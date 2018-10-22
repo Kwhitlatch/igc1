@@ -1,0 +1,27 @@
+diff --git a/wysiwyg.module b/wysiwyg.module
+index ce89746..373a919 100644
+--- a/wysiwyg.module
++++ b/wysiwyg.module
+@@ -343,9 +343,19 @@ function wysiwyg_load_editor($profile) {
+       if (!empty($editor['init callback'])) {
+         $init = $editor['init callback']($editor, $library, $profile);
+         if (!empty($init)) {
+-          // Build a file for each of the editors to hold the init scripts.
+-          // @todo Aggregate all initialization scripts into one file.
+-          $uri = 'public://js/wysiwyg/wysiwyg_' . $name . '_' . drupal_hash_base64($init) . '.js';
++          // When using s3fs module it replaces the public stream wrapper class
++          // with it's own streamwrapper to support managing all your files on s3.
++          // @see: https://www.drupal.org/node/2303815
++          if(module_exists('s3fs') == TRUE) {
++            if($stream_wrapper = file_stream_wrapper_get_instance_by_uri('public://')) {
++              $real_path_prefix = $stream_wrapper->realpath();
++              $uri = $real_path_prefix . 'js/wysiwyg/wysiwyg_' . $name . '_' . drupal_hash_base64($init) . '.js';
++            }
++          } else {
++            // Build a file for each of the editors to hold the init scripts.
++            // @todo Aggregate all initialization scripts into one file.
++            $uri = 'public://js/wysiwyg/wysiwyg_' . $name . '_' . drupal_hash_base64($init) . '.js';
++          }
+           $init_exists = file_exists($uri);
+           if (!$init_exists) {
+             $js_path = dirname($uri);
