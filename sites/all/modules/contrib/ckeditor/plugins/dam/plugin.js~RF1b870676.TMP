@@ -1,0 +1,1570 @@
+/**
+ * 2016 - Fluke Corporation - Ankur Jana
+ * Plugin for connecting to DigitalAssetManagement application and perform CRUD and Search operations 
+ */
+
+CKEDITOR.plugins.add('dam',
+{
+    // The plugin initialization logic goes inside this method.
+    init: function (editor) {
+
+        // Place the icon path in a variable to make it easier to refer to it later.
+        // "this.path" refers to the directory where the plugin.js file resides.   
+        console.log(this.path);
+        var iconPath = this.path + 'images/icon.png';
+        var pluginDirectory = this.path;
+
+        //below gives error in igcommerce site, check
+        //editor.addContentsCss(pluginDirectory + 'styles/damStyle.css');
+
+        var dialogCmd = new CKEDITOR.dialogCommand('damIntegrateDlg');
+        var contentTypeFound = "";
+        var globalVar = "";
+        var test1 = [];
+        var selectArrayAll = [];
+
+        //variable for storing filters
+        var filters = {};
+        var resultsThumbnail = "";
+
+        imageFolderPath = this.path;
+
+        //below function is probably not required, delete code after verification
+        //var createElement = (function () {
+        //    // Detect IE using conditional compilation
+        //    if (/*@cc_on @*//*@if (@_win32)!/*@end @*/false) {
+        //        // Translations for attribute names which IE would otherwise choke on
+        //        var attrTranslations =
+        //        {
+        //            "class": "className",
+        //            "for": "htmlFor"
+        //        };
+
+        //        var setAttribute = function (element, attr, value) {
+        //            if (attrTranslations.hasOwnProperty(attr)) {
+        //                element[attrTranslations[attr]] = value;
+        //            }
+        //            else if (attr == "style") {
+        //                element.style.cssText = value;
+        //            }
+        //            else {
+        //                element.setAttribute(attr, value);
+        //            }
+        //        };
+
+        //        return function (tagName, attributes) {
+        //            attributes = attributes || {};
+
+        //            // See http://channel9.msdn.com/Wiki/InternetExplorerProgrammingBugs
+        //            if (attributes.hasOwnProperty("name") ||
+        //                attributes.hasOwnProperty("checked") ||
+        //                attributes.hasOwnProperty("multiple")) {
+        //                var tagParts = ["<" + tagName];
+        //                if (attributes.hasOwnProperty("name")) {
+        //                    tagParts[tagParts.length] =
+        //                        ' name="' + attributes.name + '"';
+        //                    delete attributes.name;
+        //                }
+        //                if (attributes.hasOwnProperty("checked") &&
+        //                    "" + attributes.checked == "true") {
+        //                    tagParts[tagParts.length] = " checked";
+        //                    delete attributes.checked;
+        //                }
+        //                if (attributes.hasOwnProperty("multiple") &&
+        //                    "" + attributes.multiple == "true") {
+        //                    tagParts[tagParts.length] = " multiple";
+        //                    delete attributes.multiple;
+        //                }
+        //                tagParts[tagParts.length] = ">";
+
+        //                var element =
+        //                    document.createElement(tagParts.join(""));
+        //            }
+        //            else {
+        //                var element = document.createElement(tagName);
+        //            }
+
+        //            for (var attr in attributes) {
+        //                if (attributes.hasOwnProperty(attr)) {
+        //                    setAttribute(element, attr, attributes[attr]);
+        //                }
+        //            }
+
+        //            return element;
+        //        };
+        //    }
+        //        // All other browsers
+        //    else {
+        //        return function (tagName, attributes) {
+        //            attributes = attributes || {};
+        //            var element = document.createElement(tagName);
+        //            for (var attr in attributes) {
+        //                if (attributes.hasOwnProperty(attr)) {
+        //                    element.setAttribute(attr, attributes[attr]);
+        //                }
+        //            }
+        //            return element;
+        //        };
+        //    }
+        //})();
+
+        //function for base 64 conversion
+        function encodeImageFileAsURL(fileElement) {
+
+            var srcData = "";
+            var filesSelected = fileElement.getInputElement().$.files;
+            
+            if (filesSelected.length > 0) {
+                var fileToLoad = filesSelected[0];
+
+                var fileReader = new FileReader();
+
+                fileReader.onload = function (fileLoadedEvent) {
+                    srcData = fileLoadedEvent.target.result; // <--- data: base64
+                    globalData.assetUploadBase64 = srcData;
+                    //console.log("inside->" + globalData.assetUploadBase64);
+                }
+
+                fileReader.readAsDataURL(fileToLoad);
+            }
+        }
+
+        //function for fetching content types
+        function fetchContentTypes() {
+
+            var test = '{"document": "Document","executable": "Executable","image": "Image","video": "Video"}';
+            var readResponse = "";
+            var contentTypeIds = "";
+            var contId = "";
+            var contentTypeHtml = "";
+            var contentTypeArr = [];
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (xhttp.readyState == 4 && xhttp.status == 200) {
+                    //contentTypeFound = xhttp.responseText;
+                    //readResponse = JSON.parse(xhttp.responseText);
+                    readResponse = JSON.parse(test);
+                    contentTypeIds = Object.keys(readResponse);
+                    for (var count in contentTypeIds) {
+                        contId = contentTypeIds[count];
+                        contentTypeHtml = [contId, readResponse[contId]];
+                        contentTypeArr.push(contentTypeHtml);
+                    }
+                    contentTypeFound = contentTypeArr;
+                }
+            };
+            xhttp.open("POST", "http://dev-fluke-dam.pantheonsite.io/api/dam_service_resources/GetSupportedContentTypes.json", true);
+
+            xhttp.send();
+        }
+
+        function renderContentTypes() {
+            var contentTypeHtml = "";
+            var contTypeArr = {
+                document: "Document",
+                executable: "Executable",
+                image: "Image",
+                video: "Video"
+            };
+            //var contTypeArr = [["document":"Document"], ["executable":"Executable"], ["image":"Image"], ["video":"Video"]];
+            var contentTypeFound2 = [["Saab", "saab"], ["Volvo", "volvo"], "BMW"];
+            var contentTypeFound2 = [];
+            //contentTypeFound2.push("test","test");
+            var itemCnt = Object.keys(contTypeArr).length;
+            //var test = ['test', 'test'];
+
+            var contType;
+            for (contType in contTypeArr) {
+                //contentTypeHtml = '[\'' + contTypeArr[contType] + '\', ' + '\'' + contType + '\']';
+                contentTypeHtml = [contTypeArr[contType], contType];
+                contentTypeFound2.push(contentTypeHtml);
+
+            }
+
+            return contentTypeFound2;
+        }
+
+
+        function setSelectedAsset() {
+            console.log('in set selected asset');
+        }
+
+        //function to execute search
+        function searchAssets(contentType, taxonomyFilter, searchString, element) {
+
+
+            //var isFormDataSupported = !!window.FormData;
+            //console.log(resultsThumbElem.getElement());
+            var resultsFound = false;
+            
+
+            if (window.FormData) {
+
+                if (taxonomyFilter == "") {
+                    taxonomyFilter = "all";
+                }
+
+                var data = new FormData();
+                data.append("content_type", contentType);
+                data.append("taxonomy", taxonomyFilter);
+
+                if (searchString != "") {
+                    data.append("search_string", searchString);
+                }
+
+                var xhr = new XMLHttpRequest();
+                //xhr.withCredentials = true;
+                var resultTitle = "";
+
+                element.clear();
+                element.getElement().hide();
+                vboxImgProps.getElement().hide();
+                vboxVidProps.getElement().hide();
+
+                xhr.addEventListener("readystatechange", function () {
+                    if (this.readyState === 4) {
+                        var responseJsonObj = JSON.parse(this.responseText);
+                        globalData.resultsJsonObj = responseJsonObj;
+
+                        //renderResultsGrid(responseJsonObj, contentType);
+                        
+                        //console.log(responseJsonObj.nodes.length);
+
+                        //resultsThumbnail = "<table id='tblResultsThumb'>";
+
+                        for (var obj in responseJsonObj.nodes) {
+                            //console.log(responseJsonObj.nodes[obj].node.id);
+                            resultTitle = responseJsonObj.nodes[obj].node.title;
+                            if (resultTitle.length > 50) {
+                                resultTitle = resultTitle.substr(0, 50);
+                            }
+
+                            //if (contentType == 'document') {
+                            //    resultsThumbnail += '<tr><td><div><img src="' + imageFolderPath + '/images/dam_doc.png" style="height: 30px; width =30px" /></div><div>Sample</div>' +
+                            //   '</td></tr>';
+
+                            //}
+                            //else if (contentType == 'image') {
+                            //    resultsThumbnail += "<tr><td><img src=\"" + responseJsonObj.nodes[obj].node.url + "\" style=\"height: 30px; width =30px\" />" +
+                            //    '</td></tr>';
+                            //}
+                            //else if (contentType == 'executable') {
+                            //    resultsThumbnail += '<tr><td><img src="' + imageFolderPath + '/images/dam_exe.png" style="height: 30px; width =30px" />' +
+                            //   '</td></tr>';
+
+                            //}
+                            //else if (contentType == 'video') {
+                            //    resultsThumbnail += '<tr><td><img src="' + imageFolderPath + '/images/dam_vid.png" style=" height: 30px; width =30px" />' +
+                            //   '</td></tr>';
+
+                            //}
+                            
+                            element.add(resultTitle, responseJsonObj.nodes[obj].node.url);
+                            resultsFound = true;
+                        }
+
+                        //resultsThumbnail += "</table>";
+                        ////console.log(resultsThumbnail);
+                        //resultsThumbElem.getElement().setHtml(resultsThumbnail);
+                        //resultsThumbElem.getElement().show();
+
+                        //$('#tblResultsThumb').onClick(function() {
+                        //    console.log('test test test');
+                        //});
+
+                        //var searchResults = Object.keys(responseJsonObj);
+                        //var singleResult = responseJsonObj.nodes[0];
+                        //console.log(singleResult.node.id);
+                        //alert(singleResult);
+                        //element.add(singleResult.node.title, singleResult.node.url);
+                        element.getElement().show();
+
+                        if (resultsFound) {
+                            if (contentType == 'image') {
+                                vboxImgProps.getElement().show();
+                            } else if (contentType == 'video') {
+                                vboxVidProps.getElement().show();
+                            }
+                                
+                        }
+
+                    }
+                });
+
+                xhr.open("POST", "http://dev-fluke-dam.pantheonsite.io/api/dam_service_resources/SearchAssets", true);
+                xhr.send(data);
+
+            }
+            else {
+                jQuery.support.cors = true;
+                alert('not supported');
+            }
+
+
+
+        }
+
+        function renderResultsGrid(jsonResultsObject, contentType) {
+
+            var renderHtml = "";
+            var responseJsonObj = jsonResultsObject;
+            var columnCount = 6;
+            var itemCount = 0;
+
+            renderHtml = '<div style="height: 100px; width: 400px; background-color: yellow; overflow-y: auto;"><table id="tblResultsThumb">';
+
+            for (var obj in responseJsonObj.nodes) {
+                //console.log(responseJsonObj.nodes[obj].node.id);
+                resultTitle = responseJsonObj.nodes[obj].node.title;
+                if (resultTitle.length > 50) {
+                    resultTitle = resultTitle.substr(0, 50);
+                }
+
+                if (itemCount == 0) {
+                    renderHtml += '<tr>';
+                }
+
+                if (contentType == 'document') {
+                    renderHtml += '<td style="text-align:center"><div><img src="' + imageFolderPath + 'images/dam_doc.png" style="height: 30px; width: 30px" /></div>' +
+                        '<div>' + resultTitle + '</div>' +
+                   '</td>';
+
+                }
+                else if (contentType == 'image') {
+                    renderHtml += "<td><img src=\"" + responseJsonObj.nodes[obj].node.url + "\" style=\"height: 30px; width: 30px\" />" +
+                    '</td>';
+                }
+                else if (contentType == 'executable') {
+                    renderHtml += '<td><img src="' + imageFolderPath + 'images/dam_exe.png" style="height: 30px; width: 30px" />' +
+                   '</td>';
+
+                }
+                else if (contentType == 'video') {
+                    renderHtml += '<td><img src="' + imageFolderPath + 'images/dam_vid.png" style=" height: 30px; width: 30px" />' +
+                   '</td>';
+
+                }
+
+                itemCount++;
+
+                if (itemCount % 3 == 0) {
+                    renderHtml += '</tr><tr>';
+                }           
+            }
+
+            if (itemCount % 3 != 0) {
+                var intCount = itemCount % 3;
+                for (i = 0; i <= intCount; i++)
+                {
+                    renderHtml += '<td></td>';                       
+                }
+                renderHtml += '</tr>';
+            }
+
+            renderHtml += "</table></div>";
+            //renderHtml = '<div class="divTable">' +
+
+    //'<div class="divHeading">' +
+    //    '<div class="divCell">' +
+    //        '<p>Heading 1</p>' +
+    //        '</div>' +
+    //        '<div class="divCell">' +
+    //        '<p>Heading 2</p>' +
+    //        '</div>' +
+    //        '<div class="divCell">' +
+    //        '<p>Heading 3</p>' +
+    //        '</div>' +
+    //        '</div>' +
+    //        '<div class="divRow">' +
+    //    '<div class="divCell">' +
+    //        '<p>Row 1 Column 1</p>' +
+    //        '</div>' +
+    //        '<div class="divCell">' +
+    //        '<p>Row 1 Column 2</p>' +
+    //        '</div>' +
+    //        '<div class="divCell">' +
+    //        '<p>Row 1 Column 3</p>' +
+    //        '</div>' +
+    //'</div>';
+//    <div class="Row">
+//        <div class="Cell">
+//            <p>Row 2 Column 1</p>
+//        </div>
+//        <div class="Cell">
+//            <p>Row 2 Column 2</p>
+//        </div>
+//        <div class="Cell">
+//            <p>Row 2 Column 3</p>
+//        </div>
+//    </div>
+//</div>
+            console.log(renderHtml);
+            resultsThumbElem.getElement().setHtml(renderHtml);
+            resultsThumbElem.getElement().show();
+        }
+
+        //function to get languages and populate drop down
+        function getLanguages(element) {
+            var xhr = new XMLHttpRequest();
+
+            xhr.addEventListener("readystatechange", function () {
+                if (this.readyState === 4) {
+                                        
+                    var responseJsonObj = JSON.parse(this.responseText);                    
+                    var dataObj = responseJsonObj[1];
+                    var itemFound = false;
+
+                    for (var obj in dataObj) {                        
+                        element.add(dataObj[obj].name, dataObj[obj].language);
+                        itemFound = true;
+                    }
+
+                    if (itemFound) {
+                        element.enable();
+                        element.getElement().show();
+                    }
+                    
+                }
+            });
+
+            xhr.open("POST", "http://dev-fluke-dam.pantheonsite.io/api/dam_service_resources/GetEnabledLanguages.json", true);
+            xhr.send();
+        }
+
+        //function to get meta data and populate meta data dropdowns
+        function GetMetaData(contentType, searchParams) {
+
+            var dataToPost = new FormData();
+            dataToPost.append("content_types[0]", contentType);
+
+            var xhr = new XMLHttpRequest();
+            var searchParmasArr = searchParams;
+
+            xhr.addEventListener("readystatechange", function () {
+                if (this.readyState === 4) {
+
+                    var responseJsonObj = JSON.parse(this.responseText);
+                    var searchResults = responseJsonObj[0];
+                    var searchCriteriaItems = "";
+                    var itemFound = "false";
+
+                    for (var objParamDd in searchParmasArr) {
+                        for (var objParam in searchResults) {
+                            
+                            if (searchParmasArr[objParamDd].label.toLowerCase().replace(': ', '') == objParam.toLowerCase()) {
+                                searchCriteriaItems = searchResults[objParam];
+                                for (var objKey in searchCriteriaItems) {
+                                    searchParmasArr[objParamDd].add(searchCriteriaItems[objKey].name, searchCriteriaItems[objKey].tid);
+                                    itemFound = 'true';
+                                }
+
+                                if (itemFound == 'true') {
+                                    searchParmasArr[objParamDd].enable();
+                                    searchParmasArr[objParamDd].getElement().show();
+                                }
+                            }
+                        }
+                    }
+
+                    buttonSearch.enable();
+                }
+            });
+
+            xhr.open("POST", "http://dev-fluke-dam.pantheonsite.io/api/dam_service_resources/GetMetaData.json", true);
+            xhr.send(dataToPost);
+
+        }
+
+        // Create an editor command that stores the dialog initialization command.
+        editor.addCommand('openDialogCmd', dialogCmd);
+
+        editor.addCommand('damIntegrationCmd', {
+            exec: function (editor) {
+                //fetchContentTypes();
+                editor.execCommand("openDialogCmd");
+            },
+            async: false
+        });
+
+        // Create a toolbar button that executes the plugin command defined above.
+        editor.ui.addButton('digitalAssetBtn',
+		{
+		    label: 'Insert Digital Asset',
+		    command: 'damIntegrationCmd',
+		    icon: iconPath
+		});
+
+        // Add a new dialog window definition containing all UI elements and listeners.
+        CKEDITOR.dialog.add('damIntegrateDlg', function (editor) {
+            return {
+
+                title: 'Asset Properties',
+                minWidth: 500,
+                minHeight: 200,
+                contents: [
+					{
+					    id: 'tabSearchAsset',
+					    label: 'Search',
+					    elements: [
+							{
+							    type: 'html',
+							    html: '<p>Choose an asset type to search: </p>',
+							    style: 'font-weight: bold;',
+							    onClick: function () {
+							        
+							        tblResultsId = resultsThumbElem.getElement().getId();
+							        //jQuery('#' + tblResultsId).hide();
+							        jQuery('#' + tblResultsId).on('click', 'td', function () {
+							            jQuery('#' + tblResultsId + ' td').css('backgroundColor', '#fff');
+							            //console.log(jQuery(this)[0].firstChild.src);
+							            globalData.selectItemToEditor = jQuery(this)[0].firstChild.src;
+							            jQuery(this).css('backgroundColor', '#000');
+							        });
+							    }
+							},
+							{
+							    type: 'radio',
+							    id: 'rdoAssetType',
+							    //label: 'Choose an asset type to search.',
+							    //labelLayout: 'horizontal',
+							    //items: contentTypeFound,
+							    items: [["Document", "document"], ["Executable", "executable"], ["Image", "image"], ["Video", "video"]],
+							    'default': 'document',
+
+							    onLoad: function (element) {
+							        // alert('onload');
+							        // fetchContentTypes();
+							    },
+							    commit: function (data) {
+							        data.selectContentType = this.getValue();
+							    },
+							    onChange: function () {
+							        var rdoBtnVal = this.getValue();
+
+
+							        if (rdoBtnVal == 'document') {
+
+							            //disable meta drop downs before search
+							            for (var keyType in selectArrayAll) {
+							                selectArrayAll[keyType].disable();
+							            }
+
+							            //get meta data for selected asset type and reload meta drop downs
+							            GetMetaData(rdoBtnVal, selectArrayAll);
+							        }
+							        else if (rdoBtnVal == 'executable') {
+							            //disable meta drop downs before search
+							            for (var keyType in selectArrayAll) {
+							                selectArrayAll[keyType].disable();
+							            }
+
+							            //get meta data for selected asset type and reload meta drop downs
+							            GetMetaData(rdoBtnVal, selectArrayAll);
+							        }
+							        else if (rdoBtnVal == 'image') {
+							            //disable meta drop downs before search
+							            for (var keyType in selectArrayAll) {
+							                selectArrayAll[keyType].disable();
+							            }
+
+							            //get meta data for selected asset type and reload meta drop downs
+							            GetMetaData(rdoBtnVal, selectArrayAll);
+							        }
+							        else if (rdoBtnVal == 'video') {
+							            //disable meta drop downs before search
+							            for (var keyType in selectArrayAll) {
+							                selectArrayAll[keyType].disable();
+							            }
+
+							            //get meta data for selected asset type and reload meta drop downs
+							            GetMetaData(rdoBtnVal, selectArrayAll);
+							        }
+							        else {
+							            alert('Oops! Something went wrong please refresh page.');
+							        }
+							    }
+
+							},
+							{
+							    type: 'text',
+							    id: 'txtSrchKeywords',
+							    label: 'Search Keywords: ',
+							    widths: [107, 268],
+							    labelStyle: 'font-weight: bold; vertical-align: sub',
+							    labelLayout: 'horizontal',
+							    //validate: CKEDITOR.dialog.validate.notEmpty("Title field cannot be empty.")
+							},
+                            {
+                                type: 'select',
+                                id: 'sltLanguage',
+                                label: 'Language: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [],
+                                onChange: function () {
+                                    //if (this.getValue() == "") {
+                                    //    delete filters.fltApplication;
+                                    //} else {
+                                    //    filters.fltApplication = this.getValue();
+                                    //}
+                                }
+
+                            },
+                            {
+                                type: 'button',
+                                id: 'btnAdvFilters',
+                                label: 'Advanced Filters',
+                                title: 'Click for Advanced Filters',
+                                onClick: function () {
+                                    var parentDialog = this.getDialog();
+                                    var advFilters = parentDialog.getContentElement('tabSearchAsset', 'vboxAdvFilters');
+                                    
+                                    if (advFilters.isVisible()) {
+                                        advFilters.getElement().hide();
+                                    }
+                                    else {
+                                        advFilters.getElement().show();
+                                    }
+                                }
+
+                            },
+                            {
+                                type: 'vbox',
+                                id: 'vboxAdvFilters',
+                                align: 'left',
+                                //width: '200px',
+                                children: [
+                                    {
+                                        type: 'html',
+                                        html: '<p>Filter Selection: </p>',
+                                        style: 'font-weight: bold;'
+                                    },
+                                    {
+                                        type: 'radio',
+                                        id: 'rdoFilterOpt',
+                                        labelLayout: 'vertical',
+                                        //label: 'Select Filter Type:',
+                                        items: [["Include all", "all"], ["Include some", "some"]],
+                                        'default': 'all'
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltApplication',
+                                        label: 'Application: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+									        ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltApplication;
+                                            } else {
+                                                filters.fltApplication = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltAstCat',
+                                        label: 'Asset Category: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+									        ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltAstCat;
+                                            } else {
+                                                filters.fltAstCat = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltDocType',
+                                        label: 'Document Type: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+									        ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltDocType;
+                                            } else {
+                                                filters.fltDocType = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltImgQlt',
+                                        label: 'Image Quality: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltImgQlt;
+                                            } else {
+                                                filters.fltImgQlt = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltIndustry',
+                                        label: 'Industry: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltIndustry;
+                                            } else {
+                                                filters.fltIndustry = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltLocaleIg',
+                                        label: 'Locale - IG: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltLocaleIg;
+                                            } else {
+                                                filters.fltLocaleIg = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltMac',
+                                        label: 'Master Asset Container (MAC): ',
+                                        widths: [107, 26],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltMac;
+                                            } else {
+                                                filters.fltMac = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltMacType',
+                                        label: 'Master Asset Container Type (MAC Type): ',
+                                        widths: [240, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltMacType;
+                                            } else {
+                                                filters.fltMacType = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltOpco',
+                                        label: 'OpCo: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltOpCo;
+                                            } else {
+                                                filters.fltOpCo = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltRegion',
+                                        label: 'Region: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function () {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltRegion;
+                                            } else {
+                                                filters.fltRegion = this.getValue();
+                                            }
+                                        }
+
+                                    },
+                                    {
+                                        type: 'select',
+                                        id: 'sltTopic',
+                                        label: 'Topic: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        items: [
+                                            ['- Any - ', '']
+                                        ],
+                                        onChange: function (data) {
+                                            if (this.getValue() == "") {
+                                                delete filters.fltTopic;
+                                            }
+                                            else {
+                                                filters.fltTopic = this.getValue();
+                                            }
+                                        }
+                                    }
+                                ]
+
+                            },
+                            {
+                                type: 'button',
+                                id: 'btnSearch',
+                                label: 'Search',
+                                title: 'Search Assets',
+                                className: 'btnSearch',
+                                style: 'font-weight: bold;',
+                                onClick: function () {
+                                    var parentDialog = this.getDialog();
+                                    var resultsList = parentDialog.getContentElement('tabSearchAsset', 'sltSearchResults');
+                                    var searchKeywords = parentDialog.getContentElement('tabSearchAsset', 'txtSrchKeywords');
+                                    var contentType = parentDialog.getContentElement('tabSearchAsset', 'rdoAssetType');
+                                    var filterOpt = parentDialog.getContentElement('tabSearchAsset', 'rdoFilterOpt');
+                                    var taxonomyFilter = "";
+                                    var taxFilterLength = 0;
+
+                                    if (filterOpt.getValue() == "all") {
+                                        for (var filter in filters) {
+                                            taxonomyFilter += filters[filter] + ",";
+                                        }
+
+                                    } else if (filterOpt.getValue() == "some") {
+                                        for (var filter in filters) {
+                                            taxonomyFilter += filters[filter] + "+";
+                                        }
+
+                                    }
+
+                                    //remove trailing + or ,
+                                    taxFilterLength = taxonomyFilter.length;
+                                    if (taxFilterLength > 0) {
+                                        if (taxonomyFilter.slice(taxFilterLength - 1, taxFilterLength) == "+" || taxonomyFilter.slice(taxFilterLength - 1, taxFilterLength) == ",") {
+                                            taxonomyFilter = taxonomyFilter.substring(0, taxFilterLength - 1);
+                                        }
+                                    }
+
+                                    //if no filters applied set taxonomy as "all"
+                                    if (taxFilterLength == 0) {
+                                        taxonomyFilter = "all";
+                                    }
+
+                                    //call search
+                                    searchAssets(contentType.getValue(), taxonomyFilter, searchKeywords.getValue(), resultsList);                                    
+                                }
+                            },
+                            {
+                                type: 'vbox',
+                                id: 'vboxSearchResults',
+                                align: 'left',
+                                //width: '200px',
+                                children: [
+                                    {
+
+                                        type: 'select',
+                                        id: 'sltSearchResults',
+                                        label: 'Results: ',
+                                        //className: 'blank', 
+                                        size: 15,
+                                        style: 'height: 200px;',
+                                        items: [
+									        ['Please Choose', '']
+                                        ],
+                                        commit: function (data) {
+                                            var input = this.getInputElement().$;
+
+                                            data.selectAssetTitle = input.options[input.selectedIndex].text;
+                                            data.selectedAssetUrl = this.getValue();
+
+                                            //console.log(input.options[input.selectedIndex].text);							        
+                                            //console.log(this);
+                                            //data.selectedAssetTitle = this
+                                        },
+                                        //style: 'visibility: hidden',
+                                        onLoad: function (element) {
+                                            //console.log('selectOnLoad');
+                                            //this.add('Option 3', '1');
+                                            //this.add('Option 4', '2');
+                                            //this.removeClass('cke_dialog_ui_input_select');
+                                        },
+                                        onChange: function (element) {
+                                            console.log(this.getValue());
+                                            var parentDialog = this.getDialog();
+                                            var captionElem = parentDialog.getContentElement('tabSearchAsset', 'txtCaption');
+                                            var altTextElem = parentDialog.getContentElement('tabSearchAsset', 'txtAltText');
+
+                                            for (obj in globalData.resultsJsonObj.nodes) {
+                                                
+                                                //console.log(globalData.resultsJsonObj.nodes[obj].node.display_title);
+                                                //console.log(globalData.resultsJsonObj.nodes[obj].node.caption);
+                                                if (this.getValue() == globalData.resultsJsonObj.nodes[obj].node.url) {
+                                                    //console.log(globalData.resultsJsonObj.nodes[obj].node.caption);
+                                                    captionElem.setValue(globalData.resultsJsonObj.nodes[obj].node.caption);
+                                                    altTextElem.setValue(globalData.resultsJsonObj.nodes[obj].node.display_title);
+                                                }
+                                            }
+                                            //console.log(globalData.resultsJsonObj);
+                                        }
+                                    }
+                                ]
+                            },
+                            //{
+                            //    type: 'html',
+                            //    id: 'showResultThumbnails',
+                            //    html: '<table style="border: solid 1px; margin: 0; padding: 0;"><tr><td>'+
+                            //        '<a href="http://www.fluke.com"><img style="height: 30px; width: 20px; padding: 5px;" src="http://dev-fluke-dam.pantheonsite.io/sites/default/files/sample_2.png" /></a>' +
+                            //        '</td></tr></table>',
+                            //},
+                            {
+                                type: 'vbox',
+                                id: 'vbxImgProps',
+                                children: [
+                                    {
+                                        type: 'checkbox',
+                                        id: 'cbxCaption',
+                                        label: 'Captioned Image',
+                                        labelStyle: 'font-weight: bold; vertical-align: top',
+                                        labelLayout: 'horizontal',
+                                        commit: function (data) {
+                                            data.imageCaptionShow = this.getValue();
+                                        }
+                                    },
+                                    {
+                                        type: 'text',
+                                        id: 'txtCaption',
+                                        label: 'Caption: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        commit: function (data) {
+                                            data.imageCaption = this.getValue();
+
+                                        }
+                                    },
+                                    {
+                                        type: 'text',
+                                        id: 'txtAltText',
+                                        label: 'Alt Text: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        commit: function (data) {
+                                            data.imageAltText = this.getValue();
+                                        }
+                                    },
+                                    {
+                                        type: 'text',
+                                        id: 'txtImgHeight',
+                                        label: 'Height: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        commit: function (data) {
+                                            data.imageHeight = this.getValue();
+                                        }
+                                    },
+                                    {
+                                        type: 'text',
+                                        id: 'txtImgWidth',
+                                        label: 'Width: ',
+                                        widths: [107, 26],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub; align: left',
+                                        labelLayout: 'horizontal',
+                                        commit: function (data) {
+                                            data.imageWidth = this.getValue();
+                                        }
+                                    }
+                                ]                            
+                            },
+                            {
+                                type: 'vbox',
+                                id: 'vbxVidProps',
+                                children: [   
+                                    {
+                                        type: 'text',
+                                        id: 'txtVidHeight',
+                                        label: 'Height: ',
+                                        widths: [107, 268],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub',
+                                        labelLayout: 'horizontal',
+                                        commit: function (data) {
+                                            data.videoHeight = this.getValue();
+                                        }
+                                    },
+                                    {
+                                        type: 'text',
+                                        id: 'txtVidWidth',
+                                        label: 'Width: ',
+                                        widths: [107, 26],
+                                        labelStyle: 'font-weight: bold; vertical-align: sub; align: left',
+                                        labelLayout: 'horizontal',
+                                        commit: function (data) {
+                                            data.videoWidth = this.getValue();
+                                        }
+                                    }
+                                ]
+                            },
+                            
+					    ]
+					},
+					{
+					    id: 'tabAddAsset',
+					    label: 'Add',
+					    elements: [
+
+                            {
+                                type: 'html',
+                                html: '<p>Choose an asset type to upload: </p>',
+                                style: 'font-weight: bold;'
+                            },
+							{
+							    type: 'radio',
+							    id: 'rdoUldAssetType',
+							    //label: 'Choose an asset type to search.',
+							    //labelLayout: 'horizontal',
+							    items: [["Document", "document"], ["Executable", "executable"], ["Image", "image"], ["Video", "video"]],
+							    'default': 'document',
+
+							    onLoad: function (element) {
+							        //console.log('rdoOnLoad');
+							        test1 = [["document", "Document"], ["executable", "Executable"], ["image", "Image"], ["video", "Video"]];
+							        // alert('onload');
+							        // fetchContentTypes();
+							    },
+							    commit: function (data) {
+							        data.selectUldContentType = this.getValue();
+							    },
+
+							    setup: function (element) {
+							        //console.log('rdoSetup');
+							        //alert('test');
+							        //this.setValue(contentTypeFound);
+							        this.add('Option 3', '1');
+							    }
+
+							},
+                            {
+                                type: 'text',
+                                id: 'txtTitle',
+                                label: 'Title: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'file',
+                                id: 'uldAssetIcon',
+                                label: 'Asset Icon: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'textarea',
+                                id: 'txtDesc',
+                                label: 'Description: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'file',
+                                id: 'uldAsset',
+                                label: 'Asset: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                onChange: function (data) {
+                                    //make this variable global on dialog show
+                                    //globalData = {};
+                                    encodeImageFileAsURL(this);
+                                    console.log("in on change");
+                                }
+                            },
+                            {
+                                type: 'text',
+                                id: 'txtAltTag',
+                                label: 'Alt Tag: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'text',
+                                id: 'txtSoftVer',
+                                label: 'Software Version: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'text',
+                                id: 'txtVidUrl',
+                                label: 'Video URL: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'text',
+                                id: 'txtImgCaption',
+                                label: 'Image Caption: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'text',
+                                id: 'txtCreated',
+                                label: 'Created: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'text',
+                                id: 'txtVidCaption',
+                                label: 'Video Caption: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                            },
+                            {
+                                type: 'select',
+                                id: 'sltProduct',
+                                label: 'Product: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [
+                                    ['- Select - ', '-1']
+                                ],
+
+                            },
+                            {
+                                type: 'select',
+                                id: 'sltAddIndustry',
+                                label: 'Industry: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [
+                                    ['- Select - ', '-1']
+                                ],
+
+                            },
+                            {
+                                type: 'select',
+                                id: 'sltAddApplication',
+                                label: 'Application: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [
+                                    ['- Select - ', '-1']
+                                ],
+
+                            },
+                            {
+                                type: 'select',
+                                id: 'sltAddTopic',
+                                label: 'Topic: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [
+                                    ['- Select - ', '-1']
+                                ],
+
+                            },
+                            {
+                                type: 'select',
+                                id: 'sltAddAward',
+                                label: 'Award: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [
+                                    ['- Select - ', '-1']
+                                ],
+
+                            },
+                            {
+                                type: 'select',
+                                id: 'sltAddRegion',
+                                label: 'Region: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [
+                                    ['- Select - ', '-1']
+                                ],
+
+                            },
+                            {
+                                type: 'select',
+                                id: 'sltAddOpco',
+                                label: 'OpCo: ',
+                                widths: [107, 268],
+                                labelStyle: 'font-weight: bold; vertical-align: sub',
+                                labelLayout: 'horizontal',
+                                items: [
+                                    ['- Select - ', '-1']
+                                ],
+
+                            },
+                            {
+                                type: 'html',
+                                html: '<div id="datepicker"></div>' +
+                                      '<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">' +
+                                      '<script src="//code.jquery.com/jquery-1.10.2.js"></script>' +
+                                      '<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>' +
+                                        '<script>' +
+                                        'jQuery( "#datepicker" ).datepicker();' +
+                                        '</script>',
+                            },
+							{
+							    type: 'text',
+							    id: 'abbr',
+							    label: 'Abbreviation',
+							    //validate: CKEDITOR.dialog.validate.notEmpty("Abbreviation field cannot be empty.")
+							},
+                            {
+                                type: 'button',
+                                id: 'btnCreateAsset',
+                                label: 'Create',
+                                title: 'Create Asset',
+                                onClick: function () {
+
+                                    var parentDialog = this.getDialog();
+                                    var assetTitle = parentDialog.getContentElement('tabAddAsset', 'txtTitle');
+                                    var contentType = parentDialog.getContentElement('tabAddAsset', 'rdoUldAssetType');
+
+                                    var assetIcon = parentDialog.getContentElement('tabAddAsset', 'uldAssetIcon');
+                                    var mainAsset = parentDialog.getContentElement('tabAddAsset', 'uldAsset');
+
+                                    //var base64Data = encodeImageFileAsURL(mainAsset);
+
+                                    //console.log(base64Data);
+                                    //var base64 = $('#imgTest img').prop('src');
+                                    var arr = globalData.assetUploadBase64.split('base64,');
+                                    //console.log(base64Data);
+
+                                    var fileData = {
+                                        "file": {
+                                            "file": arr[1],
+                                            //"file": globalData.assetUploadBase64,
+                                            "filename": "testfile",
+                                            "filepath": "public://", /* in D7 change this value to "public://my_image.jpg" */
+                                        }
+                                    };
+
+                                    jQuery.ajax({
+                                        type: "POST",
+                                        //url: "http://localhost:81/flukedamlocal/damservice/file.json",
+                                        url: "http://dev-fluke-dam.pantheonsite.io/api/file",
+                                        data: fileData,
+                                        dataType: "json",
+                                        success: function (result) {
+                                            if (result.fid !== '') {
+                                                console.log('file uploaded');
+                                            }
+                                        }
+                                    });
+
+                                    //correct data, remove hard-coded values with dynamic values
+                                    var nodedata = {
+                                        "title": assetTitle.getValue(),
+                                        "type": contentType.getValue(),
+                                        "language": 'en',
+                                        "field_display_title[en][0][value]": "test_asst_en",
+                                    };
+                                    //jQuery.ajax({
+                                    //    //url: "http://localhost:81/flukedamlocal/damservice/node.json",
+                                    //    url: "http://dev-fluke-dam.pantheonsite.io/api/node.json",
+                                    //    type: 'post',
+                                    //    data: nodedata,
+                                    //    dataType: 'json',
+                                    //    //headers: {
+                                    //    //    'X-CSRF-Token': token
+                                    //    //},
+                                    //    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                    //        console.log('error ' + errorThrown);
+                                    //    },
+                                    //    success: function (data) {
+                                    //        console.log("Node created");
+                                    //    }
+                                    //});
+                                }
+                            },
+					    ]
+					}
+                ],
+
+                onSetupContent: function () {
+                    //console.log('setupContent');
+
+
+                },
+
+                onShow: function () {
+                    console.log('onShow1234');
+                    globalData = {};
+                    resultsThumbElem = this.getContentElement('tabSearchAsset', 'showResultThumbnails');
+
+                    var radioElem = this.getContentElement('tabSearchAsset', 'rdoAssetType');
+                    var selectElem = this.getContentElement('tabSearchAsset', 'sltSearchResults');
+
+                    var selectLang = this.getContentElement('tabSearchAsset', 'sltLanguage');
+                    var selectApplication = this.getContentElement('tabSearchAsset', 'sltApplication');
+                    var selectAstCat = this.getContentElement('tabSearchAsset', 'sltAstCat');
+                    var selectDocType = this.getContentElement('tabSearchAsset', 'sltDocType');
+                    var selectImgQlt = this.getContentElement('tabSearchAsset', 'sltImgQlt');
+                    var selectIndustry = this.getContentElement('tabSearchAsset', 'sltIndustry');
+                    var selectLocaleIg = this.getContentElement('tabSearchAsset', 'sltLocaleIg');
+                    var selectMac = this.getContentElement('tabSearchAsset', 'sltMac');
+                    var selectMacType = this.getContentElement('tabSearchAsset', 'sltMacType');
+                    var selectOpco = this.getContentElement('tabSearchAsset', 'sltOpco');
+                    var selectRegion = this.getContentElement('tabSearchAsset', 'sltRegion');
+                    var selectTopic = this.getContentElement('tabSearchAsset', 'sltTopic');
+                    var vbxAdvFilters = this.getContentElement('tabSearchAsset', 'vboxAdvFilters');
+
+                    buttonSearch = this.getContentElement('tabSearchAsset', 'btnSearch');
+                    vboxImgProps = this.getContentElement('tabSearchAsset', 'vbxImgProps');
+                    vboxVidProps = this.getContentElement('tabSearchAsset', 'vbxVidProps');
+                   
+                    selectArrayAll = [selectApplication, selectAstCat, selectDocType, selectImgQlt, selectIndustry, selectLocaleIg, selectMac, selectMacType, selectOpco, selectRegion, selectTopic];
+
+                    //disable and hide the fields before getting data from server
+                    for (var keyType in selectArrayAll) {
+                        selectArrayAll[keyType].disable();
+                        selectArrayAll[keyType].getElement().hide();
+                    }
+
+                    //disable and hide languages
+                    selectLang.disable();
+                    selectLang.getElement().hide();
+
+                    //Hide the search results list box on dialog load
+                    selectElem.getElement().hide();
+
+                    //Hide advanaced filters
+                    vbxAdvFilters.getElement().hide();
+
+                    //Hide image properties box
+                    vboxImgProps.getElement().hide();
+
+                    //Hide video properties box
+                    vboxVidProps.getElement().hide();
+
+                    //Disable Search Button
+                    buttonSearch.disable();
+
+                    //console.log(radioElem);
+                    GetMetaData(radioElem.getValue(), selectArrayAll);
+
+                    //get languages
+                    getLanguages(selectLang);
+                },
+
+                onOk: function () {
+                    // Create a link element and an object that will store the data entered in the dialog window.
+                    // http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.dom.document.html#createElement
+                    var dialog = this,
+						data = {},
+						link = editor.document.createElement('a');
+
+                    // Populate the data object with data entered in the dialog window.
+                    // http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.dialog.html#commitContent
+                    this.commitContent(data);
+
+                    var elemFig;
+                    var elemFigCaption;
+                    var elemVideo;
+                    var elemSource;
+
+                    console.log(data.selectContentType);
+
+                    if (data.selectContentType == "document") {
+                        link = editor.document.createElement('a');
+                        link.setAttribute('href', data.selectedAssetUrl);
+                        link.setHtml(data.selectAssetTitle);
+                    }
+                    else if (data.selectContentType == "image") {
+
+                        link = editor.document.createElement('img');
+                        link.setAttribute('src', data.selectedAssetUrl);
+                        //link.setAttribute('src', globalData.selectItemToEditor);
+                        link.setAttribute('alt', data.imageAltText);
+
+                        if (data.imageHeight != "") {
+                            link.setAttribute('height', data.imageHeight);
+                        }
+
+                        if (data.imageWidth != "") {
+                            link.setAttribute('width', data.imageWidth);
+                        }
+
+                        if (data.imageCaptionShow) {
+
+                            //create figure element
+                            elemFig = editor.document.createElement('figure');
+                            elemFig.setAttribute('class', 'image');
+                            elemFig.setAttribute('style', 'float: left');
+
+                            //create figure caption element
+                            elemFigCaption = editor.document.createElement('figcaption');
+                            elemFigCaption.setHtml(data.imageCaption);
+
+                            //create final image with caption for render
+                            elemFig.setHtml(link.getOuterHtml() + elemFigCaption.getOuterHtml());
+                        }                       
+
+                        //console.log(link.getOuterHtml());
+                        //console.log(link.getHtml());
+                        //console.log(data.imageCaptionShow);                        
+                        
+                        //link.setHtml(data.selectAssetTitle);
+                        //link.setHtml("image_added");
+                    }
+                    else if (data.selectContentType == "video") {
+                        elemVideo = editor.document.createElement('video');
+                        elemVideo.setAttribute('controls','');
+
+                        elemSource = editor.document.createElement('source');
+                        elemSource.setAttribute('src', data.selectedAssetUrl);
+
+                        if (data.videoWidth != "") {
+                            elemVideo.setAttribute('width', data.videoWidth);
+                        }
+
+                        if (data.videoHeight != "") {
+                            elemVideo.setAttribute('height', data.videoHeight);
+                        }
+
+                        var fileExt = data.selectedAssetUrl.substr(data.selectedAssetUrl.lastIndexOf('.') + 1);
+                        elemSource.setAttribute('type', 'video/' + fileExt);
+
+                        elemVideo.setHtml(elemSource.getOuterHtml() + 'Your browser does not support HTML5 video.');
+                        //elemVideo.setHtml('<source src="http://dev-fluke-dam.pantheonsite.io/sites/default/files/P4Gtraining.mp4" type="video/mp4" />');
+                        //elemSource = null;
+                    }
+                    else if (data.selectContentType == "executable") {                        
+                        link = editor.document.createElement('a');
+                        link.setAttribute('href', data.selectedAssetUrl);
+                        link.setHtml(data.selectAssetTitle);
+                    }
+
+                    // Set the URL (href attribute) of the link element.
+                    // http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.dom.element.html#setAttribute
+
+
+                    // In case the "newPage" checkbox was checked, set target=_blank for the link element.
+                    //if (data.newPage)
+                    //    link.setAttribute('target', '_blank');
+
+                    // Set the style selected for the link, if applied.
+                    // http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.dom.element.html#setStyle
+                    //switch (data.style) {
+                    //    case 'b':
+                    //        link.setStyle('font-weight', 'bold');
+                    //        break;
+                    //    case 'u':
+                    //        link.setStyle('text-decoration', 'underline');
+                    //        break;
+                    //    case 'i':
+                    //        link.setStyle('font-style', 'italic');
+                    //        break;
+                    //}
+
+                    // Insert the Displayed Text entered in the dialog window into the link element.
+                    // http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.dom.element.html#setHtml
+                    //link.setHtml('asset');
+
+                   //alert(typeof(data.selectContentType));
+				   
+				   //switch(data.selectContentType){
+						
+				   // 	case 'document':
+				   // 		editor.insertElement(link);
+				   // 		break;
+						
+				   // 	case 'executable':
+				   // 		editor.insertElement(link);
+				   // 		break;
+						
+				   // 	case 'image':
+				   // 		if (data.imageCaptionShow) {
+				   // 			editor.insertElement(elemFig);
+				   // 		}
+				   // 		else {
+				   // 			// Insert the link element into the current cursor position in the editor.
+				   // 			// http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.editor.html#insertElement
+				   // 			editor.insertElement(link);
+				   // 		}
+				   // 		break;
+							
+				   // 	case 'video':
+				   // 		editor.insertElement(elemVideo);
+				   // 		break;						
+                    //}
+
+                    editor.insertElement(elemVideo);
+                }
+            };
+        });
+    }
+});

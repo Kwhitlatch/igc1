@@ -1,0 +1,33 @@
+From 925ee8f67520441cb4ec90ef264fb48beb8395f1 Mon Sep 17 00:00:00 2001
+From: pallavi Sugandhi <pallavi.sugandhi@clariontechnologies.co.in>
+Date: Thu, 19 May 2016 15:14:18 +0530
+Subject: [PATCH] Issue 1570762 by pallavi_sugandhi:
+ quicktab_default_tab_selection.
+
+---
+ js/qt_ui_tabs.js | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/js/qt_ui_tabs.js b/js/qt_ui_tabs.js
+index ad6b5a8..6a29950 100644
+--- a/js/qt_ui_tabs.js
++++ b/js/qt_ui_tabs.js
+@@ -6,8 +6,14 @@ Drupal.behaviors.qt_ui_tabs = {
+     $('.quicktabs-ui-wrapper').once('qt-ui-tabs-processed', function() {
+       var id = $(this).attr('id');
+       var qtKey = 'qt_' + id.substring(id.indexOf('-') +1);
++      var active_tab = parseInt(settings.quicktabs[qtKey].active_tab);
+       if (!settings.quicktabs[qtKey].history) {
+-        $(this).tabs();
++        if (window.location.hash.match('#qt.*') == undefined) {
++          $(this).tabs({selected: active_tab, active: active_tab});
++        }
++        else {
++          $(this).tabs();
++        }
+       }
+       else {
+         $(this).tabs({event: 'change'});
+-- 
+1.9.4.msysgit.1
+

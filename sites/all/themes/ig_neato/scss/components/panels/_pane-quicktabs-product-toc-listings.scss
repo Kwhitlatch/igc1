@@ -1,0 +1,133 @@
+//Example: /en-us/products/electrical-testing/digital-multimeters
+.toc-description {
+  img {
+    background: transparent;
+  }
+}
+#tabs.pane-quicktabs-product-toc-listings {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 6rem;
+  ul.ui-tabs-nav,
+  .ui-tabs-panel {
+    padding: 0;
+    margin: 0;
+    .paginate > ul {
+      padding-left: 0;
+    }
+  }
+  .ui-widget-header {
+    border: none;
+    background: none;
+  }
+  .ui-tabs-nav {
+    li {
+      display: inline-block;
+      width: 100%;
+      @include media($screen-xs) {
+        width: 33.3%;
+      }
+      margin: 0;
+      padding: 0;
+      &.ui-state-default {
+        border: none;
+        background: none;
+      }
+      a {
+        border-bottom: 4px solid white;
+        font-family: $heading-font-family;
+        // font-weight: 100;
+        text-align: center;
+        display: block;
+        width: 100%;
+        font-size: 23px;
+        padding: 2px 10px 4px;
+      }
+      &.ui-state-active a {
+        border-bottom: 4px solid #336699;
+      }
+    }
+  }
+  a h3 {
+    color: $action-color;
+    font-weight: 300;
+  }
+  .row {
+    margin-bottom: 1em;
+    padding-bottom: 1em;
+    border-bottom: 1px solid $gray-c;
+    @include clearfix;
+    list-style-type: none;
+  }
+  .toc-listing-item-wrapper {
+    @include span-columns(12);
+    @include media($screen-xs) {
+      @include span-columns(6);
+    }
+    @include media($screen-sm) {
+      @include span-columns(4);
+    }
+    @include media($screen-md) {
+      @include span-columns(3);
+    }
+    .toc-listing-image {
+      a {
+        line-height: 0; // Fixes the extra spacing issue below the image
+      }
+      img, picture {
+        background-color: $white; // Adds white background to transparent pngs
+      }
+    }
+  }
+  .toc_article_card_large {
+    @include span-columns(12);
+    @include media($screen-xs) {
+      padding: 2rem 0;
+      @include span-columns(6);
+    }
+    @include media($screen-sm) {
+      @include span-columns(8);
+    }
+    @include media($screen-md) {
+      @include span-columns(9);
+    }
+    .bv-inline-stars {
+      margin-bottom: 5px;
+      @include media($screen-sm) {
+        margin-top: 10px;
+        @include span-columns(4);
+      }
+      @include media($screen-lg) {
+        @include span-columns(5);
+      }
+    }
+    .compare-item {
+      @include media($screen-sm) {
+        @include span-columns(8);
+      }
+      @include media($screen-lg) {
+        @include span-columns(7);
+      }
+    }
+  }
+}
+
+.product-filter {
+  // The .css maps are broken for extends. The code for this is in helpers-mixins/_fancy-select.scss
+  @extend %fancy-select;
+  margin-top: 1.5rem;
+  width: 100%;
+  @include media($screen-sm) {
+    @include span-columns(9);
+  }
+  label {
+    @extend %element-invisible;
+  }
+}
+
+.toc-listing-content {
+  .pagination {
+    @extend %paginate-div;
+  }
+}

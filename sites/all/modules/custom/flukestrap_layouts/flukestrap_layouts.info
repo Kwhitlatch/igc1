@@ -1,0 +1,6 @@
+name = flukestrap Layouts
+description = Responsive panels layouts set to work with Panopoly and the flukestrap theme
+core = 7.x
+package = Fluke
+dependencies[] = panels
+stylesheets[all][] = flukestrap_layouts.css

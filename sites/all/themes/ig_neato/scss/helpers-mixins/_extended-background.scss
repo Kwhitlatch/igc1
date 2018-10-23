@@ -1,0 +1,19 @@
+@mixin extended-background($color: $gray-e){
+  background-color: $color;
+  margin: 0 -4em;
+  padding: 0 4em;
+
+  @include media($screen-md){
+    margin: 0 -1000px;
+    padding: 0 1000px;
+    overflow-y: hidden;
+
+  }
+}
+
+@mixin remove-extended-background($color: none){
+  background: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: visible;
+}

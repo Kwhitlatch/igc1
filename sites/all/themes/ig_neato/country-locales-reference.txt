@@ -1,0 +1,229 @@
+m3en     af         m3en         Afghanistan
+r0en     al         r0en         Albania
+m1fr     dz         m1fr         Algeria
+eses     es         eses         Andorra
+m2en     ao         m2en         Angola
+tten     ai         tten         Anguilla
+tten     aq         tten         Antarctica
+tten     ag         tten         Antigua and Barbuda
+ares     ar         ares         Argentina
+r0en     am         r0en         Armenia
+tten     aw         tten         Aruba
+auen     au         auen         Australia
+atde     at         atde         Austria
+r0en     az         r0en         Azerbaijan
+tten     bs         tten         Bahamas
+m3en     bh         m3en         Bahrain
+sgen     bd         sgen         Bangladesh
+tten     bb         tten         Barbados
+r0en     by         r0en         Belarus
+benl     be         benl         Belgium
+tten     bz         tten         Belize
+m1fr     bj         m1fr         Benin
+tten     bm         tten         Bermuda
+sgen     bt         sgen         Bhutan
+boes     bo         boes         Bolivia
+r0en     ba         r0en         Bosnia-Herzegovina
+m2en     bw         m2en         Botswana
+tten     bv         tten         Bouvet Island
+brpt     br         brpt         Brazil
+r0en     io         r0en         British Indian Ocean Territory
+sgen     bn         sgen         Brunei Darussalam
+r0en     bg         r0en         Bulgaria
+m1fr     bf         m1fr         Burkina Faso
+m1fr     bi         m1fr         Burundi
+sgen     kh         sgen         Cambodia
+m1fr     cm         m1fr         Cameroon
+caen     ca         caen         Canada
+m2en     cv         m2en         Cape Verde
+tten     ky         tten         Cayman Islands
+m1fr     cf         m1fr         Central African Republic
+m1fr     td         m1fr         Chad
+cles     cl         cles         Chile
+cnzh     cn         cnzh         China
+auen     au         auen         Christmas Island
+auen     au         auen         Cocos (Keeling) Islands
+coes     co         coes         Colombia
+m1fr     km         m1fr         Comoros
+m1fr     cg         m1fr         Congo
+auen     au         auen         Cook Islands
+cres     cr         cres         Costa Rica
+m1fr     ci         m1fr         Cote D''Ivoire
+r0en     hr         r0en         Croatia
+m3en     cy         m3en         Cyprus
+czcs     cz         czcs         Czech Republic
+dkda     dk         dkda         Denmark
+m1fr     dj         m1fr         Djibouti
+tten     dm         tten         Dominica
+does     do         does         Dominican Republic
+m2pt     tp         m2pt         East Timor
+eces     ec         eces         Ecuador
+sves     sv         sves         El Salvador
+m3en     eg         m3en         Egypt
+m1fr     gq         m1fr         Equatorial Guinea
+m2en     er         m2en         Eritrea
+r0en     ee         r0en         Estonia
+m3en     et         m3en         Ethiopia
+r0en     dk         r0en         Faeroe Islands
+auen     fk         auen         Falkland Islands (Malvinas)
+auen     au         auen         Fiji
+fifi     fi         fifi         Finland
+frfr     fr         frfr         France
+m1fr     gf         m1fr         French Guiana
+auen     au         auen         French Polynesia
+auen     au         auen         French Southern Territories
+m1fr     ga         m1fr         Gabon
+m2en     gm         m2en         Gambia
+r0en     ge         r0en         Georgia
+dede     de         dede         Germany
+m2en     gh         m2en         Ghana
+uken     uk         uken         Gibraltar
+r0en     gr         r0en         Greece
+dkda     dk         dkda         Greenland
+tten     gd         tten         Grenada
+tten     gp         tten         Guadeloupe
+gtes     gt         gtes         Guatemala
+uken     uk         uken         Guernsey, C.I.
+m1fr     gn         m1fr         Guinea
+m2en     gw         m2en         Guinea-Bissau
+tten     gy         tten         Guyana
+tten     ht         tten         Haiti
+auen     au         auen         Heard and McDonald Islands
+gtes     hn         gtes         Honduras
+cnzh     hk         cnzh         Hong Kong
+r0en     hu         r0en         Hungary
+r0en     is         r0en         Iceland
+inen     in         inen         India
+idid     id         idid         Indonesia
+m3en     iq         m3en         Iraq
+ieen     ie         ieen         Ireland
+uken     uk         uken         Isle of Man
+r0en     us         r0en         Israel
+itit     it         itit         Italy
+tten     jm         tten         Jamaica
+jpja     jp         jpja         Japan
+uken     uk         uken         Jersey, C.I.
+m3en     jo         m3en         Jordan
+r0en     kz         r0en         Kazakhstan
+m2en     ke         m2en         Kenya
+auen     au         auen         Kiribati
+krko     kr         krko         Korea, North
+krko     kr         krko         Korea, South
+m3en     kw         m3en         Kuwait
+r0en     kg         r0en         Kyrgyzstan
+sgen     la         sgen         Lao Peoples Democratic Republic
+r0en     lv         r0en         Latvia
+m3en     lb         m3en         Lebanon
+m2en     ls         m2en         Lesotho
+m2en     lr         m2en         Liberia
+m2en     ly         m2en         Libya
+chde     au         chde         Liechtenstein
+r0en     lt         r0en         Lithuania
+befr     be         befr         Luxembourg
+r0en     mo         r0en         Macau
+r0en     mk         r0en         Macedonia
+m1fr     mg         m1fr         Madagascar
+m2en     mw         m2en         Malawi
+myen     my         myen         Malaysia
+sgen     mv         sgen         Maldives
+m1fr     ml         m1fr         Mali
+m3en     mt         m3en         Malta
+auen     au         auen         Marshall Islands
+tten     mq         tten         Martinique
+m1fr     mr         m1fr         Mauritania
+m1fr     mu         m1fr         Mauritius
+mxes     mx         mxes         Mexico
+auen     au         auen         Micronesia, Fed. States of
+r0en     md         r0en         Moldova, Republic of
+frfr     fr         frfr         Monaco
+cnzh     mn         cnzh         Mongolia
+tten     ms         tten         Montserrat
+m1fr     ma         m1fr         Morocco
+m2en     mz         m2en         Mozambique
+r0en     mm         r0en         Myanmar
+m2en     na         m2en         Namibia
+auen     au         auen         Nauru
+sgen     np         sgen         Nepal
+tten     an         tten         Netherland Antilles
+nlnl     nl         nlnl         Netherlands
+m3en     nt         m3en         Neutral Zone (Saudi/Iraq)
+auen     au         auen         New Caledonia
+auen     au         auen         New Zealand
+cres     ni         cres         Nicaragua
+m1fr     ne         m1fr         Niger
+m2en     ng         m2en         Nigeria
+auen     au         auen         Niue
+auen     au         auen         Norfolk Island
+auen     au         auen         Northern Mariana Islands
+nono     no         nono         Norway
+m3en     om         m3en         Oman
+sgen     pk         sgen         Pakistan
+auen     au         auen         Palau
+cres     pa         cres         Panama
+auen     au         auen         Papua New Guinea
+ares     py         ares         Paraguay
+pees     pe         pees         Peru
+auen     au         auen         Pitcairn
+phen     ph         phen         Philippines
+plpl     pl         plpl         Poland
+ptpt     pt         ptpt         Portugal
+m3en     qa         m3en         Qatar
+m1fr     re         m1fr         Reunion
+roro     ro         roro         Romania
+ruru     ru         ruru         Russian Federation
+m2en     rw         m2en         Rwanda
+tten     kn         tten         Saint Kitts and Nevis
+tten     lc         tten         Saint Lucia
+auen     au         auen         Samoa
+itit     it         itit         San Marino
+m2en     st         m2en         Sao Tome and Principe
+m3en     sa         m3en         Saudi Arabia
+m1fr     sn         m1fr         Senegal
+r0en     rs         r0en         Serbia
+m2en     sc         m2en         Seychelles
+m2en     sl         m2en         Sierra Leone
+sgen     sg         sgen         Singapore
+r0en     sk         r0en         Slovakia
+r0en     si         r0en         Slovenia
+auen     au         auen         Solomon Islands
+m3en     so         m3en         Somalia
+m2en     za         m2en         South Africa
+eses     es         eses         Spain
+sgen     lk         sgen         Sri Lanka
+m2en     sh         m2en         St. Helena
+auen     pm         auen         St. Pierre and Miquelon
+tten     vc         tten         St. Vincent and the Grenadines
+tten     sr         tten         Suriname
+nlnl     sj         nlnl         Svalbard and Jan Mayen Islands
+m2en     sz         m2en         Swaziland
+sesv     se         sesv         Sweden
+chde     ch         chde         Switzerland
+twen     tw         twen         Taiwan
+r0en     tj         r0en         Tajikistan
+m3en     tz         m3en         Tanzania, United Republic of
+thth     th         thth         Thailand
+m1fr     tg         m1fr         Togo
+auen     au         auen         Tokelau
+auen     au         auen         Tonga
+tten     tt         tten         Trinidad and Tobago
+m1fr     tn         m1fr         Tunisia
+trtr     tr         trtr         Turkey
+r0en     tm         r0en         Turkmenistan
+tten     tc         tten         Turks and Caicos Islands
+auen     au         auen         Tuvalu
+m3en     ae         m3en         U.A.E.
+m3en     ug         m3en         Uganda
+r0en     ua         r0en         Ukraine
+uken     uk         uken         United Kingdom
+uyes     uy         uyes         Uruguay
+r0en     uz         r0en         Uzbekistan
+auen     au         auen         Vanuatu
+itit     it         itit         Vatican City State
+vees     ve         vees         Venezuela
+vnvi     vn         vnvi         Viet Nam
+auen     au         auen         Wallis and Futuna Islands
+m1fr     eh         m1fr         Western Sahara
+m3en     ye         m3en         Yemen, Republic of
+m2en     zr         m2en         Zaire
+m2en     zm         m2en         Zambia
+m2en     zw         m2en         Zimbabwe

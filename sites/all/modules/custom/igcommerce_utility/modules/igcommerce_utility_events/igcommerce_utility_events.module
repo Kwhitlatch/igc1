@@ -1,0 +1,92 @@
+<?php
+
+
+
+
+function igcommerce_utility_events_block_info() {
+
+  $blocks['events_webinars_list'] = array(
+    'info' => t('Events - Solr Webinars list'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  return $blocks;
+
+}
+
+function igcommerce_utility_events_block_view($delta = NULL) {
+
+  switch ($delta) {
+    case 'events_webinars_list':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_events_webinars();
+      break;
+  }
+
+  return $block;
+
+}
+
+function igcommerce_utility_events_webinars() {
+
+    global $language;
+
+    $options = array(
+        "ss_language" => $language->language,
+        "bundle" => 'event',
+        "sm_event_type_name" => 'Live webinars',
+    );
+
+    $fields = 'tm_event_date, ss_field_content_title, tm_event_website_title, tm_event_website_url, sm_event_webinar_type_name';
+
+    $query    = fluke_solr_get_connection();
+    $filters  = fluke_solr_add_filters($query, array('filters' => $options, 'fl' => $fields, 'rows' => 5, 'sort' => 'ss_field_content_title'));
+    $response = fluke_solr_query($filters);
+
+    $live_webinars = array();
+
+    foreach($response->response->docs as $live) {
+
+       $event = new stdClass;
+       if (isset($live->tm_event_date[0])) {
+         $event->date = $live->tm_event_date[0];
+       }
+       if (isset($live->ss_field_content_title)) {
+         $event->title = $live->ss_field_content_title;
+       }
+       if (isset($live->sm_event_webinar_type_name[0])) {
+         $event->type  = $live->sm_event_webinar_type_name[0];
+       }
+       if (isset($live->tm_event_website_url[0])) {
+         $event->website_url = $live->tm_event_website_url[0];
+       }
+       if (isset($live->tm_event_website_title[0])) {
+         $event->website_name = $live->tm_event_website_title[0];
+       }
+
+       $live_webinars[] = $event;
+    }
+
+    dpm($live_webinars, "live webinars are");
+
+
+}
+
+
+function igcommerce_utility_events_theme() {
+
+    $module_path = drupal_get_path('module', 'igcommerce_utility_events');
+    $base = array(
+        'path' => $module_path . "/templates",
+    );
+
+    dpm($base, "Base is");
+
+    return array(
+        'live_webinars' => $base + array(
+            'template' => 'events-live-webinars',
+            'variables' => array('items' => NULL, 'language' => NULL),
+        ),
+    );
+}
+

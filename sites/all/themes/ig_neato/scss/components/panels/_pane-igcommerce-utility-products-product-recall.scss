@@ -1,0 +1,52 @@
+// I don't know what this does. I suspect it was for the homepage product recall
+// notice. The styling for that is now in _pane-igcommerce-utility-homepage-alerts.scss
+// If anyone can confirm or deny, please leave a note. -RRN 8-24-17
+
+/*
+
+div[class*='pane-igcommerce-utility-products-product-recall']{
+  padding: 2em 0;
+  margin: 0 2em;
+  @include media($desk-xwide){
+    margin: 0 auto;
+  }
+  .pane-content{
+    line-height: 200px;
+    p{
+      font-size: $font-size-lg;
+      line-height: 1.25;
+      margin-left: 1.5em;
+      position: relative;
+      // Keeps safety recall icon aligned properly on desktop 
+      @include media($desk-xwide) {
+        margin-left: 4rem;
+      }
+      a{
+        @include icon(before, exclamation-triangle);
+        &:before{
+          position: absolute;
+          left: -1.75em;
+          top: 25%;
+          font-size: $font-size-xl;
+          color: $color-primary;
+          text-shadow: -1px 2px 0 black,
+          0px -3px 0 black,
+          -3px 2px 0 black,
+          3px 2px 0 black,
+          0px -3px 0 black;
+          padding-right: 1em;       // this keeps the a tag hoverable through the text
+          @include media($tablet){
+            top: 0;
+          }
+        }
+      }
+      .recall_home_title{
+        color: $base-font-color;
+        font-weight: 700;
+        font-family: $heading-font-family;
+      }
+    }
+  }
+}
+
+*/

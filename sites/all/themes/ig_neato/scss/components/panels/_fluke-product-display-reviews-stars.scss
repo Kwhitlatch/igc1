@@ -1,0 +1,10 @@
+// Styling for Bazaar Voice reviews stars.
+// Most of this styling is dynamically added through the bv.js script.
+// You can edit some of the theme using the bazaarvoice
+// console at https://config.portal.bazaarvoice.com/siteManager
+// The themeing we can't style there, we manually override here.
+ 
+#fluke-product-display-reviews-stars {
+  @include span-columns(12);
+  @extend %m-b-1;
+}

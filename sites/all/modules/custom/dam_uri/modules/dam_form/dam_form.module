@@ -1,0 +1,651 @@
+<?php
+function dam_form_form_alter(&$form, &$form_state, $form_id) {
+  // set up the action for the different forms on submit
+  switch ($form_id) {
+    case 'dam_form_search_form':
+      $form['#action'] = '/dam_uri_search/ajax';
+      break;
+    case 'dam_form_upload_form':
+      $form['#action'] = '/dam_uri_upload/ajax';
+      break;
+    case 'dam_form_search_filter_form':
+      $form['#action'] = '/dam_uri_search_filter/ajax';
+      break;
+    case 'dam_form_upload_type_form':
+      $form['#action'] = '/dam_uri_upload_type/ajax';
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Drupal form to be put in a modal.
+ */
+function dam_form_upload_form($form, $form_state) {
+  if ($form_state['input']['form_id'] == 'dam_form_upload_type_form') {
+    $form = array();
+
+    //get json of content types and parse it
+    $data = dam_api_get_supported_content_types();
+    $json_a = drupal_json_decode($data);
+
+    //set up the radio buttons options from the json
+    $options = array();
+    foreach ($json_a as $key => $value) {
+      $options[$json_a[$key]] = $json_a[$value];
+    }
+
+    //set up the radio butons with the options
+    if (array_key_exists('choose_type', $form_state['input'])) {
+      $form['choose_type'] = array(
+        '#type' => 'hidden',
+        '#default_value' => $form_state['input']['choose_type'],
+      );
+    }
+    //sets which button was clicked on
+    $form['uri_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['uri_id'],
+    );
+
+    //gets the enabled languages for filtering
+    $data = dam_api_enabled_languages();
+    $json_a = drupal_json_decode($data);
+
+    $languageoptions = array();
+
+    //displays all the enabled languages
+    foreach ($json_a["1"] as $key => $value) {
+      $languageoptions[$key] = $value['name'];
+    }
+    $form['upload_asset_language'] = array(
+      '#type' => 'select',
+      '#title' => t('Language:'),
+      '#options' => $languageoptions,
+    );
+
+    //get json of filters and parse it
+    $data = dam_api_get_metadata(array( "content_types['" . $form_state['input']['choose_type'] . "']" => $form_state['input']['choose_type']));
+    $json_a = drupal_json_decode($data);
+
+    $selectmenus = array();
+    $checkoptions = array();
+
+    //set up fields to edit for uploading content
+    foreach ($json_a as $mainkey => $mainvalue) {
+      foreach ($mainvalue as $key => $value) {
+        //if the field in content is text area or text field then set up textfield
+        if (array_key_exists('widget', $value) && ($value['widget']['type'] == 'text_textarea' || $value['widget']['type'] == 'text_textfield'
+        || $value['widget']['type'] == 'youtube')) {
+          //set up text fields and text areas for required fields and non required fields
+          if (($value['required'] == 0 && $key == "field_caption") ||
+            ($key == "field_pp_thumbnail_file" && $form_state['input']['choose_type'])) {// && $key != "field_url_title"){
+            $form['upload_asset_' . $key] = array(
+              '#type' => 'textfield',
+              '#title' => check_plain($value['label']) . ":",
+            );
+          }
+          elseif ($value['required'] != 0 || $key == "field_url_title") {
+            $form['upload_asset_' . $key] = array(
+              '#type' => 'textfield',
+              '#title' => check_plain($value['label']) . ":",
+              '#required' => TRUE,
+              //'#element_validate' => array('dam_uri_upload_required_validate'),
+            );
+          }
+        }
+        if (array_key_exists('widget', $value) && ($value['widget']['module'] == 'file' || $value['widget']['module'] == 'image')) {
+          //set up text fields and text areas
+          $form['upload_asset_' . $key] = array(
+            '#type' => 'file',
+            '#title' => t('Upload File:'),
+            '#element_validate' => array('dam_form_upload_file_validate'),
+          );
+        }
+        /*
+        //if filter is taxonomy and isn't Product Category then set up select menu
+        if (!array_key_exists('label', $value) && $key != "Product Category"){
+          $selectoptions = array();
+          $selectoptions['all'] = t('- Any -');
+
+          //set up taxonomy filter select menu options
+          foreach($value as $subkey=>$subvalue){
+            $selectoptions[$subvalue['tid']] = $subvalue['name'];
+          }
+
+          //set up taxonomy filter select menu
+          $form['upload_asset_'.$key] = array(
+            '#type' => 'select',
+            '#title' => check_plain(t($key.':')),
+            '#options' => $selectoptions,
+          );
+          //save the taxonomy filter names for use later
+          $selectmenus[] = 'choose_'.$key;
+        }
+        */
+      }
+    }
+
+    //set up back button
+    $form['back'] = array(
+      '#type' => 'button',
+      '#value' => t('Back'),
+      '#limit_validation_errors' => array(),
+      '#ajax' => array(
+        'callback' => 'dam_uri_upload_type_callback', )
+    );
+
+    //set up the submit button
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+    );
+
+    return $form;
+  }
+}
+
+/**
+ * Drupal form to be put in a modal.
+ */
+function dam_form_search_form($form, $form_state) {
+  $form = array();
+
+  //get the array of taxonomy filters being used
+  $taxonomyfilters = array();
+  $taxonomyfilters = dam_form_filter_taxonomy($form_state['input'], "filter_");//, array("0" => "all"));array_diff(
+
+  if (array_key_exists('choose_filter_type', $form_state['input'])) {
+    //sets filters with value from user or default if none
+    if (sizeof($taxonomyfilters) > 0) {
+      $stringfilters = implode($form_state['input']['choose_filter_type'], array_unique($taxonomyfilters));
+      foreach ($taxonomyfilters as $key => $value) {
+        $form['filter_' . $key] = array(
+          '#type' => 'hidden',
+          '#value' => $value,
+        );
+      }
+    }
+    else {
+      $stringfilters = "all";
+      $form['filter_all'] = array(
+        '#type' => 'hidden',
+        '#value' => 'all',
+      );
+    }
+
+    //sets keywords to any if no keywords
+    if ($form_state['input']['keywords'] != "") {
+      $keywords = $form_state['input']['keywords'];
+    }
+    else {
+      $keywords = " ";
+    }
+
+    //sets the hidden fields of what was selected for searching
+    $form['choose_type'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['choose_type'],
+    );
+    $form['choose_language'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['choose_language'],
+    );
+    $form['choose_filter_type'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['choose_filter_type'],
+    );
+    $form['keywords'] = array(
+      '#type' => 'hidden',
+      '#value' => $keywords,
+    );
+
+    //sets which button was clicked on
+    $form['uri_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['uri_id'],
+    );
+  }
+
+  //get all assets found from search and parse the json file
+  $data = dam_api_search_assets($form_state['input']['choose_type'], $stringfilters, $keywords, $form_state['input']['choose_language']);
+  $json_a = drupal_json_decode($data);
+  $json_b = array();
+
+  //removes all blank nodes in solr from the search results
+  foreach ($json_a['nodes'] as $key => $value) {
+    if ($value['node']['id'] != 0) {
+      $json_b['nodes'][$key] = $value;
+    }
+  }
+
+  // Check if we have found any result otherwise display no result found message.
+  if ( isset($json_b['nodes']) && count($json_b['nodes']) > 0 ) {
+    //finds what the size of the results is
+    $result_size = (sizeof($json_b['nodes'])%15 > 0)?((intval(sizeof($json_b['nodes'])/15) + 1)) : (intval(sizeof($json_b['nodes'])/15));
+
+    //determing which pagination page should be shown for the results
+    if (sizeof($json_b['nodes']) > 0) {
+      if (array_key_exists('triggering_element', $form_state)) {
+        $result_page = intval(preg_replace('/(first|prev|page|next|last)/', '', $form_state['triggering_element']['#parents']['0']));
+      }
+      else {
+        $result_page = 1;
+      }
+
+      //slices out the results which should be shown for the current pagination
+      $pagedarray = array();
+      $pagedarray = array_slice($json_b['nodes'], ($result_page * 15 - 15), 15, TRUE);
+
+      //setup asset radio options for selecting assets
+      $options = array();
+      $options_attributes = array();
+
+      //set up the different assets which can be selected and stores their data in the attributes of the option
+      foreach ($pagedarray as $item) {
+        if ($form_state['input']['choose_type'] == 'image') {
+          $options[$item['node']['id']] = '<div><a href="' . $item['node']['url'] . '" target="_blank">' . $item['node']['title'] .
+            " / " . $item['node']['display_title'] . '</a></div><img src="' . $item['node']['url'] . '" width="150px" height="auto" />';
+          $options_attributes[$item['node']['id']] = array('did' => $item['node']['id'],
+            'url' => $item['node']['url'], 'alt' => $item['node']['display_title'], 'caption' => $item['node']['caption']);
+        }
+        elseif ($form_state['input']['choose_type'] == 'video' && $item['node']['video'] != "") {
+          $options[$item['node']['id']] = '<div><a href="//players.brightcove.net/5229431846001/default_default/index.html?videoId=' .
+            $item['node']['video'] . '">' . $item['node']['title'] . " / " . $item['node']['display_title'] .
+            '</a></div><img src="' . $item['node']['url'] . '" width="150px" height="auto" />';
+          $options_attributes[$item['node']['id']] = array('did' => $item['node']['id'],
+            'url' => $item['node']['video'], 'alt' => $item['node']['display_title'], 'caption' => $item['node']['caption'],
+            'thumbnail' => $item['node']['url']);
+        }
+        else {
+          $options[$item['node']['id']] = '<div><a href="' . $item['node']['url'] . '" target="_blank">' . $item['node']['file'] .
+            '</a></div>' . $item['node']['title'] . " / " . $item['node']['display_title'];
+          $options_attributes[$item['node']['id']] = array('did' => $item['node']['id'],
+            'url' => $item['node']['url'], 'alt' => $item['node']['display_title'], 'caption' => '');
+        }
+      }
+
+      //set up asset radios with options
+      $form['choose_asset'] = array(
+        '#type' => 'radios',
+        '#title' => t('Select Asset:'),
+        '#options' => $options,
+        '#options_attributes' => $options_attributes,
+      );
+
+      //adds the pagination to the form
+      dam_paging($result_page, $result_size, $form);
+    }
+    else {
+      //set up no results
+      $form['no_results'] = array(
+        '#markup' => "<div>" . t('No Results') . "</div>",
+      );
+    }
+  }
+  else{
+    $form['no_results'] = array(
+      '#markup' => "<div>" . t('No Results') . "</div>",
+    );
+  }
+
+  //set up back button
+  $form['back'] = array(
+    '#type' => 'button',
+    '#value' => t('Back'),
+    '#ajax' => array(
+      'callback' => 'dam_uri_search_filter_callback', )
+  );
+  //set up submit button
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
+
+/**
+ * Drupal form to be put in a modal.
+ */
+function dam_form_upload_type_form($form, $form_state) {
+  $form = array();
+
+  //gets the id of which upload button was clicked on
+  if (array_key_exists('_triggering_element_id', $form_state['input']) && $form_state['input']['_triggering_element_id'] != "edit-back") {
+    $form['uri_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['_triggering_element_id'],
+    );
+  }
+  else {
+    $form['uri_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['uri_id'],
+    );
+  }
+
+  //get json of content types and parse it
+  $data = dam_api_get_supported_content_types();
+  $json_a = drupal_json_decode($data);
+
+  //set up the radio buttons options from the json
+  $options = array();
+  foreach ($json_a as $key => $value) {
+    if ($json_a[$key] == "document" || $json_a[$key] == "image") {
+      $options[$json_a[$key]] = $json_a[$value];
+     }
+  }
+
+  //set up the radio butons with the options
+  $form['choose_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Select Type:'),
+    '#options' => $options,
+    '#default_value' => 'document',
+    '#prefix' => '<div id="testingid">',
+    '#suffix' => '</div>',
+  );
+
+  //set up the submit button
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#ajax' => array(
+      'callback' => 'dam_uri_upload_callback', ),
+  );
+  return $form;
+}
+
+/**
+ * Drupal form to be put in a modal.
+ */
+function dam_form_search_filter_form($form, $form_state) {
+  $form = array();
+  //dpm($form_state);
+  //dpm($form_state['input']['_triggering_element_name']);
+  //$testinga = array();
+  //$tests = substr($form_state['input']['_triggering_element_name'], 7);
+  //$ads = array();
+  //$ads = $form_state['input']['ajax_html_ids'];
+  //$patt = '/'.$tests.'/g';
+  //dpm($patt);
+  //$testinga = array_shift(preg_grep($patt, $ads));
+  //dpm($testinga);
+  //dpm($form_state['input']['ajax_html_ids']);
+  //setup which button was clicked on
+  //dpm($form_state);
+
+  if (array_key_exists('_triggering_element_id', $form_state['input']) && $form_state['input']['_triggering_element_id'] != "edit-back") {
+    $form['uri_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['_triggering_element_id'], //substr($form_state['input']['_triggering_element_name'], 7) . '-dam-uri',
+    );
+    /*$form['uri_adfid'] = array(
+      '#type' => 'hidden',
+      '#value' => $testinga . '-dam-uri',
+    );*/
+  }
+  else {
+    $form['uri_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $form_state['input']['uri_id'],
+    );
+  }
+
+  //get json of content types and parse it
+  $data = dam_api_get_supported_content_types();
+  $json_a = drupal_json_decode($data);
+
+  //set up content type radio buttons options from the json
+  $options = array();
+  foreach ($json_a as $key => $value) {
+    $options[$json_a[$key]] = $json_a[$value];
+  }
+
+  //set up content type radio butons with the options
+  $form['choose_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Select Type:'),
+    '#options' => $options,
+    '#default_value' => 'document',
+  );
+
+  //set up filter type radio buttons
+  $form['choose_filter_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Select Filter Type:'),
+    '#options' => array(',' => t('Include all filters'), '+' => t('Include some filters')),
+    '#default_value' => ',',
+  );
+
+  //set up keywords textfield
+  $form['keywords'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Search for:'),
+  );
+
+  //gets the enabled languages for filtering
+  $data = dam_api_enabled_languages();
+  $json_a = drupal_json_decode($data);
+
+  $languageoptions = array();
+  //displays all the enabled languages
+  foreach ($json_a["1"] as $key => $value) {
+    $languageoptions[$key] = $value['name'];
+  }
+  $form['choose_language'] = array(
+    '#type' => 'select',
+    '#title' => t('Language:'),
+    '#options' => $languageoptions,
+  );
+
+  //get json of filters and parse it
+  $data = dam_api_get_metadata(array("content_types[executable]" => "executable", "content_types[video]" => "video",
+  "content_types[document]" => "document", "content_types[image]" => "image"));
+  $json_a = drupal_json_decode($data);
+
+  $selectmenus = array();
+
+  //set up all taxonomy filters select menus
+  foreach ($json_a as $mainkey => $mainvalue) {
+    foreach ($mainvalue as $key => $value) {
+      //if filter is taxonomy and isn't Product Category then set up select menu
+      if (!array_key_exists('label', $value) && $key != "Product Category") {
+        $selectoptions = array();
+        $selectoptions['all'] = t('- Any -');
+
+        //set up taxonomy filter select menu options
+        foreach ($value as $subkey => $subvalue) {
+          $selectoptions[$subvalue['tid']] = $subvalue['name'];
+        }
+
+        //set up taxonomy filter select menu
+        $form['filter_' . $key] = array(
+          '#type' => 'select',
+          '#title' => check_plain(t($key . ':')),
+          '#options' => $selectoptions,
+        );
+        //save the taxonomy filter names for use later
+        $selectmenus[] = 'choose_' . $key;
+      }
+    }
+  }
+  //set up the submit button
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#ajax' => array(
+      'callback' => 'dam_uri_search_callback',
+      'wrapper' => 'testingid'),
+  );
+  return $form;
+}
+
+/**
+ * Validation for uploading correct file types into drupal
+ */
+function dam_form_upload_file_validate(&$element, &$form_state) {
+  //custom validation and error message for each kind of asset
+  $upload_field = '';
+  $validators = '';
+  $error_text = '';
+  switch ($form_state['input']['choose_type']) {
+    case "document":
+      $upload_field = 'upload_asset_field_document';
+      $error_text = t('Document must be valid .doc .docx .dot .htm .html .odt .ods .odp .pdf .pot .pps .ppt .pptx .rtf .txt .xls .xlsx');
+      $validators = array(
+        'file_validate_extensions' => array('doc docx dot htm html odt ods odp pdf ppt pot pps ppt pptx rtf txt xls xlsx'));
+      break;
+    case "executable":
+      $upload_field = 'upload_asset_field_executable_file';
+      $error_text = t('Executable must be valid .bin .exe .gz .gzip .tar .tgz .zip');
+      $validators = array(
+        'file_validate_extensions' => array('bin exe gz gzip tar tgz zip'));
+      break;
+    case "image":
+      $upload_field = 'upload_asset_field_image';
+      $error_text = t('Image must be valid .gif .jpeg .jpg .png .tif');
+      $validators = array(
+        'file_validate_is_image' => array(),
+        'file_validate_extensions' => array('gif jpg jpeg png tif'));
+      break;
+    case "video":
+      $upload_field = 'upload_asset_field_uploaded_video';
+      $error_text = t('Video must be valid .avi .f4v .flv .m4v .mov .mp4 .mpeg .mpg .ogg .ogv .vp5 .vp6 .webm .wmv');
+      $validators = array(
+        'file_validate_extensions' => array('avi f4v flv m4v mov mp4 mpeg mpg ogg ogv vp5 vp6 webm wmv'));
+      break;
+  }
+  //checks the file if it is valid and displays errors
+  $file = file_save_upload($upload_field, $validators);
+  if (!$file) {
+    form_error($element, $error_text);
+  }
+  $form_state['storage']['file'] = $file;
+}
+
+function dam_form_filter_taxonomy($array, $filter_key) {
+  $filter_array = array();
+
+  //filters blank taxonomys and all from the results for filtering
+  foreach ($array as $key => $value) {
+    if ((strpos($key, $filter_key) === 0) && $value != "" && $value != "all") {
+      $filter_array[str_replace($filter_key, "", $key)] = $value;
+    }
+  }
+  return $filter_array;
+}
+
+/**
+ * Drupal form submit handlers.
+ */
+function dam_form_search_form_submit(&$form, &$form_state) {
+  //loads javascript and sends the chosen values back to parent form
+  drupal_add_js(drupal_get_path('module', 'dam_uri') . '/js/dam.js');
+  drupal_add_js(array('dam_uri' => array(
+    'type' => 'search',
+    'did' => $form_state['complete form']['choose_asset']['#options_attributes'][$form_state['input']['choose_asset']]['did'],
+    'url' => $form_state['complete form']['choose_asset']['#options_attributes'][$form_state['input']['choose_asset']]['url'],
+    'alt' => $form_state['complete form']['choose_asset']['#options_attributes'][$form_state['input']['choose_asset']]['alt'],
+    'caption' => $form_state['complete form']['choose_asset']['#options_attributes'][$form_state['input']['choose_asset']]['caption'],
+    'id' => $form_state['input']['uri_id']//.$form_state['input']['uri_button']
+    )), 'setting');
+
+  // Close the modal.
+  $form_state['ajax_commands'][] = ctools_modal_command_dismiss();
+}
+
+function dam_form_upload_form_submit(&$form, &$form_state) {
+  $node_array = array();
+  $file_array = array();
+
+  $node_language = $form_state['values']['upload_asset_language'];
+  $node_array['type'] = $form_state['values']['choose_type'];
+
+  array_merge($node_array, dam_form_filter_taxonomy($form_state['values'], "upload_asset_"));
+
+  //puts the values from the form into an array which holds all the node info
+  foreach ($form_state['values'] as $key => $value) {
+    if ((strpos($key, 'upload_asset_') === 0) && $value != "" && $value != "all") {
+      //sets if the field has a defined, undefined, or no language
+      if ($key == 'upload_asset_field_url_title' || $key == 'upload_asset_field_display_title' || $key == 'upload_asset_field_caption') {
+        $node_array[str_replace("upload_asset_", "", $key)] = array($node_language => array("0" => array("value" => $value)));
+      }
+      elseif ($key == 'upload_asset_title_field' || $key == 'upload_asset_field_image'
+        || $key == 'upload_asset_field_executable_file' || $key == 'upload_asset_field_pp_thumbnail_file') {
+        $node_array[str_replace("upload_asset_", "", $key)] = array('und' => array("0" => array("value" => $value)));
+        }
+        else {
+        $node_array[str_replace("upload_asset_", "", $key)] = $value;
+      }
+    }
+    //if the field is an asset then upload the asset and give back the info
+    if ($key == 'upload_asset_field_document' || $key == 'upload_asset_field_executable_file'
+      || $key == 'upload_asset_field_image' || $key == 'upload_asset_field_uploaded_video') {
+
+      //sets up the $file_array to store all the info for the file
+      $get_file = file_get_contents($form_state['storage']['file']->uri);
+      $encoded_file = base64_encode($get_file);
+      $mime_type = $form_state['storage']['file']->filemime;
+      $file_name = $form_state['storage']['file']->filename;
+      $file_array = array('file' => $encoded_file, 'filename' => $file_name, 'filemime' => $mime_type);
+
+      //uploads the file and gets the id
+      $dam_file = dam_api_add_file($file_array);
+      $file_id = drupal_json_decode($dam_file);
+
+      //sets up if the file is translateable
+      if ($key == 'upload_asset_field_image' || $key == 'upload_asset_field_executable_file') {
+        $node_array[str_replace("upload_asset_", "", $key)] = array('und' => array("0" => array("fid" => $file_id['fid'])));
+      }
+      else {
+        $node_array[str_replace("upload_asset_", "", $key)] = array($node_language => array("0" => array("fid" => $file_id['fid'])));
+      }
+    }
+  }
+  //creates the node in the DAM and gets the url of the file that was uploaded
+  $dam_node = drupal_json_decode(dam_api_add_node(json_encode($node_array)));
+  $dam_json = drupal_json_decode(dam_api_get_file($file_id['fid']));
+
+  //sets up the caption of the item for use in the DAM URI field
+  /*if(array_key_exists('upload_asset_field_pp_thumbnail_file', $form_state['input'])){
+    $caption = $form_state['input']['upload_asset_field_pp_thumbnail_file'];
+  } else*/
+  if (array_key_exists('upload_asset_field_caption', $form_state['input'])) {
+    $caption = $form_state['input']['upload_asset_field_caption'];
+  }
+  else {
+    $caption = '';
+  }
+
+  if (array_key_exists('upload_asset_field_pp_thumbnail_file', $form_state['input'])) {
+    $thumbnail = $form_state['input']['upload_asset_field_pp_thumbnail_file'];
+  }
+  else {
+    $thumbnail = '';
+  }
+
+  //sets up what is put in the DAM URI field
+  drupal_add_js(drupal_get_path('module', 'dam_uri') . '/js/dam.js');
+  drupal_add_js(array('dam_uri' => array(
+    'type' => 'upload',
+    'did' => $dam_node['nid'],
+    'url' => $dam_json['url'],
+    'alt' => $node_array['field_display_title'][$node_language][0]['value'],
+    'caption' => $caption,
+    'thumbnail' => $thumbnail,
+    'id' => $form_state['input']['uri_id']//.$form_state['input']['uri_button']
+  )), 'setting');
+
+  // Close the modal.
+  $form_state['ajax_commands'][] = ctools_modal_command_dismiss();
+}
+
+function dam_form_search_filter_form_submit(&$form, &$form_state) {
+
+}
+
+function dam_form_upload_type_form_submit(&$form, &$form_state) {
+
+}

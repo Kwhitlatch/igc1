@@ -1,0 +1,6 @@
+name = IG Commerce Utility - Solr
+description = Utility module for IG commerce focused on Sikr only.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = igcommerce_utility

@@ -1,0 +1,6 @@
+name = IG Commerce Utility - Admin theming
+description = Utility module for IG commerce Administration theme overrides.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = igcommerce_utility

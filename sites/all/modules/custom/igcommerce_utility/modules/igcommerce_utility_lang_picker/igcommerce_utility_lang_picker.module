@@ -1,0 +1,799 @@
+<?php
+/**
+ * @file
+ * The IG Commerce Utility Language Picker Module.
+ * @author ryan.ray.neff@fluke.com
+ *
+ * This creates the Desktop version of the language picker. The mobile version 
+ * of the picker is created via a view. The js for both is in the theme layer.
+ *
+ */
+
+/**
+ * Declare what blocks are provided by this module.
+ * Implements hook_block_info().
+ */
+function igcommerce_utility_lang_picker_block_info() {
+  $blocks['lang_picker_desktop'] = array(
+    'info' => t('Languge Picker Desktop'),
+    'cache' => DRUPAL_CACHE_PER_PAGE
+  );
+
+  $blocks['lang_picker_mobile_tester'] = array(
+    'info' => t('Languge Picker Mobile'),
+    'cache' => DRUPAL_CACHE_PER_PAGE
+  );
+  return $blocks;
+}
+
+/**
+ * Define what the block is going to look like.
+ * Implements hook_block_view().
+ */
+function igcommerce_utility_lang_picker_block_view($delta) {
+  $block = array();
+
+  switch ($delta) {
+    
+    case 'lang_picker_desktop':
+      $block['content'] = igcommerce_utility_lang_picker_desktop_build_block();
+    break;
+    case 'lang_picker_mobile_tester':
+      $block['content'] = igcommerce_utility_lang_picker_mobile_build_block();
+    break;
+  }
+  return $block;
+}
+
+/**
+ * Static HTML for the desktop country picker block.
+ */
+function igcommerce_utility_lang_picker_desktop_build_block() {
+
+  $content = "";
+
+    $content = '
+    <div id="flat-country-picker-block" style="display: none;">
+      <nav class="flat-country-picker" aria-labelledby="desktop-country-navigation">
+        <div class="continent-list">
+          <p id="desktop-country-navigation"><strong>' . t('Select your country site') . '</strong></p>
+          <ul class="accordion-tabs-minimal">
+
+            <li class="tab-header-and-content">
+              <a href="#" class="tab-link">Africa and Middle East</a>
+              <div class="tab-content" style="display: none;">
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-FA"></span>Africa
+                  <div class="language-set">
+                    ( <a href="/en">English</a> | <a href="/fr">Français</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-FB"></span>Middle East
+                  <div class="language-set">
+                    ( <a href="/en">English</a> )
+                  </div>
+                </div>
+              </div> 
+            </li>
+
+            <li id="americas" class="tab-header-and-content">
+              <a href="#" class="tab-link is-active">Americas</a>
+              <div class="tab-content is-open" style="display: flex;">
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-AR"></span>Argentina
+                  <div class="language-set">
+                    ( <a href="/es-ar">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-CR"></span>Costa Rica
+                  <div class="language-set">
+                    ( <a href="/es-cr">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-MX"></span>Mexico
+                  <div class="language-set">
+                    ( <a href="/es-mx">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-BO"></span>Bolivia
+                  <div class="language-set">
+                    ( <a href="/es-bo">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-DO"></span>Dominican Republic
+                  <div class="language-set">
+                    ( <a href="/es-do">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-PE"></span>Peru
+                  <div class="language-set">
+                    ( <a href="/es-pe">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-BR"></span>Brazil
+                  <div class="language-set">
+                    ( <a href="/pt-br">Português</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-EC"></span>Ecuador
+                  <div class="language-set">
+                    ( <a href="/es-ec">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-US"></span>United States
+                  <div class="language-set">
+                    ( <a href="/en-us">English</a> | <a href="/es-us">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-CA"></span>Canada
+                  <div class="language-set">
+                    ( <a href="/en-ca">English</a> | <a href="/fr-ca">Français</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-SV"></span>El Salvador
+                  <div class="language-set">
+                    ( <a href="/es-sv">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-UY"></span>Uruguay
+                  <div class="language-set">
+                    ( <a href="/es-uy">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-CL"></span>Chile
+                  <div class="language-set">
+                    ( <a href="/es-cl">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-GT"></span>Guatemala
+                  <div class="language-set">
+                    ( <a href="/es-gt">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-VE"></span>Venezuela
+                  <div class="language-set">
+                    ( <a href="/es-ve">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-CO"></span>Colombia
+                  <div class="language-set">
+                    ( <a href="/es-co">Español</a> )
+                  </div>
+                </div>
+              </div>
+            </li>
+  
+            <li id="edit-continent-list-f4" class="tab-header-and-content">
+              <a href="#" class="tab-link">Asia Pacific</a>
+              <div class="tab-content" style="display: none;">
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-AU"></span>Australia
+                  <div class="language-set">
+                    ( <a href="/en-au">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-JP"></span>Japan
+                  <div class="language-set">
+                    ( <a href="/ja-jp">日本</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-KR"></span>South Korea
+                  <div class="language-set">
+                    ( <a href="/ko-kr">한국어</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-CN"></span>China
+                  <div class="language-set">
+                    ( <a href="https://www.fluke.com.cn">中国</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-MY"></span>Malaysia
+                  <div class="language-set">
+                    ( <a href="/en-my">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-TW"></span>Taiwan
+                  <div class="language-set">
+                    ( <a href="/zh-tw">Chinese Traditional</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-IN"></span>India
+                  <div class="language-set">
+                    ( <a href="/en-in">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-PH"></span>Philippines
+                  <div class="language-set">
+                    ( <a href="/en-ph">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-TH"></span>Thailand
+                  <div class="language-set">
+                    ( <a href="/en-th">English</a> | <a href="/th-th">ภาษาไทย</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-ID"></span>Indonesia
+                  <div class="language-set">
+                    ( <a href="/en-id">English</a> | <a href="/id-id">Bahasa</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-SG"></span>Singapore
+                  <div class="language-set">
+                    ( <a href="/en-sg">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-VN"></span>Vietnam
+                  <div class="language-set">
+                    ( <a href="/en-vn">English</a> | <a href="/vi-vn">Tiếng Việt Vietnam</a> )
+                  </div>
+                </div>
+              </div>
+            </li>
+
+            <li class="tab-header-and-content">
+              <a href="#" class="tab-link">Europe</a>
+              <div class="tab-content" style="display: none;">
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-AT"></span>Austria
+                  <div class="language-set">
+                    ( <a href="/de-at">Deutsch</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-IE"></span>Ireland
+                  <div class="language-set">
+                    ( <a href="/en-ie">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-FC"></span>Rest of Europe
+                  <div class="language-set">
+                    ( <a href="/en">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-BE"></span>Belgium
+                  <div class="language-set">
+                    ( <a href="/fr-be">Français</a> | <a href="/nl-be">Dutch</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-IT"></span>Italy
+                  <div class="language-set">
+                    ( <a href="/it-it">Italiano</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-ES"></span>Spain
+                  <div class="language-set">
+                    ( <a href="/es-es">Español</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-CZ"></span>Czechia
+                  <div class="language-set">
+                    ( <a href="/cs-cz">Czech</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-NL"></span>Netherlands
+                  <div class="language-set">
+                    ( <a href="/nl-nl">Dutch</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-SE"></span>Sweden
+                  <div class="language-set">
+                    ( <a href="/sv-se">Swedish</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-DK"></span>Denmark
+                  <div class="language-set">
+                    ( <a href="/da-dk">Dansk</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-NO"></span>Norway
+                  <div class="language-set">
+                    ( <a href="/no-no">Norsk</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-CH"></span>Switzerland
+                  <div class="language-set">
+                    ( <a href="/de-ch">Deutsch</a> | <a href="/fr-ch">Français</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-FI"></span>Finland
+                  <div class="language-set">
+                    ( <a href="/fi-fi">Finish</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-PL"></span>Poland
+                  <div class="language-set">
+                    ( <a href="/pl-pl">Polski</a> )
+                  </div>
+                </div>                
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-TR"></span>Turkey
+                  <div class="language-set">
+                    ( <a href="/tr-tr">Türkçe</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-FR"></span>France
+                  <div class="language-set">
+                    ( <a href="/fr-fr">Français</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-PT"></span>Portugal
+                  <div class="language-set">
+                    ( <a href="/pt-pt">Português</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-GB"></span>United Kingdom
+                  <div class="language-set">
+                    ( <a href="/en-gb">English</a> )
+                  </div>
+                </div>
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-DE"></span>Germany
+                  <div class="language-set">
+                    ( <a href="/de-de">Deutsch</a> )
+                  </div>
+                </div>
+              </div>
+            </li>
+
+            <li class="tab-header-and-content">
+              <a href="#" class="tab-link">Russia</a>
+              <div class="tab-content" style="display: none;">
+                <div class="country-group">
+                  <span class="countryicon-sprite iconset-shiny countrycode-RU"></span>Russia
+                  <div class="language-set">
+                    ( <a href="/ru-ru">Russian</a> )
+                  </div>
+                </div>
+              </div>
+            </li>
+
+          </ul>
+        </div>
+      </nav>
+    </div>';
+
+    return $content;
+}
+
+/**
+ * Static HTML for the mobile country picker block.
+ *
+ * China is launching before ROW and US, so they will get a different version
+ * based on language.
+ * 
+ * This uses mmenu. Mmenu is instantiated for #country-picker-mobile in
+ * theme/ig_neato/js/js-src/scripts.js
+ * Mmenu usage inside Drupal is poorly documented. The stand-alone mmenu d
+ * documentation has many options that just don't work inside Drupal, so
+ * we had to "cheat" some things, like the title.
+ */
+function igcommerce_utility_lang_picker_mobile_build_block() { 
+
+  $content = "";
+
+  $content = '
+    <nav id="country-picker-mobile" aria-labelledby="mobile-country-navigation">
+      <p id="mobile-country-navigation"><strong>' . t('Select your country site') . '</strong></p>
+      <ul>
+        
+        <li><a href="/">Africa and Middle East</a>
+          <ul>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-FA"></span>Africa</span> 
+              <a class="locale" href="/en">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-FA"></span>Africa</span> 
+              <a class="locale" href="/fr">
+                Français
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-FB"></span>Middle East</span> 
+              <a class="locale" href="/en">
+                English
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <li><a href="/">Americas</a>
+          <ul>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-AR"></span>Argentina</span>
+              <a class="locale" href="/es-ar">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CO"></span>Colombia</span> 
+              <a class="locale" href="/es-co">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-BO"></span>Bolivia</span>
+              <a class="locale" href="/es-bo">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-BR"></span>Brazil</span> 
+              <a class="locale" href="/pt-br">
+                Português
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CA"></span>Canada</span> 
+              <a class="locale" href="/en-ca">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CA"></span>Canada</span> 
+              <a class="locale" href="/fr-ca">
+                Français
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CL"></span>Chile</span> 
+              <a class="locale" href="/es-cl">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CR"></span>Costa Rica</span> 
+              <a class="locale" href="/es-cr">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-DO"></span>Dominican Republic</span> 
+              <a class="locale" href="/es-do">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-EC"></span>Ecuador</span> 
+              <a class="locale" href="/es-ec">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-SV"></span>El Salvador</span> 
+              <a class="locale" href="/es-sv">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-GT"></span>Guatemala</span>
+              <a class="locale" href="/es-gt">
+                Español
+              </a>
+            </li>
+              <li class="lang-country-set">
+                <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-MX"></span>Mexico</span> 
+                <a class="locale" href="/es-mx">
+                  Español
+                </a>
+              </li>
+              <li class="lang-country-set">
+                <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-PE"></span>Peru</span> 
+                <a class="locale" href="/es-pe">
+                  Español
+                </a>
+              </li>
+              <li class="lang-country-set">
+                <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-US"></span>United States</span> 
+                <a class="locale" href="/en-us">
+                  English
+                </a>
+              </li>
+              <li class="lang-country-set">
+                <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-US"></span>United States</span> 
+                <a class="locale" href="/es-us">
+                  Español
+                </a>
+              </li>
+              <li class="lang-country-set">
+                <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-UY"></span>Uruguay</span> 
+                <a class="locale" href="/es-uy">
+                  Español
+                </a>
+              </li>
+              <li class="lang-country-set">
+                <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-VE"></span>Venezuela</span> 
+                <a class="locale" href="/es-ve">
+                  Español
+                </a>
+              </li>
+          </ul>
+        </li>
+
+        <li><a href="/">Asia Pacific</a>
+          <ul>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-AU"></span>Australia</span> 
+              <a class="locale" href="/en-au">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CN"></span>China</span> 
+              <a class="locale" href="https://www.fluke.com.cn">
+                中国
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-IN"></span>India</span> 
+              <a class="locale" href="/en-in">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-ID"></span>Indonesia</span>
+              <a class="locale" href="/id-id">
+                Bahasa
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-ID"></span>Indonesia</span> 
+              <a class="locale" href="/en-id">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-JP"></span>Japan</span> 
+              <a class="locale" href="/ja-jp">
+                日本
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-MY"></span>Malaysia</span> 
+              <a class="locale" href="/en-my">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-PH"></span>Philippines</span> 
+              <a class="locale" href="/en-ph">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-SG"></span>Singapore</span>
+              <a class="locale" href="/en-sg">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-KR"></span>South Korea</span> 
+              <a class="locale" href="/ko-kr">
+                한국어
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-TW"></span>Taiwan</span> 
+              <a class="locale" href="/zh-tw">
+                Chinese Traditional
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-TH"></span>Thailand</span> 
+              <a class="locale" href="/th-th">
+                ภาษาไทย
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-TH"></span>Thailand</span> 
+              <a class="locale" href="/en-th">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-VN"></span>Vietnam</span> 
+              <a class="locale" href="/en-vn">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-VN"></span>Vietnam</span> 
+              <a class="locale" href="/vi-vn">
+                Tiếng Việt Vietnam
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <li><a href="/">Europe</a>
+          <ul>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-AT"></span>Austria</span> 
+              <a class="locale" href="/de-at">
+                Deutsch
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-BE"></span>Belgium</span> 
+              <a class="locale" href="/nl-be">
+                Dutch
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-BE"></span>Belgium</span> 
+              <a class="locale" href="/fr-be">
+                Français
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CZ"></span>Czechia</span> 
+              <a class="locale" href="/cs-cz">
+                Czech
+              </a>
+            </li>            
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-DK"></span>Denmark</span> 
+              <a class="locale" href="/da-dk">
+                Dansk
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-FI"></span>Finland</span> 
+              <a class="locale" href="/fi-fi">
+                Finish
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-FR"></span>France</span> 
+              <a class="locale" href="/fr-fr">
+                Français
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-DE"></span>Germany</span> 
+              <a class="locale" href="/de-de">
+                Deutsch
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-IE"></span>Ireland</span> 
+              <a class="locale" href="/en-ie">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-IT"></span>Italy</span> 
+              <a class="locale" href="/it-it">
+                Italiano
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-NL"></span>Netherlands</span> 
+              <a class="locale" href="/nl-nl">
+                Dutch
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-NO"></span>Norway</span> 
+              <a class="locale" href="/no-no">
+                Norsk
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-PL"></span>Poland</span> 
+              <a class="locale" href="/pl-pl">
+                Polski
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-PT"></span>Portugal</span> 
+              <a class="locale" href="/pt-pt">
+                Português
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-FC"></span>Rest of Europe</span> 
+              <a class="locale" href="/en">
+                English
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-ES"></span>Spain</span> 
+              <a class="locale" href="/es-es">
+                Español
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-SE"></span>Sweden</span> 
+              <a class="locale" href="/sv-se">
+                Swedish
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CH"></span>Switzerland</span> 
+              <a class="locale" href="/de-ch">
+                Deutsch
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-CH"></span>Switzerland</span> 
+              <a class="locale" href="/fr-ch">
+                Français
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-TR"></span>Turkey</span> 
+              <a class="locale" href="/tr-tr">
+                Türkçe
+              </a>
+            </li>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-GB"></span>United Kingdom</span> 
+              <a class="locale" href="/en-gb">
+                English
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <li><a href="/">Russia</a>
+          <ul>
+            <li class="lang-country-set">
+              <span class="country"><span class="countryicon-sprite iconset-shiny countrycode-RU"></span>Russia</span> 
+              <a class="locale" href="/ru-ru">
+                Russian
+              </a>
+            </li>
+          </ul>
+        </li>
+
+      </ul>
+    </nav>
+   ';
+
+    return $content; 
+}

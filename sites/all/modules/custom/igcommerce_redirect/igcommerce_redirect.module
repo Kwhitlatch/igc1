@@ -1,0 +1,343 @@
+<?php 
+
+/**
+ * Implements hook_menu().
+ */
+function igcommerce_redirect_menu() {
+  $items = array();
+  $items['igcommerce_redirect_404'] = array(
+      'title callback' => '_redirect_404_title',
+      'description' => 'The page you are looking for could not be found.',
+      'page callback' => 'igcommerce_redirect_404',
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Retrieves the title for the redirects 404 page.
+ */
+function _redirect_404_title() {
+  return variable_get('redirect_404_title', t('404 - Page not found'));
+}
+
+function igcommerce_redirect_404() {
+  global $language;
+  
+  //a) . First -- determine the correct language-locale. This will require some form of mapping from legacy language locales (e.g. frfr) to our new language locales (e.g., fr-fr). Attached you will find a document that maps the old to the new.
+  // check first and second arg for fluke/[locale]  
+  $locale = FALSE;
+  $dest = $_GET['destination'];
+  unset($_GET['destination']);
+  // If we're here because drupal_not_found() was called inside of a block, the $dest will not be translated
+  if ($path = igcommerce_utility_url_get_locale_path($dest, $language->language)) {
+    $dest = $path;
+  }
+  $parsed = parse_url($dest);
+  $path = $parsed['path'];
+  $path_parts = explode('/', $path);
+  $redirect = NULL;
+  
+  // If 404 is an old fluke path, grab locale from there
+  // Also remove fluke/[locale] from path for later use
+  if (arg(0, $dest) == 'fluke') {
+    array_shift($path_parts);
+    $old_locale = arg(1, $dest);
+    if ($locale = igcommerce_redirect_locale_map($old_locale)) {
+      array_shift($path_parts);
+      $path = implode('/', $path_parts);
+    }
+  } 
+
+  // If there is a locale in the url query
+  if (!$locale) {
+    if (!empty($_GET['locale'])) {
+      $old_locale = $_GET['locale'];
+      $locale = igcommerce_redirect_locale_map($old_locale);
+    } 
+  }
+  
+  // If no locale found yet, default to $language
+  if (!$locale) {
+    $locale = $language->language;
+  }
+  
+  $lang = clone $language;
+  $lang->prefix = $locale;
+    
+  // If front page go there
+  if (arg(2, $dest) == 'home') {
+    drupal_goto('<front>', array('language' => $lang), '301');
+  }
+  
+  //b). Second - if the URL contains "?pid=nnnnnn" -- then look up the PID (Solr field = ss_product_id_pcat) based on the value of nnnnn. If you find a match then do a 302 redirect to that new. If there isn't a match on the PID then go to the next step.
+  if (!empty($_GET['pid'])) {
+    $pid = $_GET['pid'];
+    if ($redirect = igcommerce_redirect_load_product_url('ss_product_id_pcat', $pid, $locale)) {
+      if (!igcommerce_redirect_validate_path($redirect, $locale)) {
+        unset($redirect);
+      }      
+    }
+  }
+  
+  //c). Third - find the URL title. The url title should precede the .html (or .htm) - for example http://www.fluke.com/fluke/uses/calibradores-de-procesos/calibradores-de-lazo/fluke-789.htm In this case the URL title is fluke-789. Using Solr once again, look for a match on URL title (ss_field_url_title). If you find a match then do a 302 redirect to that product display. If you don't find a match then go to the next step.
+  if (!$redirect && strpos($dest, '.htm') !== FALSE) {
+    $dest_parts = explode('/', $dest);
+    $page_part = array_pop($dest_parts);
+    $url_title = array_pop($dest_parts);  
+    if ($redirect = igcommerce_redirect_load_product_url('ss_field_url_title', $url_title, $locale)) {
+      if (!igcommerce_redirect_validate_path($redirect, $locale)) {
+        unset($redirect);
+      }      
+    } 
+  }
+  
+  //d). Fourth - look for a ?category=XXX element in the URL. There will be a mapping document (to be attached) that will be used to match to a URL builder taxonomy term value (product category). If there's a match then do a 302 redirect to that TOC (it will be a TOC).
+  if (!$redirect && !empty($_GET['category'])) {
+    $category = $_GET['category'];
+    $redirect = igcommerce_redirect_load_tid_url($category, $locale);
+  }
+  
+  //e). Fifth -- if the first steps fail to produce a match, take the URL and remove everything before the URL title (assuming there is one) and attempt to find a match marching up the URL tree (e.g., /products/electrical-testing/digital-multimeters -- you would search for digital multimeters - if found then 302, if not then look for electrical-testing, if found then 302, if not then look for products, if found then 302 if not then 302 to the homepage (no match found).
+  $path_parts_tmp = $path_parts;
+  while (count($path_parts_tmp)) {
+    $path = implode('/', $path_parts_tmp);
+    $path = str_replace('.html', '', $path);
+    $path = str_replace('.htm', '', $path);
+    
+    if (igcommerce_redirect_validate_path($path, $locale)) {
+      $redirect = $path;
+      break;
+    }
+    array_pop($path_parts_tmp);    
+  }
+  
+  if ($redirect) {
+    drupal_goto($redirect, array('language' => $lang), '301');    
+  } else {
+    // Serve up the normal 404 page with ?keyword = url_title
+    $keyword = str_replace('.htm', '', str_replace('.html', '', array_pop($path_parts)));
+    $keyword = str_replace('-', ' ', $keyword);
+    $_GET['keyword'] = $keyword;
+    $language->language = $locale;
+    $language->prefix = $locale;
+    menu_set_active_item('search/page');
+    menu_execute_active_handler();
+    exit();
+  }
+}
+
+function igcommerce_redirect_load_tid_url($category, $lang) {
+  $row = 1;
+  $tid = NULL;
+  
+  if (($handle = fopen(drupal_get_path('module', 'igcommerce_redirect') . '/pcat.csv', "r")) !== FALSE) {
+    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+      $num = count($data);
+      $row++;
+      $cat = $data[0];
+      if ($category == $cat) {
+        $tid = $data[1];
+        break;
+      }
+    }   
+ 
+    fclose($handle);
+  }
+  
+  if (!$tid) {
+    return;
+  }
+  
+  $filters = array(
+      'ss_language' => $lang,
+      'bundle' => 'url_builder',
+      'entity_id' => $tid,
+  );
+  
+  $options = array(
+      'rows' => 1,
+      'filters' => $filters,
+  );
+  
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, $options);
+  $response = fluke_solr_query($filters);
+  
+  $docs = $response->response->docs;
+  
+  if (empty($docs[0]->ss_path_alias_locale)) {
+    return;
+  }
+  
+  return $docs[0]->ss_path_alias_locale;
+}
+
+/**
+ * Check if a given url is valid
+ */
+function igcommerce_redirect_validate_path($path, $lang) {
+  // Check system path first
+  if (drupal_valid_path($path)) {
+    //return TRUE;
+  }
+  
+  // Check path alias
+  if ($source = drupal_lookup_path('source', $path, $lang)) {
+    return TRUE;
+  } 
+  
+  return FALSE;
+}
+
+function igcommerce_redirect_load_product_url($field, $value, $lang) {
+  $filters = array(
+      'ss_language' => $lang,
+      'bs_status' => TRUE, // only interested in published,
+      $field => $value,
+  );
+  
+  $options = array(
+      'rows' => 1,
+      'filters' => $filters,
+  );
+  
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, $options);
+  $response = fluke_solr_query($filters);  
+  
+  $docs = $response->response->docs;
+  
+  if (empty($docs[0]->ss_path_alias_locale)) {
+    return;
+  }
+
+  return $docs[0]->ss_path_alias_locale;
+}
+
+/**
+ * Returns an array of Drupal locales, keyed by legacy values
+ */
+function igcommerce_redirect_get_locales() {
+  $locales = array(
+      'caen' =>	'en-ca',
+      'uken' =>	'en-gb',
+      'ieen' =>	'en-ie',
+      'dede' =>	'de-de',
+      'atde' =>	'de-at',
+      'chde' =>	'de-ch',
+      'frfr' =>	'fr-fr',
+      'befr' =>	'fr-be',
+      'cafr' =>	'fr-ca',
+      'chfr' =>	'fr-ch',
+      'uses' =>	'es-us',
+      'nlnl' =>	'nl-nl',
+      'benl' =>	'nl-be',
+      'fifi' =>	'fi-fi',
+      'eses' =>	'es-es',
+      'czcs' =>	'cs-cz',
+      'itit' =>	'it-it',
+      'chit' =>	'it-it',
+      'nono' =>	'no-no',
+      'plpl' =>	'pl-pl',
+      'brpt' =>	'pt-br',
+      'sesv' =>	'sv-se',
+      'en-us' => 'en-us',
+      'ptpt' =>	'pt-pt',
+      'm2pt' =>	'pt-pt',
+      'r0en' =>	'en',
+      'm2en' =>	'en',
+      'm3en' =>	'en',
+      'roro' =>	'en',
+      'auen' =>	'en-au',
+      'iden' =>	'en-id',
+      'inen' =>	'en-in',
+      'myen' =>	'en-my',
+      'phen' =>	'en-ph',
+      'sgen' =>	'en-sg',
+      'then' =>	'en-th',
+      'tten' =>	'en-tt',
+      'vnen' =>	'en-vn',
+      'm1fr' =>	'fr',
+      'mxes' =>	'es-mx',
+      'ares' =>	'es-ar',
+      'boes' =>	'es-bo',
+      'cles' =>	'es-cl',
+      'coes' =>	'es-co',
+      'cres' =>	'es-cr',
+      'does' =>	'es-do',
+      'eces' =>	'es-ec',
+      'gtes' =>	'es-gt',
+      'pees' =>	'es-pe',
+      'sves' =>	'es-sv',
+      'uyes' =>	'es-uy',
+      'vees' =>	'es-ve',
+      'dkda' =>	'da-dk',
+      'idid' =>	'id-id',
+      'krko' =>	'ko-kr',
+      'ruru' =>	'ru-ru',
+      'thth' =>	'th-th',
+      'trtr' =>	'tr-tr',
+      'vnvi' =>	'vi-vn',
+      'twen' =>	'zh-tw',
+      'jpja' =>	'ja-jp',
+      'cnzh' =>	'zh-cn',
+  );
+  
+  return $locales;
+}
+
+/**
+ * Maps legacy fluke locale to new Drupal locale
+ */
+function igcommerce_redirect_locale_map($locale) {
+  $locales = igcommerce_redirect_get_locales();
+    
+  if (!empty($locales[$locale])) {
+    return $locales[$locale];
+  }
+  
+  return FALSE;
+}
+
+/**
+ * Implements hook_init() to redirect en-us paths to correct translated alias
+ */
+function igcommerce_redirect_init() {
+  global $language;
+  
+  if (!$path = request_path()) {
+    return;
+  }
+  $parts = explode('/', $path);
+  
+  if (!$locale = array_shift($parts)) {
+    return;
+  }
+  
+  $query = $_GET;
+  unset($query['q']);
+  $options['query'] = $query;
+  
+  // redirect if no en-us prefix present
+  if ($language->language == 'en-us') {
+    if ($locale != $language->language) {
+      // TODO instead of hard coding en-us, base it on default language      
+      //drupal_goto($path, $options, 301);
+    }
+    return;
+  }
+  
+  // Check url for translated path_alias  
+  // Check if an alias exists
+  $path = implode('/', $parts);  
+  $conditions = array('source' => $path, 'language' => $language->language);
+  if ($alias = path_load($conditions)) {
+    if ($path != $alias['alias']) {
+      drupal_goto($alias['alias'], $options, 301);
+    }
+  }
+  
+}

@@ -1,0 +1,245 @@
+/**
+ * @file 00-social-media.less
+ * Styles social media icons
+ *
+ * Some custom icons are added here, mostly these are consistent across all sites.
+ * The social media is added to the site via the sharethis module: https://www.drupal.org/project/sharethis
+ * The custom social media icons are added through fontawesome: https://www.drupal.org/project/fontawesome
+ * 
+ */
+ .sharethis-wrapper span {
+  display: inline-block;
+  background-color: @fluke-gray;
+  height: 30px;
+  width: 30px;
+  transition: .1s;
+  transition-property: transform;
+  transform: translateZ(0);
+  &:hover {
+    transform: scale(1.1);
+    z-index: 2;
+  }
+}
+
+.st_facebook_custom,
+.st_linkedin_custom,
+.st_twitter_custom,
+.st_reddit_custom,
+.st_email_custom {
+  .text-center;
+  //position:relative;
+  color: @fluke-white;
+  font-family: FontAwesome;
+  font-size: 1.5em;
+  margin-right: 5px;
+}
+
+.st_facebook_custom {
+  &:after {
+    content: "\f09a";
+  }
+  &:hover {
+    background-color: @facebook;
+  }
+}
+
+.st_linkedin_custom {
+  &:after {
+    content: "\f0e1";
+  }
+  &:hover {
+    background-color: @linkedin;
+  }
+}
+
+.st_twitter_custom {
+  &:after {
+    content: "\f099";
+  }
+  &:hover {
+    background-color: @twitter;
+  }
+}
+
+.st_reddit_custom {
+  &:after {
+    content: "\f1a2";
+  }
+  &:hover {
+    background-color: @reddit;
+  }
+}
+
+.st_email_custom {
+  &:after {
+    content: "\f0e0";
+  }
+  &:hover {
+    background-color: @fluke-yellow;
+  }
+}
+
+/**
+ * - Fluke Social Icons
+ * ----------------------------------------------------------------------------
+ */
+.icon-C_RU_US:before {
+  content:"\e00f";
+}
+
+.icon-C_RU:before {
+  content:"\e010";
+}
+
+.icon-C_UL_LIST:before {
+  content:"\e011";
+}
+
+.icon-C_UL_US:before {
+  content:"\e012";
+}
+
+.icon-CE_0102:before {
+  content:"\e014";
+}
+
+.icon-C_UL:before {
+  content:"\e013";
+}
+
+.icon-CE_0344:before {
+  content:"\e015";
+}
+
+.icon-CE:before {
+  content:"\e016";
+}
+
+.icon-China_RoHS_40_10:before {
+  content:"\e017";
+}
+
+.icon-China_RoHS_40:before {
+  content:"\e018";
+}
+
+.icon-China_RoHS_e:before {
+  content:"\e019";
+}
+
+.icon-CMC:before {
+  content:"\e01a";
+}
+
+.icon-CSA_C_US-LR110460:before {
+  content:"\e01b";
+}
+
+.icon-CSA_C_US_221839:before {
+  content:"\e01c";
+}
+
+.icon-CSA_C_US_C1:before {
+  content:"\e01d";
+}
+
+.icon-CSA_C_US_LR110460:before {
+  content:"\e01e";
+}
+
+.icon-CSA_C_US:before {
+  content:"\e01f";
+}
+
+.icon-CSA_C22_2_231:before {
+  content:"\e020";
+}
+
+.icon-CSA_C22_2_1010:before {
+  content:"\e021";
+}
+
+.icon-CSA_NRTLC:before {
+  content:"\e022";
+}
+
+.icon-CSA:before {
+  content:"\e023";
+}
+
+.icon-ETL_Safety:before {
+  content:"\e024";
+}
+
+.icon-EX:before {
+  content:"\e025";
+}
+
+.icon-FM_Approved:before {
+  content:"\e026";
+}
+
+.icon-HART_Protocol:before {
+  content:"\e027";
+}
+
+.icon-KC:before {
+  content:"\e028";
+}
+
+.icon-MSHA:before {
+  content:"\e029";
+}
+
+.icon-N10140:before {
+  content:"\e02a";
+}
+
+.icon-NSF:before {
+  content:"\e02b";
+}
+
+.icon-PCEC:before {
+  content:"\e02c";
+}
+
+.icon-PCT_GOST:before {
+  content:"\e02d";
+}
+
+.icon-RU:before {
+  content:"\e02e";
+}
+
+.icon-TUV_SUD:before {
+  content:"\e02f";
+}
+
+.icon-UL_LIST_950Z:before {
+  content:"\e030";
+}
+
+.icon-UL:before {
+  content:"\e031";
+}
+
+.icon-VDE_0411:before {
+  content:"\e032";
+}
+
+.icon-VDE_GS:before {
+  content:"\e033";
+}
+
+.icon-VDE:before {
+  content:"\e034";
+}
+
+.icon-iecex:before {
+  content:"\e000";
+}
+
+.icon-inmetro:before {
+  content:"\e001";
+}
+

@@ -1,0 +1,23 @@
+/* Thank-you page that appears after form-submit */
+.page-node-done {
+  background: $gray-e;
+  .main-container {
+    padding-left: 15px;
+    padding-right: 15px;
+    #block-system-main {
+      @include media($screen-sm) {
+        @include shift(1)
+        @include span-columns(10);
+      }
+      @include media($screen-md) {
+        @include shift(2)
+        @include span-columns(8);
+      }
+      .webform-confirmation {
+        p {
+          @extend %h1;
+        }
+      }
+    }
+  }
+}

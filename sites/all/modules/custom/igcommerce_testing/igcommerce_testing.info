@@ -1,0 +1,5 @@
+name = IG Commerce Testing Harness
+description = This modules tests IGCommerce using SimpleTest
+core = 7.x
+dependencies[] = simpletest
+files[] = tests/igcommerce_testing.test

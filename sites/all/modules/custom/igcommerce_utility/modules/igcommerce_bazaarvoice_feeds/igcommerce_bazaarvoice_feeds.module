@@ -1,0 +1,382 @@
+<?php
+/**
+ * Implements hook_permission().
+ */
+function igcommerce_bazaarvoice_feeds_permission() {
+  return array(
+    'access igcommerce_bazaarvoice_feeds' => array(
+      'title' => t('Administer IGCommerece BazaarVoice Feeds'),
+      'description' => t('Configure sftp, set dev environments, and review the xml feed'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Add default permission for access settings to administrator
+ */
+function igcommerce_bazaarvoice_feeds_install() {
+  // rid=3 => administrator.
+  user_role_change_permissions(3,
+    array(
+      'access igcommerce_bazaarvoice_feeds' => TRUE,
+    )
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function igcommerce_bazaarvoice_feeds_menu() {
+    $items['admin/config/services/bv-feed-generate'] = array(
+    'title' => 'BazaarVoice Feeds Generation',
+    'description' => t('Generate the xml feed for bazaarvoice'),
+    'page callback' => 'bazaarvoice_feeds_admin',
+    'access arguments' => array('access igcommerce_bazaarvoice_feeds'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+/**
+ * Constructs a simple page, generates xml, saves file locally, and presents download link.
+ *
+ * See the Bazaarvoice xml specs here:
+ * http://labsbp-docsportal.aws.bazaarvoice.com/DataFeeds/ProductFeeds/StructureOfProductFeed_ref.html
+ */
+function bazaarvoice_feeds_admin() {
+
+  global $language, $base_url;
+  //dpm(igcommerce_bazaarvoice_feeds_products_all_details(), 'debugging function that displays all product fields');
+
+  // Some products belong to unpublished categories, we want to build an
+  // array of those to check against, so we can rule out the illigetimates
+  // Sadly, I can't find any field on the products themselves that would
+  // indicate published or unpublished.
+  $legit_categories = igcommerce_bazaarvoice_feeds_url_builder_details(); 
+  if (!empty($legit_categories)) {
+    $legit_list = array();
+    foreach ($legit_categories as $legit_category) {
+       $legit_list[] = $legit_category->entity_id;
+    }
+  }
+
+  // Solr Query returns product details from fields specified in the function.
+  // If you want to see ALL avalable product fields, swap in this function:
+  // igcommerce_bazaarvoice_feeds_products_all_details();
+  $raw_products = igcommerce_bazaarvoice_feeds_products_fields_details();
+  // Takes $categories_processed and puts each in correct xml wrappers
+  if (!empty($raw_products)) {
+    $xml_products = "\t<Products>" . PHP_EOL;
+    // We want to capture a list of all used categories, so that we can cull
+    // the unused categories in that section.
+    $category_list = array();
+
+    // Since we don't have the upc info in the system, we're going to pull it 
+    // from a csv. The Model number is the key that corresponds to the UPC value.
+    $csv_path = drupal_get_path('module', 'igcommerce_bazaarvoice_feeds') . '/data/data.csv';
+    $csv = file($csv_path);
+    foreach($csv as $line) {
+      $line = str_getcsv($line);
+      $upc_csv[$line[0]] = trim($line[1]);
+    }
+
+    foreach ($raw_products as $single_product) {
+      if(in_array($single_product->im_field_url_builder[0], $legit_list)) {
+      $xml_products .= "\t\t<Product>" . PHP_EOL;
+      //$xml_products .= $single_product->entity_id . PHP_EOL;
+      $xml_products .= "\t\t\t<BrandExternalId>Fluke_2</BrandExternalId>" . PHP_EOL;
+
+      // The field ss_field_content_title is part of the solr query, so we don't need to check for it
+        $xml_products .= "\t\t\t<Name>";
+        // Turns all html entities into chars
+        $name_cleaned_up = html_entity_decode($single_product->ss_field_content_title);
+        // Encodes '&' as html entities
+        $name_cleaned_up = htmlspecialchars($name_cleaned_up);
+        $xml_products .= $name_cleaned_up;
+        $xml_products .= "</Name>" . PHP_EOL;
+      
+      
+      // Required and must be unique.
+      if (isset($single_product->ss_field_url_title[0]) && !empty($single_product->ss_field_url_title[0])) {
+        $xml_products .= "\t\t\t<ExternalId>";
+        $xml_products .= $single_product->ss_field_url_title;
+        $xml_products .= "</ExternalId>" . PHP_EOL;
+      }
+
+      // Required, must be unique
+      if (isset($single_product->path_alias) && !empty($single_product->path_alias)) {
+        $xml_products .= "\t\t\t<ProductPageUrl>";
+        $xml_products .= "https://www.fluke.com/en-us/" . $single_product->path_alias;
+        $xml_products .= "</ProductPageUrl>" . PHP_EOL;
+      }
+
+      if (!empty($single_product->is_product_slideshow)) {
+        if (!empty($single_product->ss_slideshow_main_img)) {
+          $json_slideshow = json_decode($single_product->ss_slideshow_main_img, TRUE);
+        }
+        if (!empty($json_slideshow['url'])) {
+          $xml_products .= "\t\t\t<ImageUrl>";
+          $xml_products .= "https:" . $json_slideshow['url'];
+          $xml_products .= "</ImageUrl>" . PHP_EOL;
+        } 
+      }
+
+      if (isset($single_product->tm_short_description_summary[0]) && !empty($single_product->tm_short_description_summary[0])) {
+        // The description field has some junk markup. Clean that up before wrapping in xml.
+        $product_description = $single_product->tm_short_description_summary[0];
+        // There are mixed html entities in here, some &lt; and some <, so make them all one style
+        $product_description = html_entity_decode($product_description);
+        // Strip out all html tags
+        $product_description = strip_tags($product_description);
+        // remove all carriage returns and newlines
+        $product_description = preg_replace( "/\r|\n/", "", $product_description);
+        // "&" prevents validation in xml, so convert to html entity.
+        $product_description = str_replace(" & ", " and ", $product_description);
+        // Encodes '&' as html entities
+        $product_description = htmlspecialchars($product_description);
+
+        $xml_products .= "\t\t\t<Description>";
+        $xml_products .= $product_description;
+        $xml_products .= "</Description>" . PHP_EOL;
+      }
+
+      if (isset($single_product->im_field_url_builder[0]) && !empty($single_product->im_field_url_builder[0])) {
+        $product_categories = $single_product->im_field_url_builder[0];         
+        $xml_products .= "\t\t\t<CategoryExternalId>";
+        // Some products have ambigious categories, so we need to back them up to more definitive categories.
+        // For example, 2148 is "professional series" and 2149 is "Performance Series"
+        if ($product_categories == 2148 || $product_categories == 2149 || $product_categories == 2150) {
+          $product_categories = 2147; // 2147 is infrared cameras and gas detectors
+        } 
+        $xml_products .= $product_categories;
+        $xml_products .= "</CategoryExternalId>" . PHP_EOL;
+        if(!in_array($product_categories, $category_list)) {
+          $category_list[] = $product_categories;
+        }
+      }
+
+      // If product has models, get em, parse em, output em as xml.
+      // They come out as a seperate product which shares the Attribute BV_FE_FAMILY
+      // and BV_FE_EXPAND so that they can share reviews on a single url.
+      if (isset($single_product->tm_new_models[0])) {
+        $allmodels = json_decode($single_product->tm_new_models[0]);
+        foreach ($allmodels as $key => $models) {
+          //$allmodels has data for all locales, get english only
+          if ($key == 'en-us') {
+            $model_wad = NULL;
+            $sku_wad = NULL;
+            $upc_wad = NULL;
+            foreach ($models as $key => $model) {
+              if (isset($model->model_name)) {
+                $model_wad .= "\t\t\t\t<ModelNumber>";
+                $model_wad .= html_entity_decode($model->model_name);
+                $model_wad .= "</ModelNumber>" . PHP_EOL;
+              }
+              // We're using the skus to lookup the UPC's, because we don't have
+              // those in the system. michael.hequibal@fluke.com can send you an
+              // updated spreadsheet with the sku model number relationship.
+              // save the columns "Fluke Part Number" and "UPC Code" and save
+              // them as a .csv in the /data folder.  THis file is loaded at the
+              // start of this function as $upc_csv
+              if ($model->sku != 0 && $language->language == "en-us") {
+                $sku_wad .= "\t\t\t\t<ManufacturerPartNumber>";
+                $sku_wad .= $model->sku;
+                $sku_wad .= "</ManufacturerPartNumber>" . PHP_EOL;
+                if(!empty($upc_csv[$model->sku]) && $upc_csv[$model->sku] != "X") {
+                  $upc_wad .= "\t\t\t\t<UPC>";
+                  // Strips out extra whitespace
+                  $upc_wad .= preg_replace('/\s+/', '', $upc_csv[$model->sku]);
+                  $upc_wad .= "</UPC>" . PHP_EOL;
+                }
+              }
+            } // end foreach
+            // Put the model and sku wads in the appropriate xml wrappers
+            if (isset($model_wad)) {
+              $xml_products .= "\t\t\t<ModelNumbers>" . PHP_EOL;
+              $xml_products .= $model_wad;
+              $xml_products .= "\t\t\t</ModelNumbers>" . PHP_EOL;
+            }
+            // This is the same as the SKU.
+            if (isset($sku_wad)) {
+              $xml_products .= "\t\t\t<ManufacturerPartNumbers>" . PHP_EOL;
+              $xml_products .= $sku_wad;
+              $xml_products .= "\t\t\t</ManufacturerPartNumbers>" . PHP_EOL;
+            }
+            if (isset($upc_wad)) {
+              $xml_products .= "\t\t\t<UPCs>" . PHP_EOL;
+              $xml_products .= $upc_wad;
+              $xml_products .= "\t\t\t</UPCs>" . PHP_EOL;
+            }
+          } // end if en-us
+        } // end foreach models
+      } // end if isset models
+      $xml_products .= "\t\t</Product>" . PHP_EOL;
+      } // end in_array check
+    } // end foreach as $single_product
+    unset($single_product);
+    $xml_products .= "\t</Products>" . PHP_EOL;
+  } // End products xml generation
+  unset($raw_products);
+  
+  // dpm($category_list, 'Here are the category list');
+  // Returns a solr query with all the category details
+  // This pulls out only the details we need, and assigns each category to a 
+  // keyed multidimensional array, that we will then use to generate the xml.
+  $raw_categories = igcommerce_bazaarvoice_feeds_url_builder_details();
+  if (!empty($raw_categories)) {
+    // Takes $categories_processed and puts each in correct xml wrappers
+      $xml_categories = "\t<Categories>" . PHP_EOL;
+      foreach ($raw_categories as $single_category) {
+        // Some categories aren't tied to products, we need to ignore those
+        if (in_array($single_category->entity_id, $category_list)) {
+          $xml_categories .= "\t\t<Category>" . PHP_EOL;
+
+          $xml_categories .= "\t\t\t<ExternalId>";
+          $xml_categories .= $single_category->entity_id;
+          $xml_categories .= "</ExternalId>" . PHP_EOL;
+
+          $xml_categories .= "\t\t\t<Name>";
+          $xml_categories .= $single_category->label;
+          $xml_categories .= "</Name>" . PHP_EOL;
+
+          $xml_categories .= "\t\t\t<CategoryPageUrl>";
+          $xml_categories .= "https://www.fluke.com/en-us/";
+          $xml_categories .= $single_category->ss_path_alias;
+          $xml_categories .= "</CategoryPageUrl>" . PHP_EOL;
+          $xml_categories .= "\t\t</Category>" . PHP_EOL;
+        }
+      } //end foreach
+      unset($single_category);
+    $xml_categories .= "\t</Categories>" . PHP_EOL;   
+  } //end categories xml generation
+  unset($raw_categories);
+
+  // One-off xml chuncks that go into final assembley
+
+  // Timestamp in XML's dateTime format, aka ISO 8601
+  $xml_open = '<?xml version="1.0" encoding="utf-8"?>
+  <Feed xmlns="http://www.bazaarvoice.com/xs/PRR/ProductFeed/5.6" incremental="false" name="Fluke" extractDate="' . date('c') . '">' . PHP_EOL;
+  
+  // The brand` will always stay the same.
+  $xml_brands = "\t<Brands>" . PHP_EOL;
+  $xml_brands .= "\t\t<Brand>" . PHP_EOL;
+  $xml_brands .= "\t\t\t<ExternalId>Fluke_2</ExternalId>" . PHP_EOL;
+  $xml_brands .= "\t\t\t<Name>Fluke</Name>" . PHP_EOL;
+  $xml_brands .= "\t\t</Brand>" . PHP_EOL;
+  $xml_brands .= "\t</Brands>" . PHP_EOL;
+  
+  $xml_close = '</Feed>';
+  
+  // globs all the xml chunks
+  $xml_complete = $xml_open . $xml_brands . $xml_categories . $xml_products . $xml_close;
+  
+  // filename for xml
+  $xml_name = "fluke_bazaarvoice_feed_" . date('m_d_Y_hia') . ".xml";
+  // path where the xml files are saved
+  $mydir = 'public://bazaarvoice_feeds/';
+  // If the folder doesn't exsist, create it.
+  file_prepare_directory($mydir, FILE_CREATE_DIRECTORY);
+  // save the file to the specified directory.
+  $file = file_save_data($xml_complete, $mydir . $xml_name);
+  
+  // Generate file download link.  
+  if ($file != 0) {
+    $link = file_create_url($file->uri);
+    drupal_set_message(t('Export has been created! Download the <a href="@link" download>file</a>.', array('@link' => $link)));
+  }
+
+  return array('#markup' => '<pre>' . htmlspecialchars($xml_complete) . '</p>');
+}
+
+
+/**
+ * Solr query to fetch all category details.
+ */
+function igcommerce_bazaarvoice_feeds_url_builder_details() {
+
+  $content = NULL;
+
+    // We only want english product categories
+  $filters = array(
+    'ss_language' => 'en-us',
+    'entity_type' => 'taxonomy_term',
+    'bundle' => 'url_builder',
+    'sm_term_depth' => '[2 TO *]', // Excludes top level items
+    'sm_vid_URL_Builder' => '(Products)',
+    'bs_field_hide_from_toc_left_navi' => 0, // There's some taxonomy terms like "Legacy Products" that are not published.
+    );
+
+  $query = fluke_solr_get_connection();
+
+  // Send the query with filters, maximum of 200 rows. (likely 150ish)
+  $query_options = fluke_solr_add_filters($query, array('filters' => $filters, 'rows' => 200));
+  $response = fluke_solr_query($query_options);
+
+    // The $response is a nested array, grab only what we need.
+  if ($response) {
+    $content = $response->response->docs;
+  }
+  return $content;
+}
+
+/**
+ * Solr query to fetch all product details.
+ */
+// TODO: this function returns ALL product data. It's really helpful if you
+// need to add more fields in the future. It's currently not called,
+// and does nothing.
+function igcommerce_bazaarvoice_feeds_products_all_details() {
+
+  $content = NULL;
+
+  $filters = array(
+    "ss_language" => 'en-us',
+    "bundle" => "product_display",
+    //"entity_id" => 9048
+    );
+//"ss_env_id" => '*',
+  $query = fluke_solr_get_connection();
+
+  $query_options = fluke_solr_add_filters($query, array('filters' => $filters, 'rows' => 100));
+  $response = fluke_solr_query($query_options);
+
+  if ($response) {
+    $content = $response->response->docs;
+  }
+  return $content;
+
+}
+
+/**
+ * Solr query to fetch specific fields for all productss.
+ */
+function igcommerce_bazaarvoice_feeds_products_fields_details() {
+
+  $content = NULL;
+
+  $options = array(
+    "ss_language" => 'en-us',
+    "bundle" => "product_display",
+    "ss_field_content_title" => "*", // THere's some weird trash in solr that doesn't have a content title, yet is still published in en-us.
+    "bs_status" => 1,
+  );
+
+  $fields = 'entity_id,ss_field_content_title,ss_field_url_title,path_alias,
+  is_product_slideshow,ss_slideshow_main_img,tm_short_description_summary,im_field_url_builder,
+  tm_new_models';
+
+  $query = fluke_solr_get_connection();
+  $query_options = fluke_solr_add_filters($query, array('filters' => $options, 'fl' => $fields, 'rows' => 3000));
+  $response = fluke_solr_query($query_options);
+
+  if ($response) {
+    $content = $response->response->docs;
+  }
+  return $content;
+
+}
+
+//3502 im_field_url_builder 

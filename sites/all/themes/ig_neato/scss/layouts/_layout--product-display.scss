@@ -1,0 +1,178 @@
+
+/* 
+ * The products are displayed through Panelizer. There is a custom template called
+ * flukestrap-libby, and this styles each section in the template
+ */
+%product-layout-common {
+  @include span-columns(12);
+  padding: 2rem 0;
+  @include media($screen-md) {
+    padding-bottom: 5rem;
+  }
+}
+
+// tab-collapse.js moves the content around, so .myTab-accordiaon and .tab-content are the same content, just different wrappers at different times.
+#fluke-product-display-content-tabs {
+  #myTab-accordion,
+  .tab-content {
+    aside,
+    section {
+        padding-top: 2rem;
+      @include media($screen-md) {
+        padding-top: 5rem;
+      }
+      &:first-of-type h2 {
+        @extend h3;
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+// The pricespider scripts are inserted via a block on the us-en product pages.
+// This ensures that the scripts don't interfere with the margins. MIG1192
+.ryan-content > .pane-custom.pane-1 {
+  @extend %element-invisible;
+}
+
+// The revised product display lives in a block now, this overrides the panel-pane styling
+.panel-pane.pane-igcommerce-utility-products-product-detail-page {
+  max-width: 100%;
+}
+#fluke-product-display {
+  &.template-F4 .container {
+     padding-bottom: 0;
+  }
+  .container {
+    @include outer-container;
+    padding: .1rem 1.5rem;
+    @include media($screen-lg) {
+      padding: .1rem 0;
+    }
+  }
+  .gray-wrapper {
+    background-color: $gray-e;
+  }
+  .flukestrap-layouts-header {
+    .panel-pane {
+      @include outer-container(100%);
+    }
+  }
+  #fluke-product-display-title {
+    @include span-columns(12);
+    margin-bottom: 1rem;
+  }
+  #fluke-product-display-slideshow {
+    @include span-columns(12);
+    @include media($screen-sm) {
+      @include span-columns(7);
+    }
+    @include media($screen-md) {
+      @include span-columns(6);
+    }
+  }
+  #fluke-product-alerts {
+    @include span-columns(12);
+    @include media($screen-sm) {
+      @include span-columns(5);
+      margin-right: 0;
+    }
+    @include media($screen-md) {
+      @include span-columns(5);
+      @include shift(1);
+      margin-right: 0;
+    }
+  }
+  #fluke-product-display-key-features {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2rem;
+    clear: both;
+    @include media($screen-sm) {
+      @include span-columns(5);
+    padding-bottom: 7rem;
+      margin-right: 0;
+      clear: none;
+      display: block;
+    }
+    @include media($screen-md) {
+      @include shift(1);
+    }
+  }
+  #fluke-product-display-overview {
+    @extend %product-layout-common;
+    @include media($screen-md) {
+      @include span-columns(8);
+    }
+  }
+  #overviewbottom_content{
+    margin-bottom: $spacing-2;    
+  }
+  #fluke-product-display-models {
+    @extend %product-layout-common;
+    @include media($screen-sm) {
+      @include span-columns(4);
+      margin-right: 0;
+    }
+    @include media($screen-md) {
+      @include span-columns(6);
+      margin-right: 0;
+    }
+  }
+  #fluke-product-display-specs {
+    @extend %product-layout-common;
+    @include media($screen-md) {
+      @include span-columns(8);
+    }
+  }
+  #fluke-product-display-resources {
+    @extend %product-layout-common;
+    @include media($screen-sm) {
+      @include span-columns(7);
+    }
+  }  
+  // This is the accessory slideshow gallery at the bottom of product pages.
+  #fluke-product-display-accessories {
+    @extend %product-layout-common;
+  }
+  // This is the accessory accordion appearing under the Accessories tab
+  #fluke-product-display-accessories-accordion {
+    @extend %product-layout-common;
+    @include media($screen-sm) {
+      @include span-columns(7);
+    }
+  }
+  // If it's an accessory instead of a product, we'll see only compatible-products 
+  // section instead of #fluke-product-display-accessories
+  #fluke-product-display-compatible-products {
+    @extend %product-layout-common;
+    @include media($screen-sm) {
+      @include span-columns(6);
+    }
+  }
+  // Related Products
+  #fluke-product-display-related-products {
+    @extend %product-layout-common;
+  }
+  // Reviews section
+  #fluke-product-display-reviews {
+    @extend %product-layout-common;
+  }
+
+  //IE fix for overlapping + in related items
+  .pane-product-page-view-product-resources .panel-heading a.plus-minus[data-parent="#accordion"],
+  .pane-product-page-view-all-accessories .panel-heading a.plus-minus[data-parent="#accordion"]{
+    width: inherit;
+  }  
+  // Fixing Rogue tbody in content.
+  table tbody{
+    background-color: transparent;
+  }
+}
+
+// This turns the key features background gray on mobile devices only
+#fluke-product-display-key-features {
+  @include extended-background();
+  @include media($screen-sm) {
+    @include remove-extended-background();
+  }
+}

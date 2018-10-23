@@ -1,0 +1,647 @@
+<?php
+/**
+ * @file
+ * The IG Commerce Utility Products module.
+ * @author anisha.shaikh@fluke.com
+ * Term ID: 1533 for products
+ * Term ID: 1534 for Accesories
+ * Term ID: 1535 for Kits
+ * These need to be moved into a configuration admin page or straight into the view
+ */
+
+
+/**
+ * Implements hook_init() which sends incorrect url for toc pages to a 404
+ */
+function igcommerce_utility_product_tocs_init() {
+
+}
+
+function igcommerce_utility_product_tocs_menu() {
+    $items['igcommerce_utility_product_tocssort'] = array(
+        'page callback' => 'igcommerce_utility_product_tocs_sort',
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('access content'),
+    );
+
+    return $items;
+}
+
+/**
+ * Declare what blocks are provided by this module.
+ * Implements hook_block_info().
+ */
+function igcommerce_utility_product_tocs_block_info()
+{
+    $blocks['top_sellers'] = array(
+        'info' => t('Product TOC - Top Sellers'),
+        'cache' => DRUPAL_CACHE_PER_PAGE
+    );
+    $blocks['toc_products'] = array(
+        'info' => t('Product TOC - Product Listings'),
+        'cache' => DRUPAL_CACHE_PER_PAGE
+    );
+    $blocks['toc_accessories'] = array(
+        'info' => t('Product TOC - Accessory Listings'),
+        'cache' => DRUPAL_CACHE_PER_PAGE
+    );
+    $blocks['toc_test_accessories'] = array(
+        'info' => t('Product TOC Test - Accessory Listings'),
+        'cache' => DRUPAL_CACHE_PER_PAGE
+    );
+    $blocks['toc_kits'] = array(
+        'info' => t('Product TOC - Kit Listings'),
+        'cache' => DRUPAL_CACHE_PER_PAGE
+    );
+    $blocks['toc_tabs_block'] = array(
+        'info' => t('Product TOC - Tabbed block of products, accessories and kits Listings'),
+        'cache' => DRUPAL_CACHE_PER_PAGE
+    );
+    return $blocks;
+}
+
+
+/**
+ * Define what the block is going to look like.
+ * Implements hook_block_view().
+ */
+function igcommerce_utility_product_tocs_block_view($delta = NULL)
+{
+    global $language;
+    $block = array();
+    $path = request_uri();
+    $url_terms = array_slice(explode('/', $path), 3, 4, true); // Here we get the last 2 parts of the url and use them to get the url_builder values
+    $node = menu_get_object();
+    switch ($delta)
+    {
+        case 'top_sellers':
+            $block['content'] = igcommerce_utility_product_tocs_build_top_sellers();
+            break;
+        case 'toc_products':
+            $products = igcommerce_utility_product_tocs_build_products();
+            $block['content'] = $products['content'];
+            $block['total'] = $products['total'];
+            $block['disclaimer'] = isset($products['disclaimer']) ? $products['disclaimer'] : "";
+            break;
+        case 'toc_accessories':
+            $products = igcommerce_utility_product_tocs_build_accessories();
+            //$products = igcommerce_utility_product_tocs_build_accessories();
+            $block['content'] = $products['content'];
+            $block['total'] = $products['total'];
+            $block['disclaimer'] = isset($products['disclaimer']) ? $products['disclaimer'] : "";
+            break;
+        case 'toc_kits':
+            $products = igcommerce_utility_product_tocs_build_kits();
+            $block['content'] = $products['content'];
+            $block['total'] = $products['total'];
+            $block['disclaimer'] = isset($products['disclaimer']) ? $products['disclaimer'] : "";
+            break;
+        case 'toc_tabs_block':
+            $block['content'] = igcommerce_utility_product_tocs_listings_block();
+            break;
+    }
+    return $block;
+}
+
+function igcommerce_utility_product_tocs_build_products($count = FALSE) {
+
+    global $language;
+    $lang = $language->language;
+    $ajax_sort = isset($_GET['ajax_sort']) ? $_GET['ajax_sort'] : 'default';
+    $items = $items = ['content' => '', 'total' => 0];
+    $sort_type = isset($_GET['sort_type']) ? $_GET['sort_type'] : 'topseller';
+    $original_path = '';
+    $reset = FALSE;
+    if(isset($_GET['original_path'])) {
+        $original_path = $_GET['original_path'];
+        $reset = TRUE;
+    }
+
+    module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+    if (!$toc = igcommerce_utility_load_toc_from_path($original_path, $lang, $reset)) {
+        return $items;
+    }
+    if (empty($toc->sm_field_product_list_sort_solr)) {
+        return $items;
+    }
+
+    if(module_exists('igc_compare')) {
+      igc_compare_selection_setup($toc);
+    }
+
+    igcommerce_utility_head_elements($toc, TRUE);
+    $target_products_query = '';
+    $fields = '';
+    $toc_details = array();
+
+    $product_order = array();
+    foreach ($toc->sm_field_product_list_sort_solr as $target_product) {
+        if(empty($target_products_query)) {
+            $target_products_query = $target_product;
+        }
+        if(!empty($target_product) && is_numeric($target_product)) {
+            $target_products_query .= ' OR ' . $target_product;
+            array_push($product_order, $target_product);
+        }
+    }
+    $target_products_query = 'entity_id:('.$target_products_query.')';
+
+    $options = array(
+        "sm_product_type" => "1533", // TODO don't hard code this value
+        "ss_language" => $lang,
+        "bundle" => "product_display",
+    );
+    $query_params = array(
+        'q' => $target_products_query,
+        'filters' => $options,
+        'fl' => $fields,
+        'rows' => 300,
+    );
+    if ($sort_type == 'newest') {
+        $query_params['sort'] = 'ds_created DESC';
+    }
+    
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, $query_params);
+
+    $response = fluke_solr_query($filters);
+    switch ($sort_type) {
+        case 'topseller':
+            $sort = 1;
+            foreach ($product_order as $order) {
+                foreach ($response->response->docs as $article_key => $article_value) {
+                    if ($order == $article_value->entity_id) {
+                        $article_value->sort_order = $sort;
+                        $toc_details[] = $article_value;
+                        $sort++;
+                    }
+                }
+            }
+            break;
+        case 'name':
+            $toc_details = $response->response->docs;
+            usort($toc_details, function($a, $b)
+            {
+                return strcmp(t($a->ss_field_content_title), t($b->ss_field_content_title));
+            });
+            break;
+        default:
+            $toc_details = $response->response->docs;
+            break;
+    }
+    $items['total'] = $response->response->numFound;
+    $items['disclaimer'] = isset($toc->sm_disclaimer_description[0])?$toc->sm_disclaimer_description[0]:'';
+    $items['content'] = theme('products',
+        array('items' => $toc_details,
+            'lang' => $lang,
+            'total' => $items['total'],
+            'ajax_sort' => $ajax_sort,
+            'type' => 'products')
+    );
+
+    return $items;
+}
+
+/**
+ * Returns a themed block of accessories given a product category
+ */
+function igcommerce_utility_product_tocs_build_accessories($page_params=array(), $count = FALSE) {
+    global $language;
+    $lang = $language->language;
+    $ajax_sort = isset($_GET['ajax_sort']) ? $_GET['ajax_sort'] : 'default';
+    $items = $items = ['content' => '', 'total' => 0];
+    $sort_type = isset($_GET['sort_type']) ? $_GET['sort_type'] : 'topseller';
+    $original_path = '';
+    if(isset($_GET['original_path'])) {
+        $original_path = $_GET['original_path'];
+    }
+    module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+    if (!$toc = igcommerce_utility_load_toc_from_path($original_path, $lang)) {
+        return $items;
+    }
+
+    igcommerce_utility_head_elements($toc, TRUE);
+
+    if (empty($toc->sm_field_accessories_list_sort_solr)) {
+        return $items;
+    }
+
+    $target_accessories_query = '';
+    $fields = '';
+    $toc_details = array();
+    $product_order = array();
+
+    foreach ($toc->sm_field_accessories_list_sort_solr as $target_product) {
+        if (!empty($target_product) && is_numeric($target_product)) {
+            $target_accessories_query .= $target_product . ' ';
+            array_push($product_order, $target_product);
+        }
+    }
+    $target_accessories_query = 'entity_id:(' . str_replace(' ', ' OR ', trim($target_accessories_query)) . ')';
+    $options = array(
+        "sm_product_type" => "1534", // TODO don't hard code this
+        "ss_language" => $lang,
+        "bundle" => "product_display",
+        "entity_type" => "node",
+    );
+    if ($sort_type == 'newest') {
+      $sort = 'ds_created DESC';
+    }
+    $query = fluke_solr_get_connection();
+    $query_items = array('q' => $target_accessories_query,
+        'filters' => $options,
+        'fl' => $fields,
+        'rows' => 300,
+    );
+    if(isset($sort)) {
+        $query_items['sort'] = $sort;
+    }
+    $filters = fluke_solr_add_filters($query,$query_items);
+    $response = fluke_solr_query($filters);
+    switch ($sort_type) {
+        case 'topseller':
+            $sort = 1;
+            foreach ($product_order as $order) {
+                foreach ($response->response->docs as $article_key => $article_value) {
+                    if ($order == $article_value->entity_id) {
+                        $article_value->sort_order = $sort;
+                        $toc_details[] = $article_value;
+                        $sort++;
+                    }
+                }
+            }
+            break;
+        case 'name':
+            $toc_details = $response->response->docs;
+            usort($toc_details, function($a, $b)
+            {
+                return strcmp(t($a->ss_field_content_title), t($b->ss_field_content_title));
+            });
+            break;
+        default:
+            $toc_details = $response->response->docs;
+            break;
+    }
+
+    $items['total'] = $response->response->numFound;
+    $items['disclaimer'] = isset($toc->sm_disclaimer_description[0])?$toc->sm_disclaimer_description[0]:'';
+    $items['content'] = theme('products',
+        array('items' => $toc_details,
+            'lang' => $lang,
+            'page_params' => $page_params,
+            'total' => $items['total'],
+            'ajax_sort' => $ajax_sort,
+            'type' => 'accessories')
+    );
+
+    return $items;
+}
+
+/**
+ * Returns a themed kits list for use on product categoy tabbed block
+ */
+function igcommerce_utility_product_tocs_build_kits($count = FALSE) {
+    global $language;
+    $lang = $language->language;
+    $ajax_sort = isset($_GET['ajax_sort']) ? $_GET['ajax_sort'] : 'default';
+    $items = $items = ['content' => '', 'total' => 0];
+    $sort_type = isset($_GET['sort_type']) ? $_GET['sort_type'] : 'topseller';
+    $original_path = '';
+    if(isset($_GET['original_path'])) {
+        $original_path = $_GET['original_path'];
+    }
+    module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+    if (!$toc = igcommerce_utility_load_toc_from_path($original_path, $lang)) {
+        return $items;
+    }
+
+    igcommerce_utility_head_elements($toc, TRUE);
+
+    if (empty($toc->sm_field_kits_list_sort_solr)) {
+        return $items;
+    }
+
+    $target_kits_query = '';
+    $fields = '';
+    $toc_details = array();
+
+    $product_order = array();
+    foreach ($toc->sm_field_kits_list_sort_solr as $target_product) {
+        if (!empty($target_product) && is_numeric($target_product)) {
+            $target_kits_query .= $target_product . ' ';
+            array_push($product_order, $target_product);
+        }
+    }
+    $target_kits_query = 'entity_id:(' . str_replace(' ', ' OR ', trim($target_kits_query)) . ')';
+    $options = array(
+        "sm_product_type" => "1535",
+        "ss_language" => $lang,
+        "bundle" => "product_display",
+        "entity_type" => "node",
+    );
+    if ($sort_type == 'newest') {
+      $sort = 'ds_created DESC';
+    }
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, array(
+        'q' => $target_kits_query,
+        'filters' => $options,
+        'fl' => $fields,
+        'rows' => 300,
+        )
+    );
+    
+    if(isset($sort)) {
+      $filters['sort'] = $sort;
+    }
+        
+    $response = fluke_solr_query($filters);
+    switch ($sort_type) {
+        case 'topseller':
+            $sort = 1;
+            foreach ($product_order as $order) {
+                foreach ($response->response->docs as $article_key => $article_value) {
+                    if ($order == $article_value->entity_id) {
+                        $article_value->sort_order = $sort;
+                        $toc_details[] = $article_value;
+                        $sort++;
+                    }
+                }
+            }
+            break;
+        case 'name':
+            $toc_details = $response->response->docs;
+            usort($toc_details, function($a, $b)
+            {
+                return strcmp(t($a->ss_field_content_title), t($b->ss_field_content_title));
+            });
+            break;
+        default:
+            $toc_details = $response->response->docs;
+            break;
+    }
+
+    $items['total'] = $response->response->numFound;
+    $items['disclaimer'] = isset($toc->sm_disclaimer_description[0])?$toc->sm_disclaimer_description[0]:'';
+    $items['content'] = theme('products',
+        array('items' => $toc_details,
+            'lang' => $lang,
+            'total' => $items['total'],
+            'ajax_sort' => $ajax_sort,
+            'type' => 'kits')
+    );
+
+    return $items;
+}
+
+/**
+ * Returns themed output for top sellers block
+ */
+function igcommerce_utility_product_tocs_build_top_sellers() {
+    global $language;
+    $lang = $language->language;
+    $original_path = '';
+    $items = array();
+    $toc_details = array();
+    $target_top_sellers_query = '';
+    $fields = '';
+    $top_seller = array();
+
+    if(isset($_GET['original_path'])) {
+        $original_path = $_GET['original_path'];
+    }
+
+    module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+    if (!$toc = igcommerce_utility_load_toc_from_path($original_path, $lang)) {
+        return $items;
+    }
+
+    igcommerce_utility_head_elements($toc, TRUE);
+
+    if (empty($toc->sm_toc_top_sellers)) {
+        return $items;
+    }
+
+    $product_order = array();
+    foreach ($toc->sm_toc_top_sellers as $target_product) {
+        if (!empty($target_product) && is_numeric($target_product)) {
+            $target_top_sellers_query .= $target_product . ' ';
+            array_push($product_order, $target_product);
+        }
+    }
+
+    if (empty($toc->sm_field_product_list_sort_solr)) {
+        $parent = fluke_solr_get_parent_lang($lang);
+        if (!empty($toc->sm_field_product_list_sort_solr[$parent])) {
+            $toc_fallback_lang = $parent;
+        }
+        else {
+            $toc_fallback_lang = 'en-us';
+        }
+    } else {
+        $toc_fallback_lang = 'en-us';
+    }
+
+
+    $target_top_sellers_query = 'entity_id:(' . str_replace(' ', ' OR ', trim($target_top_sellers_query)) . ')';
+
+    $options = array(
+        "ss_language" => $lang,
+        "bundle" => "product_display",
+        "entity_type" => "node",
+    );
+
+    $top_query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($top_query,
+        array('q' => $target_top_sellers_query,
+            'filters' => $options,
+            'fl' => $fields,
+            'rows' => 3,
+            )
+    );
+    $response = fluke_solr_query($filters);
+    $sort = 1;
+    foreach ($product_order as $order) {
+        foreach ($response->response->docs as $article_key => $article_value) {
+            if ($order == $article_value->entity_id) {
+                $article_value->sort_order = $sort;
+                $toc_details[] = $article_value;
+                $sort++;
+            }
+        }
+    }
+
+    if($response->response->numFound && count($response->response->numFound) > 0) {
+        $i = 0;
+        foreach ($toc_details as $top_seller_obj) {
+            $top_seller[$i]['url'] = isset($top_seller_obj->url) ? igcommerce_utility_product_tocs_get_url($top_seller_obj) : NULL;
+            $top_seller[$i]['title'] = isset($top_seller_obj->ss_field_content_title) ? $top_seller_obj->ss_field_content_title : NULL;
+
+            $top_seller[$i]['image'] = '';
+            $image_content = NULL;
+            
+            if (!empty($top_seller_obj->is_product_slideshow)) {
+              $slideshow = fluke_solr_get_entity($top_seller_obj->is_product_slideshow, 'node', 'slideshow', $lang);
+              if (!empty($slideshow->sm_field_product_image_desktop[0])) {
+                $image_content = json_decode($slideshow->sm_field_product_image_desktop[0]);
+                $top_seller[$i]['image'] = igcommerce_utility_format_image_top_sellers($image_content->url, $image_content->alt, $image_content->caption);
+              }
+            }
+            $i++;
+        }
+
+        return theme('top_seller', array('items' => $top_seller));
+    }
+}
+
+
+function igcommerce_utility_product_tocs_theme()
+{
+    $module_path = drupal_get_path('module', 'igcommerce_utility_product_tocs');
+    $base = array(
+        'path' => $module_path . "/templates",
+    );
+    return array(
+        'products' => $base + array(
+                'template' => 'igcommerce_utility_product_tocs_block',
+                'variables' => array('items' => NULL, 'type' => NULL, 'too_many_modal' => ''),
+            ),
+        'top_seller' => $base + array(
+                'template' => 'igcommerce_utility_product_top_sellers_block',
+                'variables' => array('items' => NULL),
+            ),
+        'toc_blocks' => $base + array(
+                'template' => 'igcommerce_utility_product_tocs_blocks',
+                'variables' => array('blocks' => NULL, 'accessories_page', NULL),
+                'page_arg' => NULL,
+            ),
+    );
+}
+
+/**
+ * Returns a tabbed block for products, accessories and kits
+ */
+function igcommerce_utility_product_tocs_listings_block() {
+    // Add js for pagination
+    global $language;
+    // Check for valid url and redirect to 404 if not found
+    /* This is handled by default now
+    $url_check = fluke_solr_404_check_from_path(NULL, $language->language);
+    if($url_check == FALSE) {
+        drupal_not_found();
+    }
+    */
+
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_product_tocs') . '/js/igcommerce_utility_product_tocs.js');
+    
+    // This is a hack and needs to be treated somewhere else when there is a chance
+    // We need a way to check if we are on accessories page and hide the other results if need be
+    $accessories_page = FALSE;
+    $blocks = array();
+    $blocks['original_path'] = current_path();
+    $products = array_slice(explode('/', request_uri()), 2, 4, false)[0];
+    if (arg(0) == 'products') {
+        // We want to only show these when we are either on the products pages
+        if(!arg(1) != 'accessories') {
+            $blocks['products_block'] = module_invoke('igcommerce_utility_product_tocs', 'block_view', 'toc_products');
+            $blocks['kit_block'] = module_invoke('igcommerce_utility_product_tocs', 'block_view', 'toc_kits');
+        }
+        $blocks['accessory_block'] = module_invoke('igcommerce_utility_product_tocs', 'block_view', 'toc_accessories');
+        drupal_add_library('system', 'ui.tabs');
+        drupal_add_js('jQuery(document).ready(function(){jQuery("#tabs").tabs();});', 'inline');
+
+        return theme('toc_blocks', array('blocks' => $blocks, 'accessories_page' => $accessories_page));
+    }
+}
+
+function igcommerce_utility_product_tocs_sort() {
+    $type = isset($_GET['prod_type']) ? $_GET['prod_type'] : 'products';
+    switch ($type) {
+        case 'products':
+            $products = igcommerce_utility_product_tocs_build_products(FALSE);
+            $html = $products['content'];
+            break;
+        case 'accessories':
+            $products = igcommerce_utility_product_tocs_build_accessories(array(), FALSE);
+            $html = $products['content'];
+            break;
+        case 'kits':
+            $products = igcommerce_utility_product_tocs_build_kits(FALSE);
+            $html = $products['content'];
+            break;
+    }
+    exit(render($html));
+}
+
+/**
+ * Implements hook_views_post_execute().
+ */
+function igcommerce_utility_product_tocs_views_post_execute(&$view)
+{
+    if ($view->name == "product_toc_solr" || $view->name == "product_page_view")
+    {
+        drupal_static_reset('apachesolr_static_response_cache');
+    }
+}
+
+/**
+ * Format a url for a product display
+ *
+ * @param $product: The product_display document from solr
+ * @return mixed
+ */
+function igcommerce_utility_product_tocs_get_url($product)
+{
+  return $product->ss_path_alias_locale;
+  
+  // OLD CODE
+    $parts = json_decode($product->sm_url_path_builder[0]);
+    $parts = array_reverse($parts);
+    //$path = '/'. $product->ss_language.'/';
+    $path = '';
+    foreach($parts as $key => $part){
+        if($part === 'fluke-ig'){
+            continue;
+        }
+
+        /// This portion of the url will need to be swapped for 'product' (singular)
+        /// Utilize the url builder taxonomy to put in the correct translation of 'product'
+        if($key === 1){
+            $terms = taxonomy_get_term_by_name('product', 'url_builder');
+
+            $term = array_pop($terms);
+
+            global $language;
+
+            $part = !empty($term->field_url_title[$language->language][0]['value'])
+                ? $term->field_url_title[$language->language][0]['value']
+                : $term->field_url_title['en'][0]['value'];
+        }
+
+        $path .= $part.'/';
+    }
+
+    $path .= $product->ss_field_url_title;
+
+    return $path;
+}
+
+
+function igcommerce_utility_product_tocs_get_featured_image($image)
+{
+    if ($image == NULL || $image->url == '')
+    {
+        return igcommerce_utility_determine_toc_image();
+    } else
+    {
+        $image->url = igcommerce_utility_s3_check($image->url);
+        // Images for article listing.
+        if ($images = igcommerce_utility_get_images($image->url)) {
+          // Use a resized image
+          $url = $images['field_large_url'];
+          return igcommerce_utility_determine_toc_image($url, $url, $url, $image->alt);          
+        }
+        
+        return theme('dam_uri_image', (array)$image);
+    }
+}

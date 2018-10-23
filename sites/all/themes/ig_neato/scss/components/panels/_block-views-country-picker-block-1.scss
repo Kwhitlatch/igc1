@@ -1,0 +1,238 @@
+.admin-menu {
+  .language-picker-wrapper {
+    //margin-top: 30px;
+  }
+}
+.shopping-cart {
+  position: relative;
+  @include outer-container(100%);
+}
+//Overflow
+.lang-overflow{
+  overflow: hidden; 
+}
+// Mobile version of the country picker
+// This uses mmenu, so most of the styling is from the mmenu styline in the main
+#country-picker-mobile {
+  display: none;
+  color: $white;
+  z-index: 6;
+  width: 100%;
+  min-width: 100%; //DP.MIG1230
+  background: $country-picker-active-mobile;
+  z-index: 100;
+  // Moving both mmenus under the nav for consistency
+  // Because it is position: fixed, we have to do it this way instead of margin-top.
+  top: 85px;
+  bottom: 0;  
+  height: auto;
+  p {
+    @extend h2;
+    margin: 15px 15px 0;
+  }
+  .mm-panel {
+    padding: 0;
+    padding-bottom: 5.8rem; // Allows scrolling long lists.
+  }
+  a {
+    &.mm-subopen {
+      //background: $country-picker-inactive;
+      width: 100%;
+      @include icon(after, angle-right);
+      &:before {
+        color: $white;
+      }
+      &:after {
+        border: 0px;
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+        font-size: 20px;
+        line-height: 13px;
+        padding: 0;
+        margin: 0;
+      }
+      &:active {
+        background: rgba(0, 0, 0, 0.25); 
+      }
+    }
+    &.mm-subclose {
+      font-family: $heading-font-family;
+      font-weight: bold;
+      color: $white;
+      font-size: 2rem;
+      padding: 20px;
+      @include icon(before, angle-left);
+      &:before {
+        border-color: transparent; //Removed gray bracket before < in header
+        font-size: 2.5rem;
+        font-weight: bold;
+        left: 0;
+        margin: 0;
+        position: absolute;
+        top: 20px;
+        transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
+      }
+    }
+  }
+  &.mm-current {
+    background: rgba($background-color-mid, .28);
+  }
+  ul {
+    &.mm-list {
+      top: 40px; // Hides the title
+      padding: 1em;
+      font-size:$nav_font_size; // we have to increase specifity to override the css added by mmenu core jquery
+      padding-bottom: 5.8rem; // Allows scrolling long lists.
+    }
+    &.mm-opened {
+      padding: 1em;
+    }
+    li {
+      background: $gray-3; //rgba($background-color-mid, .28);
+      border-bottom: 1px solid $gray-darkest;
+      a {
+        padding: 12px 17px;
+      }
+      a:after {
+        border-bottom-width: 0;
+        margin: 0;
+      }
+      &.lang-country-set {
+        border-bottom: 1px solid $gray-darkest;
+        font-size:$nav_font_size; // we have to increase specifity to override the css added by mmenu core jquery
+        display: flex;
+        justify-content: space-between;
+        margin: 0;
+        padding: 1em;
+        width: 100%;
+        &:after {
+          margin: 0;
+        }
+        .country {
+          padding: 0;
+          width: 50%;
+        }
+        a.locale {
+          // Link covers Country & flag to the left
+          text-align: right;
+          width: 100%;
+          position: absolute;
+          padding: 0 28px;
+          right: 0;
+        }
+      }
+      ul {
+        li {
+          display: flex;
+          justify-content: space-between;
+          padding: 1em;
+          width: 100%;
+        }
+      }
+      &.mm-subtitle {
+        background: none;
+        display: block;
+        text-align: right;
+      }
+    }
+  }
+}
+
+// Static html version of the Desktop country picker
+#flat-country-picker-block {
+  background: $country-picker-active-desk;
+  color: $background-color-light;
+  display: none;
+  left: 0;
+  margin-bottom: 0;
+  min-height: 350px;
+  padding: 0;
+  position: relative;
+  width: 100%;
+  z-index: 10;
+  a {
+    color: $gray-light;
+    &:hover,
+    &:active {
+      color: $special-action-color;
+    }
+    &:active {
+      font-weight: bold;
+    }
+  }
+  .chosen-container {
+    display: none!important;
+  }
+  .flat-country-picker {
+    display: flex;
+    // only affects desktop md 
+    @include media(max-width $screen-lg) {
+      margin: 0 1.5rem;
+    }
+    @include outer-container();
+    .continent-list {
+      display: inline-block;
+      width: 200px;
+      margin-right: 75px;
+      > p {
+        @extend h2;
+        font-size: 1.6rem;
+        margin: 10px 0;
+      }
+      ul.accordion-tabs-minimal {
+        padding: 0 15px 0 0;
+        margin: 0;
+        list-style-type: none;
+        .tab-header-and-content {
+          padding: .5rem 0;
+          &:not(:last-child) {
+            border-bottom: 2px solid $gray-medium;
+          }
+          a {
+            color: $gray-light;
+            &.is-active {
+              color: $white;
+              font-weight: 700;
+            }
+          }
+        }
+      }
+    }
+    .tab-content {
+    position: absolute;
+      top: 0;
+      right: 10px;
+      display: none;
+      &.is-open {
+        display: flex;
+        align-self: flex-end;
+        @include media(min-width $screen-lg) {
+          width: 70%;
+        }
+        @include media(min-width 2000px) {
+          width: 60%;
+        }
+      }
+      flex-wrap: wrap;
+      height: 1.5rem; // This keeps the vert-height of each country consistent
+      margin: 3em 0;
+      width: 75%;
+      .country-group {
+        display: inline-block;
+        font-size: $base-font-size;
+        padding: 8px 8px 8px 0;
+        width: 33%;
+      }
+      // h3 {
+      //   display: inline;
+      //   font-family: $base-font-family;
+      //   font-size: $base-font-size;
+      //   font-weight: normal;
+      // }
+      .language-set {
+        display: inline;
+      }
+    }
+  }
+}

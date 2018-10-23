@@ -1,0 +1,15 @@
+name = DAM URI
+description = The URI to access the asset from the DAM eco system.
+package = DAM
+core = 7.x
+dependencies[] = ctools
+dependencies[] = views
+dependencies[] = form_options_attributes
+dependencies[] = dam_api
+dependencies[] = dam_form
+dependencies[] = dam_paging
+
+stylesheets[all][] = css/dam_uri.css
+
+scripts[] = js/slideshow.js
+scripts[] = js/dam_uri.js

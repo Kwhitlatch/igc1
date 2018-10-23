@@ -1,0 +1,6 @@
+name = IG Commerce Utility - Events
+description = Utility module for IG commerce focused on Events only.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = igcommerce_utility

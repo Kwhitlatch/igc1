@@ -1,0 +1,92 @@
+diff --git a/apachesolr_views_query.inc b/apachesolr_views_query.inc
+index 78194d6..c070948 100644
+--- a/apachesolr_views_query.inc
++++ b/apachesolr_views_query.inc
+@@ -38,6 +38,9 @@ class apachesolr_views_query extends views_plugin_query {
+    * Builds what is necessary prior to executing the query.
+    */
+   public function build(&$view) {
++    // Store the view in the object to be able to use it later.
++    $this->view = $view;
++
+     $view->init_pager();
+ 
+     // Let the pager modify the query to add limits.
+@@ -51,8 +54,8 @@ class apachesolr_views_query extends views_plugin_query {
+       $params['q'] = $this->params['q'];
+     }
+ 
+-    $params['rows'] = $this->pager->options['items_per_page'];
+-    $params['start'] = $this->pager->current_page * $this->pager->options['items_per_page'];
++    $params['rows'] = $this->limit;
++    $params['start'] = $this->offset;
+ 
+     // If we display all items without pager.
+     if ($params['rows'] == 0) {
+@@ -144,8 +147,7 @@ class apachesolr_views_query extends views_plugin_query {
+       apachesolr_search_add_boost_params($query);
+ 
+       // Execute search.
+-      list($final_query, $response) = apachesolr_do_query($query);
+-      apachesolr_has_searched($solr->getId(), TRUE);
++      $response = $query->doQuery();
+ 
+       if ($response) {
+         // Store results.
+@@ -154,8 +156,8 @@ class apachesolr_views_query extends views_plugin_query {
+         // Store apachesolr cached response.
+         $this->apachesolr_response = $response;
+ 
+-        // Store the results.
+-        $this->pager->total_items = $view->total_rows = $this->apachesolr_response->response->numFound;
++        $total_items = $response->response->numFound - $this->pager->get_offset();
++        $this->pager->total_items = $view->total_rows = $total_items;
+         $this->pager->update_page_info();
+       }
+     }
+diff --git a/apachesolr_views_solr_base_query.inc b/apachesolr_views_solr_base_query.inc
+index 619d8fd..c66ca0d 100644
+--- a/apachesolr_views_solr_base_query.inc
++++ b/apachesolr_views_solr_base_query.inc
+@@ -65,4 +65,41 @@ class ApachesolrViewsSolrBaseQuery extends SolrBaseQuery {
+   protected function parseSortString() {
+     // Do nothing.
+   }
++
++  /**
++   * Lighter replacement for the apachesolr_do_query() call for views queries.
++   */
++  public function doQuery() {
++    if (module_exists('facetapi')) {
++      // Gets enabled facets, adds filter queries to $params.
++      $adapter = facetapi_adapter_load($this->getSearcher());
++      if ($adapter) {
++        // Realm could be added but we want all the facets.
++        $adapter->addActiveFilters($this);
++      }
++    }
++
++    foreach (module_implements('apachesolr_query_prepare') as $module) {
++      $function_name = $module . '_apachesolr_query_prepare';
++      $function_name($this);
++    }
++
++    // This hook allows modules to modify the query and params objects.
++    drupal_alter('apachesolr_query', $this);
++
++    if ($this->abort_search) {
++      // A module implementing HOOK_apachesolr_query_alter() aborted the search.
++      return NULL;
++    }
++
++    $keys = $this->getParam('q');
++    // We must run htmlspecialchars() here since converted entities are in the index.
++    // and thus bare entities &, > or < won't match. Single quotes are converted
++    // too, but not double quotes since the dismax parser looks at them for
++    // phrase queries.
++    $keys = htmlspecialchars($keys, ENT_NOQUOTES, 'UTF-8');
++    $keys = str_replace("'", '&#039;', $keys);
++
++    return $this->search($keys);
++  }
+ }

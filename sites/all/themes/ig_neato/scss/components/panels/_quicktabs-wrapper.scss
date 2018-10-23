@@ -1,0 +1,68 @@
+// This is used on /training/webinars.  If it's used on other pages, please 
+// leave a comment here. (It was origionally setup for the quicktabs-arrows theme,
+// but I backed that off to make it more flexible.  -rrn 12-28-17)
+// Product TOC's have their own set of tab styling
+// TODO: consolidate quicktabs styling into only this sheet.
+.quicktabs-wrapper {
+  margin-top: 1rem;
+  min-height: 35rem; // Adds additional space when a quicktab has no item., mig2188
+  @include media($screen-sm) {
+    margin-top: 6.5rem;
+  }
+  // This was added to remove bullets /support/safety-notices 
+  // there may be unintended consequences elsewhere. RRN 3-19-18
+  @extend %all-list-unstyled;
+  ul li {
+    margin: 0;
+    padding: 0;
+  }
+  ul.quicktabs-tabs {
+    padding: 0 0 0 0 !important; // Overrides the quicktabs default styling
+    @include media($screen-xs) {
+      display: flex;
+      justify-content: flex-start;
+    }
+    li {
+      display: inline-block;
+      width: 100%;
+      @include media($screen-xs) {
+        flex: 1;
+        display: flex; //Keeps the child anchors the same height when you have tabs with long text.
+      }
+      margin: 0;
+      padding: 0;
+      border-bottom: 4px solid white;
+      &.active a{
+        background: none!important;
+        border-bottom: 4px solid $action-color;
+      }
+      a {
+        display: block;
+        text-align: center;
+        padding-bottom: .5em;
+        margin-bottom: -4px;
+        font-family: $heading-font-family;
+        color: $gray-4;
+        font-size: 16px;
+        font-weight: 100;
+        padding: 2px 0 4px;
+        text-decoration: none;
+        background: none !important; // Overrides the quicktabs default styling, which adds an arrow image.
+        white-space: pre-wrap; // Wraps long text strings.
+        width: 100%;
+        @include media(max-width 300px) {
+          letter-spacing: -1px;
+        }
+        @include media($phone) {
+          font-size: 23px;
+          padding: 2px 10px 4px;
+        }
+        &:hover {
+          color: $base-font-color;
+          text-decoration: none;
+          background: none;
+        }
+      }
+    }
+  }
+}

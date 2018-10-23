@@ -1,0 +1,6 @@
+name = IG Commerce Utility - Language Picker
+description = Utility module for IG commerce to create language picker blocks.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = igcommerce_utility

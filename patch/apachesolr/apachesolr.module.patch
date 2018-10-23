@@ -1,0 +1,19 @@
+Index: sites/all/modules/apachesolr/apachesolr.module
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sites/all/modules/apachesolr/apachesolr.module	(revision dab5d8f2285d15f38603558a9b115a4b4c40da6b)
++++ sites/all/modules/apachesolr/apachesolr.module	(revision )
+@@ -986,8 +986,9 @@
+     try {
+       $solr = apachesolr_get_solr($env_id);
+       if ($optimize_interval && ($time - $last > $optimize_interval)) {
+-        $solr->optimize(FALSE, FALSE);
++          // Cip: Better to disable optimization altogether
++          //$solr->optimize(FALSE, FALSE);
+-        apachesolr_environment_variable_set($env_id, 'apachesolr_last_optimize', $time);
++          apachesolr_environment_variable_set($env_id, 'apachesolr_last_optimize', $time);
+         apachesolr_set_last_index_updated($env_id, $time);
+       }
+       // Only clear the cache if the index changed.

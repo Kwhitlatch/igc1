@@ -1,0 +1,85 @@
+// This is the search box that drops down from the main nav.  Most of 
+// the search box styling lives in _search.scss
+#main-search {
+  display: none;
+  &.active {
+    display: block;
+  }
+  background-color: $gray-e;
+  padding: 1rem 2.5rem;
+  form {
+    @include media($desk-lg) {
+      @include shift(2);
+      @include span-columns(8);
+    }
+  }
+}
+
+// Searchbox labels appear in main nav dropdown, and two boxes on the search page itself.
+label[for="edit-facets"],
+label[for="edit-facets--2"], 
+label[for="edit-facets--3"] {
+  clear: left;
+  display: inline-block;
+  float: left;
+  font-weight: 400;
+  margin-bottom: 0.4em;
+  margin-top: 0.4em;
+  padding-right: 1.5rem;
+}
+  
+  // Checkboxs found in search in header and search page.
+  //#edit-facets = search dropdown in navigation on most pages
+  //#edit-facets--2 = Search results search box, ex: en-us/search/page?keyword=700#
+  //#edit-facets--3 = Search dropdown on pages that also contain a search box, ex: en-us/search/page?keyword=700#
+  #edit-facets, 
+  #edit-facets--2, 
+  #edit-facets--3 { 
+    clear: both;
+    @include media($screen-sm) {
+      clear: inherit;
+    }
+    position: relative;
+    .form-type-checkbox {
+      display: block;
+      float: initial;
+      padding-right: $spacing-1;
+      @include media($phone ) {
+        display: inline-block;
+        float: left;
+      }
+      .form-checkbox {
+        margin-bottom: 5px;
+      }
+    }
+   #edit-facets-search {
+    display: none;
+   }
+   // MIG2045: Search label made the same size as other search options.
+   // .form-item-facets-search label{
+   //  font-size: $font-size-xs;
+   // } 
+ }
+
+ //Search page
+.pane-custom-faceted-search {
+  //Search input 
+  #edit-keyword-wrapper {
+    @include span-columns(12);
+    @include media($phone){
+      @include span-columns(7); 
+    }
+    input.form-text {
+      width: 100%;
+    }
+  }
+  .views-submit-button{
+    @include span-columns(2);
+  }
+  .views-exposed-form label {
+    font-weight: 400;
+  }
+  .form-item-sort-order {
+    padding-top: $spacing-1;
+  }
+}

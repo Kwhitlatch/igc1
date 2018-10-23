@@ -1,0 +1,17 @@
+// This is a subsection of #fluke-product-display-key-features, it's only a link to the manuals section on the reviews tab.
+// The javascript that governs the tab/accordion functionality when this is clicked can be found in
+// /sites/all/modules/custom/igcommerce_utility/modules/igcommerce_utility_products/js/igcommerce_utility_products.js
+#fluke-product-display-manuals a {
+  display: inline-block;
+  float: left;
+  text-decoration: none;
+  width: 100%;
+  @extend %m-b-1;
+  @include media($screen-sm) {
+    padding-right: 1.5rem; // puts space between manuals and safety icons
+    width: auto;
+  }
+  span {
+    padding-right: 1rem;
+  }
+}

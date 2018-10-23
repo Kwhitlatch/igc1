@@ -1,0 +1,42 @@
+<?php
+
+
+function behat_shell_menu() {
+  $items = array();
+
+  $items['admin/config/user-interface/behat-install'] = array(
+    'title' => 'Setup Behat On Pantheon',
+    'description' => 'Setting up behat in pantheon system',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_behat_shell_admin'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM
+    );
+  return $items;
+}
+
+function _behat_shell_admin() {
+  $form = array();
+
+  $form['composer_install'] = array(
+    '#type' => 'submit',
+    '#value' => t('Install Composer'),
+    '#submit' => array('_composer_install_submit'),
+  );
+
+  $form['behat_install'] = array(
+    '#type' => 'submit',
+    '#value' => t('Install Behat'),
+    '#submit' => array('_behat_install_submit'),
+  );
+  return $form;
+}
+
+function _composer_install_submit($form, &$form_state) {
+  shell_exec('composer update');
+  drupal_set_message("Composer installed successfully");
+}
+
+function _behat_install_submit($form, &$form_state) {
+  drupal_set_message(t('The form has been submitted.'));
+}

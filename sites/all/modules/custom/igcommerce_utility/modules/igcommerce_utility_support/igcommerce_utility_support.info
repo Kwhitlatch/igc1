@@ -1,0 +1,4 @@
+name = IG Commerce Utility - Support
+description = Utility module for IG commerce focused on Support Pages only.
+core = "7.x"
+package = IG Commerce

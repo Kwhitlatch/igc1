@@ -1,0 +1,7 @@
+name = IG Commerce Utility - Articles
+description = Utility module for IG commerce focused on Articles only.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = igcommerce_utility
+scripts[] = js/igcommerce_utility_articles.js

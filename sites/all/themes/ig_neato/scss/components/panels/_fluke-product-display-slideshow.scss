@@ -1,0 +1,266 @@
+// Governs overview slideshow and flexsliders in related accessories & related products
+// .ig-product-flexslider is for the related flexsliders. Some of the section 
+// unique styling is in different sass files.
+// Formerly wrapped by div[class*='pane-igcommerce-utility-products-product-slideshow']
+
+#fluke-product-display-slideshow {
+  #ig-product-flexslider {
+     z-index: 0;
+    @include media($screen-md) {
+      display: -ms-inline-grid;
+      display: inline-grid;
+      -ms-grid-columns: 71px 1fr;
+        grid-template-columns: 71px 1fr;
+      -ms-grid-rows: auto;
+        grid-template-rows: auto;
+      @include icon(after, zoom-in) {
+        color: $gray-lighter;
+        font-size: 2rem;
+        right: 20px;
+        position: absolute;
+        bottom: 20px;
+        z-index: 3;
+      }
+      .slides {
+        -ms-grid-column: 2;
+        grid-column-start: 2;
+        -ms-grid-row: 1;
+        grid-row: 1;
+      }
+      .flex-control-nav.flex-control-thumbs {
+        -ms-grid-column: 1;
+        grid-column-start: 1;
+        -ms-grid-row: 1;
+        grid-row: 1;
+        display: block;
+        margin-top: 0;
+        li {
+          float: left;
+          width: auto;
+          max-width: 71px;
+          width: auto;
+          max-height: 49px;
+          height: 49px;
+          margin-bottom: 10px;
+          &:last-child {
+            margin-right: 5px;
+          }
+        }
+        img {
+          height: 100%;
+        }
+      }
+    } // end desktop only styling
+  }
+  .flex-control-nav {
+    display: flex;
+    justify-content: flex-start;
+    .flex-active {
+      box-shadow: 0 -1px 0 $color-primary;
+    }
+    ul {
+      padding-left: 0; //Removed the white padding to the left of the image.
+    }
+    li {
+      max-width: 25%;
+      margin-right: 5px;
+      border: 1px solid $gray-lighter;
+      @include media($screen-sm) {
+        max-width: calc(100%/6);
+      }
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+  
+  .flex-direction-nav {
+    display: block;
+    // The nav structure is hidden on desktop so as not to interfere with the zoom
+    @include media($screen-md) {
+      display: none;
+    }
+    .flex-nav-next,
+    .flex-nav-prev {
+      a {
+        font-size: 0!important;
+      }
+    }
+  }
+
+}
+
+.flex-container a:hover, 
+.flex-slider a:hover {
+  outline: medium none;
+}
+
+.slides, .slides > li,
+.flex-control-nav, .flex-direction-nav {
+  list-style: outside none none;
+  margin: 0;
+  padding: 0;
+}
+.ig-product-flexslider,
+.ig-overview-flexslider {
+  margin: 0;
+  padding: 0;
+  color: green;
+ // z-index: 1;
+  @include media($tablet) {
+    //z-index: auto; // z-index 1 will hide the zoomer on desktop
+  }
+}
+.ig-product-flexslider .slides > li,
+.ig-overview-flexslider .slides > li {
+  backface-visibility: hidden;
+  display: none;
+}
+.ig-product-flexslider .slides img,
+.ig-overview-flexslider .slides img {
+  display: block;
+  width: auto;
+  margin-bottom: 5px; //Spacing above caption
+  // If a smaller image is loaded in the dam by mistake, this will let it 
+  // fail gracefully.
+  margin-left: auto;
+  margin-right: auto;
+}
+// Fill the thumbnail nav. Prevents whitspace under image and before grey border.
+ol.flex-control-nav img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+    max-height: 65px; //Prevents extra large thumbnails on load.
+  }
+  .ig-product-flexslider .slides::after,
+  .ig-overview-flexslider .slides::after {
+    clear: both;
+    content: " ";
+    display: block;
+    height: 0;
+    line-height: 0;
+    visibility: hidden;
+  }
+  html[xmlns] .ig-product-flexslider .slides,
+  html[xmlns] .ig-overview-flexslider .slides{
+    display: block;
+  }
+  // * html .ig-product-flexslider .slides { //Removed the star selector - this may have been a legacy IE fix?
+ .ig-product-flexslider .slides {
+    height: 1%;
+  }
+  .no-js .ig-product-flexslider .slides > li:first-child,
+  .no-js .ig-overview-flexslider .slides > li:first-child {
+    display: block;
+  }
+  .flex-direction-nav a {
+    text-decoration: none;
+    display: block;
+    width: 55px;
+    height: 55px;
+    margin: 0;
+    position: absolute;
+    top: 35%;
+   // z-index: 10;
+    overflow: hidden;
+    cursor: pointer;
+  color: transparent; // Changed from White to remove the text "Previous" and "Next"
+  text-shadow: none;
+  transition: all 0.3s ease-in-out;
+  background-color: $gray-c;
+}
+.flex-direction-nav a:hover {
+  background-color: #222;
+}
+.flex-nav-prev a {
+  color: transparent; // Changed from White to remove the text "Previous" and "Next"
+}
+// This prevents "bouncing" when hovering over where the button is hiding
+// outside of the div.
+@include media($tablet) {
+  .ig-related-flexslider,
+  .ig-product-flexslider {
+    .flex-direction-nav .flex-prev,
+    .flex-direction-nav .flex-next {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    &:hover .flex-direction-nav {
+      .flex-prev,
+      .flex-next {
+        visibility: visible;
+        pointer-events: initial;
+      }
+    }
+  }
+}
+.ig-product-flexslider:hover .flex-direction-nav .flex-prev,
+.ig-overview-flexslider:hover .flex-direction-nav .flex-prev,
+.ig-related-flexslider:hover .flex-direction-nav .flex-prev {
+  opacity: 1.0;
+  left: 5px;
+}
+.ig-product-flexslider:hover .flex-direction-nav .flex-next,
+.ig-overview-flexslider:hover .flex-direction-nav .flex-next,
+.ig-related-flexslider:hover .flex-direction-nav .flex-next {
+  opacity: 1.0;
+  right: 5px;
+}
+.flex-direction-nav a.flex-next:before {
+  color: #fff;
+  content: '\276F';
+  display: inline-block;
+  font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+  font-size: 26px;
+  padding-right: 20px;
+  padding-top: 8px;
+  text-shadow: none;
+}
+.flex-direction-nav a.flex-prev:before {
+  color: #fff;
+  content: '\276E';
+  display: inline-block;
+  font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+  font-size: 26px;
+  padding-left: 20px;
+  padding-top: 8px;
+  text-shadow: none;
+}
+
+.ig-product-flexslider,
+.ig-overview-flexslider {
+  margin: 0 0 60px;
+  border: none;
+  position: relative;
+  //zoom: 1;
+  border-radius: 0;
+  box-shadow: none;
+}
+.ig-overview-flexslider {
+  clear: both;
+  margin: 0;
+}
+.flex-control-thumbs {
+  margin: 10px 0 0;
+}
+
+.ig-related-flexslider {
+  li {
+    @extend %tile-product-expanded;
+    padding: 0;
+    padding-right: 2em;
+    img {
+      background: $white;
+    }
+  }
+  .flex-direction-nav {
+    .flex-nav-next,
+    .flex-nav-prev {
+      a {
+        font-size: 0!important;
+        top: 30%;
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+%test-backgrounds,
+.test-backgrounds{
+  background-color: rgba(green, 50%);
+
+
+  @include media($tablet){
+    background-color: rgba(orange, 50%);
+
+  }
+  @include media($desk){
+    background-color: rgba(purple, 50%);
+
+  }
+  @include media($desk-xl){
+    background-color: rgba(blue, 50%);
+
+  }
+}

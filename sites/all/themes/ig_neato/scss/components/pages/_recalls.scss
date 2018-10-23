@@ -1,0 +1,36 @@
+//* The article and Recalls page use a view to populate the sidebar nav
+//* with a list of articles. The class is added via the view, along
+//* with the hidden-xs & hidden-sm tags.
+//*/
+//.section-side-navbar ul {
+//  font-family: "Roboto Slab", "Arial Black", serif;
+//  font-size: 17px;
+//  padding-left: 0px;
+//  list-style: none;
+//}
+//.section-side-navbar ul li {
+//  border: 0;
+//  border-bottom: 1px solid #ccc;
+//  padding: 15px 0;
+//}
+//.section-side-navbar ul li:last-child {
+//  border-bottom: none;
+//}
+//.section-side-navbar a {
+//  color: #222;
+//}
+//.section-side-navbar a:hover {
+//  text-decoration: none;
+//  color: #003b78;
+//}
+/**
+ * Adds row padding and dividing lines between articles/recalls
+ * on the recalls and articles toc page.
+ */
+//.view-article .row {
+//  border-bottom: 1px solid #efefef;
+//  padding: 30px 0;
+//}
+//.view-article.views-row-last .row {
+//  border-bottom: none;
+//}

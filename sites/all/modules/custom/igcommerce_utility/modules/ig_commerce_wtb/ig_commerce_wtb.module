@@ -1,0 +1,997 @@
+<?php
+
+
+function ig_commerce_wtb_form($form, &$form_state) {
+  drupal_page_is_cacheable(FALSE);
+
+  // Handle errors here in the form rather with the default drupal behavior
+  if (isset($form_state['validate_errors'])) {
+    foreach ($form_state['validate_errors'] as $validate_error) {
+      form_set_error($validate_error['element'], $validate_error['message']);
+    }
+
+    unset($form_state['validate_errors']);
+  }
+
+  global $language;
+  $lang = $language->language;
+
+  $regions = ig_commerce_wtb_region_settings();
+
+  $region_settings = $regions[$language->language];
+
+  $path = drupal_get_path('module', 'ig_commerce_wtb');
+
+  $form['#attached']['js'] = [$path . '/js/fluke-wtb.js'];
+
+  // allow pre-populating the drop downs with a from_product attribute
+  if (isset($_GET['from'])) {
+    $default_product = NULL;
+    $default_category = NULL;
+    _wtb_set_defaults_from_product_referrer($form_state, $default_product, $default_category);
+  }
+
+  //Determine which elements to reset based on the triggering element
+  if (isset($form_state['triggering_element'])) {
+    $form_parts = ['country', 'category', 'product', 'region', 'type', 'city'];
+
+    foreach ($form_parts as $key => $part) {
+      unset($form_parts[$key]);
+      if ($form_state['triggering_element']['#name'] === $part) {
+        break;
+      }
+
+    }
+    $form_parts = array_values($form_parts); // reset the array keys
+  } else {
+    $form_parts = [];
+  }
+
+  $categories = [0 => t("Select product category")];
+  $categories += ig_commerce_wtb_categories($lang, $form_state);
+
+  if(!empty($default_category) && empty($categories[$default_category])){
+    // Category may be an accessory which isn't displayed in the dropdown, unset the default category and product
+    unset($default_category);
+    unset($default_product);
+    unset($form_state['values']['product']);
+    unset($form_state['values']['category']);
+  }
+
+  $query = fluke_solr_get_connection();
+
+  $solr_cat_field = 'sm_product_category_names';
+
+  $lang = $language->language;
+
+  $query->addFilter('ss_language', $lang);
+  $query->addFilter('bs_status', TRUE);
+
+  // If the default category is actually a sub category set it to the parent instead
+  if (!empty($default_category)) {
+    foreach ($form_state['sub_categories'] as $parent => $children) {
+      if (in_array($default_category, $children)) {
+        $form_state['values']['category'] = $parent;
+        $default_category = $parent;
+      }
+    }
+  }
+
+  if (!empty($form_state['values']['category'])) {
+    $selected_cat = $form_state['values']['category'];
+
+    // check if it is one of the categories with sub categories
+    if (!empty($form_state['sub_categories'][$selected_cat])) {
+      $cat_filter = '(';
+
+      $cat_filters[] = '"' . $selected_cat . '"';
+      foreach ($form_state['sub_categories'][$selected_cat] as $sub_category) {
+        $cat_filters[] = '"' . $sub_category . '"';
+      }
+      $cat_filter .= implode(' OR ', $cat_filters);
+
+      $cat_filter .= ')';
+    } else {
+      $cat_filter = $selected_cat;
+    }
+
+    $query->addFilter($solr_cat_field, $cat_filter);
+
+  }
+
+  $query->addFilter('bundle', 'product_display');
+
+  // Exclude products without a where to buy category as they won't produce results
+  $query->addFilter('sm_product_wtb_category_id', "['' TO *]");
+
+  $query->addParam('rows', 500);
+
+  $query->setSolrsort('ss_field_content_title', 'asc');
+
+  $query->addParam('fl', 'entity_id,label,ss_field_content_title,tm_alerts,sm_product_category_names');
+
+  $query->addParam('facet', 'true');
+
+  $query->addParam('facet.field', $solr_cat_field);
+
+  $results = $query->search();
+
+  // Save the facet results from the first query so that we can determine which categories should be left off the list
+  if (!isset($form_state['initial_category_facets'])) {
+    $form_state['initial_category_facets'] = $results->facet_counts->facet_fields->sm_product_category_names;
+  }
+
+  $form['form-section'] = [
+    '#prefix' => '<div id="form-section-outer"><div id="form-section-inner">',
+    '#suffix' => '</div></div>',
+  ];
+
+  $control_counter = 1;
+
+  if (!empty($region_settings['country'])) {
+    _wtb_country_section($form, $form_state, $region_settings);
+
+    $control_counter++;
+  }
+
+  $form['form-section']['category'] = [
+    '#title' => t($control_counter . '. Select a Fluke product line:'),
+    '#type' => 'select',
+    '#options' => $categories,
+    '#attributes' => array('class' => array('container-inline')),
+    '#prefix' => '<div id="wtb-category-wrapper" class="wtb-wrapper">',
+    '#suffix' => '</div>',
+    '#ajax' => [
+      'callback' => 'ig_commerce_wtb_ajax',
+      'wrapper' => 'ig-commerce-wtb-form',
+    ],
+  ];
+
+  if (in_array('category', $form_parts)) {
+    $form['form-section']['category']['#default_value'] = 0;
+  }
+
+  $form_parts[] = 'category';
+
+  $control_counter++;
+
+  if (!empty($default_category)) {
+    $form['form-section']['category']['#default_value'] = $default_category;
+  }
+
+  $products = [];
+
+  foreach ($results->response->docs as $doc) {
+    // Only include products that have no alerts, or that don't have a discontinued alert
+    // Recalled products should be included
+    $include = TRUE;
+    if (!empty($doc->tm_alerts)) {
+      $alerts = json_decode($doc->tm_alerts[0], TRUE);
+
+      if (!empty($alerts['tid'])) {
+        foreach ($alerts['tid'] as $alert_id) {
+          if ($alert_id == '1536') {
+            $include = FALSE;
+          }
+        }
+      }
+    }
+
+    if ($include) {
+      $products[$doc->entity_id] = $doc;
+      if (!empty($doc->sm_product_category_names)) {
+        foreach ($doc->sm_product_category_names as $category_name) {
+          $product_categories[$category_name] = $category_name;
+        }
+      }
+    }
+  }
+
+  // Remove categories with no products
+  foreach ($form['form-section']['category']['#options'] as $key => $value) {
+    if (!$key) {
+      continue;
+    }
+    if (empty($form_state['initial_category_facets']->$key)) {
+      // If we don't have a facet count then leave it out
+      unset($form['form-section']['category']['#options'][$key]);
+    }
+  }
+
+  $product_options = [];
+  if (isset($form_state['values']['category'])) {
+    foreach ($products as $entity_id => $product) {
+      $product_options[$entity_id] = html_entity_decode($product->ss_field_content_title);
+    }
+  }
+
+  $form_state['product_options'] = $product_options;
+
+  asort($product_options);
+
+  $product_options = [0 => t('Select product')] + $product_options;
+
+  $form['form-section']['product'] = [
+    '#title' => t($control_counter . '. Select a Fluke product:'),
+    '#type' => 'select',
+    '#attributes' => array('class' => array('container-inline')),
+    '#prefix' => '<div id="wtb-product-wrapper" class="wtb-wrapper">',
+    '#suffix' => '</div>',
+    '#options' => $product_options,
+  ];
+  $control_counter++;
+
+  if (in_array('product', $form_parts)) {
+    $form['form-section']['product']['#default_value'] = 0;
+    if ($form_parts[0] !== 'product') {
+      $form['form-section']['product']['#options'] = [0 => t('Select product')];
+    }
+  }
+
+  if ($region_settings['region']) {
+    $form['form-section']['product']['#ajax'] = [
+      'callback' => 'ig_commerce_wtb_ajax',
+      'wrapper' => 'ig-commerce-wtb-form'
+    ];
+  }
+
+  if (!empty($default_product)) {
+    $form['form-section']['product']['#default_value'] = $default_product;
+  }
+
+  $country = NULL;
+  if (!empty($form_state['values']['country'])) {
+    $country = $form_state['values']['country'];
+  }
+
+  $product = NULL;
+  if (!empty($form_state['values']['product'])) {
+    $product = $form_state['values']['product'];
+  }
+
+  $region = NULL;
+  if (!empty($form_state['values']['region']) && !in_array('region', $form_parts)) {
+    $region = $form_state['values']['region'];
+  }
+
+
+  //Don't search distributors until they've selected a product
+  if ($product) {
+    $distributor_results = ig_commerce_distributor_query($country, $product, $region, NULL);
+
+  } else {
+    $distributor_results = NULL;
+  }
+
+  if ($region_settings['region']) {
+    if(in_array('region', $form_parts)){
+      unset($form_state['region_options']);
+    }
+
+    _wtb_regions_section($form, $form_state, $country, $control_counter, $distributor_results);
+
+    if (in_array('region', $form_parts) && $country != 'lx') {
+      $form['form-section']['region']['#default_value'] = 0;
+    }
+
+    $control_counter++;
+  }
+
+  if ($region_settings['type']) {
+    // type dropdown for DE
+
+    _wtb_type_section($form, $form_state, $control_counter, $distributor_results);
+
+    if (in_array('type', $form_parts)) {
+      $form['form-section']['type']['#default_value'] = 0;
+      if ($form_parts[0] !== 'type') {
+        $form['form-section']['type']['#options'] = [0 => t('Please select value')];
+      }
+    }
+  }
+
+  // City filter for Canada
+
+  if (in_array($lang, wtb_city_locales())) {
+
+    _wtb_city_section($form, $form_state, $control_counter, $distributor_results);
+
+
+    if (in_array('city', $form_parts)) {
+      $form['form-section']['city']['#default_value'] = 0;
+      //$form['form-section']['city']['#options'] = [0 => t('Select city')];
+    }
+  }
+
+  $form['form-section']['search'] = [
+    '#type' => 'submit',
+    '#value' => t('Search'),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>'
+  ];
+
+  // Custom error display
+  $errors = form_get_errors();
+
+  $form['errors'] = [
+    '#markup' => '',
+    '#prefix' => '<div id="wtb-error-display">',
+    '#suffix' => '</div>',
+  ];
+
+  if (count($errors)) {
+    $form['errors']['#markup'] .= '<ul>';
+
+    foreach ($errors as $element => $error) {
+      $form['errors']['#markup'] .= "<li>$error</li>";
+
+      $form['form-section'][$element]['#attributes']['class'][] = 'error';
+    }
+
+    $form['errors']['#markup'] .= '</ul>';
+  }
+
+  form_clear_error();
+
+  //Since form_set_error calls drupal_set_message we will want to clear the message queue as well
+  $msgs = drupal_get_messages();
+
+
+  if (isset($form_state['results'])) {
+    _wtb_form_results_section($form, $form_state, $products);
+  }
+
+  return $form;
+}
+
+
+function _wtb_set_defaults_from_product_referrer(&$form_state, &$default_product, &$default_category) {
+  global $language;
+  $lang = $language->language;
+
+  $query = fluke_solr_get_connection();
+
+  $query->addFilter('bundle', 'product_display');
+  $query->addFilter('ss_field_url_title', $_GET['from']);
+
+  $query->addParam('rows', 200);
+  $query->addParam('fl', 'entity_id,label,sm_field_content_title,sm_product_category_names');
+
+  $query->addFilter('ss_language', $lang);
+
+  $results = [];
+  try {
+    $results = $query->search();
+  } catch (Exception $e) {
+    drupal_set_message('An error occurred while accessing the distributor data source.');
+  }
+
+  if (!empty($results->response->docs[0])) {
+
+    $doc = $results->response->docs[0];
+
+    $default_product = $doc->entity_id;
+
+    $default_category = $doc->sm_product_category_names[0];
+
+    $form_state['values']['category'] = $default_category;
+
+    $form_state['values']['product'] = $default_product;
+  }
+}
+
+function _wtb_country_section(&$form, $form_state, $region_settings) {
+  $options = $region_settings['country'];
+
+  $options = [0 => t('Select country')] + $options;
+
+  $form['form-section']['country'] = [
+    '#title' => t('1. Select your country:'),
+    '#type' => 'select',
+    '#attributes' => array('class' => array('container-inline')),
+    '#options' => $options,
+    '#prefix' => '<div id="wtb-country-wrapper" class="wtb-wrapper">',
+    '#default_value' => 0,
+    '#suffix' => '</div>',
+    '#ajax' => [
+      'callback' => 'ig_commerce_wtb_ajax',
+      'wrapper' => 'ig-commerce-wtb-form',
+    ],
+  ];
+}
+
+function _wtb_regions_section(&$form, &$form_state, $country, $control_counter, $distributors_results) {
+  global $language;
+
+  $regions_result = [];
+
+  // Luxembourg doesn't actually have regions.
+  if ($country === 'LU') {
+    $form['form-section']['region'] = [
+      '#markup' => '',
+      '#prefix' => '<div id="wtb-region-wrapper" class="wtb-wrapper">',
+      '#suffix' => '</div>',
+    ];
+    return;
+  }
+  if(!empty($form_state['region_options'])) {
+    $regions_result = $form_state['region_options'];
+  }else if (!empty($distributors_results->facet_counts->facet_fields->sm_sales_regions)) {
+    foreach ($distributors_results->facet_counts->facet_fields->sm_sales_regions as $key => $counts) {
+      // Only display a region in the dropdown if it produces results.
+      // Also leave out the country of Luxembourg when the country is Belgium, as Luxembourg is handled by the country dropdown
+      // Also nationwide doesn't need to be in the list as any selection will produce results for "Nationwide"
+      if ($counts && $key !== 'Nationwide') {
+        $regions_result[$key] = $key;
+      }
+    }
+
+    ksort($regions_result);
+    $regions_result = [0 => t('Select region')] + $regions_result;
+    $form_state['region_options'] = $regions_result;
+  }else{
+    $regions_result = [0 => t('Select region')];
+  }
+
+  if (count($regions_result) === 1 && !empty($form_state['values']['product']) && isset($form_state['triggering_element']['#type']) && $form_state['triggering_element']['#type'] !== 'submit') {
+    form_set_error('product', t('Sorry, nothing matches your criteria. Please refine your search terms.'));
+  }
+
+  $form['form-section']['region'] = [
+    '#title' => t($control_counter . '. Select your region:'),
+    '#type' => 'select',
+    '#attributes' => array('class' => array('container-inline')),
+    '#options' => $regions_result,
+    '#prefix' => '<div id="wtb-region-wrapper" class="wtb-wrapper">',
+    '#suffix' => '</div>',
+  ];
+
+  $regions = ig_commerce_wtb_region_settings();
+
+  $region_settings = $regions[$language->language];
+
+  if ($region_settings['type'] or in_array($language->language, wtb_city_locales())) {
+    $form['form-section']['region']['#ajax'] = [
+      'callback' => 'ig_commerce_wtb_ajax',
+      'wrapper' => 'ig-commerce-wtb-form'
+    ];
+  }
+}
+
+function _wtb_type_section(&$form, $form_state, $control_counter, $distributor_results) {
+  $types = [];
+
+  if (!empty($distributor_results->facet_counts->facet_fields->ss_distributor_type)) {
+    foreach ($distributor_results->facet_counts->facet_fields->ss_distributor_type as $key => $counts) {
+      if ($counts) {
+        $types[$key] = $key;
+      }
+    }
+  }
+
+  ksort($types);
+
+  $types = [0 => t('Please select value')] + $types;
+
+  $form['form-section']['type'] = [
+    '#title' => t($control_counter . '. Select Type:'),
+    '#type' => 'select',
+    '#attributes' => array('class' => array('container-inline')),
+    '#options' => $types,
+    '#prefix' => '<div id="wtb-type-wrapper" class="wtb-wrapper">',
+    '#suffix' => '</div>',
+  ];
+}
+
+function _wtb_city_section(&$form, $form_state, $control_counter, $distributor_results) {
+  $cities = [];
+
+  if (!empty($distributor_results->facet_counts->facet_fields->ss_city)) {
+    foreach ($distributor_results->facet_counts->facet_fields->ss_city as $key => $counts) {
+      if ($counts) {
+        $cities[$key] = $key;
+      }
+    }
+  }
+
+  ksort($cities);
+
+  $cities = [0 => t('Select city')] + $cities;
+
+  $form['form-section']['city'] = [
+    '#title' => t($control_counter . '. Select City:'),
+    '#type' => 'select',
+    '#attributes' => array('class' => array('container-inline')),
+    '#options' => $cities,
+    // @todo: Hopefully we can just re-use the type wrapper to avoid additional theming
+    '#prefix' => '<div id="wtb-type-wrapper" class="wtb-wrapper">',
+    '#suffix' => '</div>',
+  ];
+}
+
+function _wtb_form_results_section(&$form, $form_state, $products) {
+  global $language;
+  // Formatted results
+  // Dump variables
+  $form['body']['results'] = [
+    '#prefix' => '<div id="wtb-results" class="results-column-wrapper"><div class="results-column">',
+    '#suffix' => '</div></div>',
+  ];
+
+  // Clear the results if they changed a dropdown rather than hit submit
+  if ($form_state['triggering_element']['#type'] !== 'submit') {
+    unset($form_state['results']);
+    return;
+  }
+
+  if (count($form_state['results']->response->docs)) {
+
+    $plat_tech_link = igcommerce_wtb_get_platinum_tech();
+
+    foreach ($form_state['results']->response->docs as $doc) {
+
+      $website = !empty($doc->sm_field_distributor_website[0]) ? $doc->sm_field_distributor_website[0] : '';
+
+      if (!empty($website)) {
+        $website = strpos($website, 'http') === 0 ? $website : 'http://' . $website;
+      }
+
+      //Note there are two fields that contain address info, the ts_json_address atomizes each part. ts_address uses addressfields formatting
+      $address = json_decode($doc->ts_json_address, true);
+      $premise = $address['premise'];
+
+      $premise = empty($address['sub_premise']) ? $premise : $premise . ' ' . $address['sub_premise'];
+
+      $city_state = $address['locality'];
+
+      if(!empty($address['administrative_area'])){
+        $city_state .= ' '.$address['administrative_area'] . ', ';
+      }
+
+      $variables = [
+        'label' => $doc->label,
+        'plat_tech' => !empty($doc->bs_platinum_technical) ? $doc->bs_platinum_technical : FALSE,
+        'plat_tech_link' => $plat_tech_link,
+        'premise' => $premise,
+        'address' => $address['thoroughfare'],
+        'city' => $city_state,
+        'postal_code' => $address['postal_code'],
+        'website' => $website,
+        'phone' => !empty($doc->sm_field_phone[0]) ? $doc->sm_field_phone[0] : '',
+        'fax' => !empty($doc->sm_field_fax[0]) ? $doc->sm_field_fax[0] : '',
+        'email' => !empty($doc->sm_field_email[0]) ? $doc->sm_field_email[0] : ''
+      ];
+
+      $form['body']['results'][] = [
+        '#markup' => theme('local_distributor', $variables)
+      ];
+    }
+
+    // Disabling platinum tech. modal in favor of making it a link to the page
+    /*
+    $form['plat_tech'] = [
+      '#type' => 'markup',
+      '#prefix' => '<div id="plat-tech-modal" class="modal fade" tabindex="-1" role="dialog">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">',
+      '#markup' => igcommerce_wtb_get_platinum_tech(),
+      '#suffix' => '</div></div></div>'
+    ];*/
+
+  } else {
+
+    // No results found
+    $product_label = $products[$form_state['values']['product']];
+
+    $settings = ig_commerce_wtb_region_settings();
+
+    $region_settings = $settings[$language->language];
+
+    $country_list = country_get_list();
+
+    $country_list = !empty($region_settings['country']) ? $country_list + $region_settings['country'] : $country_list;
+
+    $country_code = strtoupper(substr($language->language, 3, 2));
+
+    $country = !empty($form_state['values']['country']) ? $form_state['values']['country'] : $country_code;
+
+    if (strtolower($country) !== 'lx') {
+      $country = $country_list[strtoupper($country)];
+      $location_name = !empty($form_state['values']['region']) ? $form_state['values']['region'] : $country;
+    } else {
+      $location_name = 'Luxembourg';
+    }
+
+    $line_1 = t('It looks like there aren\'t any local Fluke distributors that carry the @product in @location. You may want to:', ['@product' => $product_label, '@location' => $location_name]);
+
+    $line_2 = t('Contact the local Fluke sales team.');
+
+    $form['body']['results']['no-results'] = [
+      '#markup' => "<div id='wtb-check-distributor'><p>$line_1<br>$line_2</p></div>"
+    ];
+  }
+}
+
+function ig_commerce_wtb_form_validate(&$form, &$form_state) {
+  if ($form_state['triggering_element']['#type'] === 'submit') {
+    $dropdowns = ['country', 'category', 'product', 'region', 'type'];
+
+    foreach ($dropdowns as $dropdown) {
+      if (!empty($form['form-section'][$dropdown]) &&
+        empty($form_state['values'][$dropdown]) &&
+        !empty($form['form-section'][$dropdown]['#type']) &&
+        $form['form-section'][$dropdown]['#type'] == 'select') {
+
+        $form['form-section'][$dropdown]['#attributes']['class'][] = 'error';
+
+        $message = t('Please select value');
+
+        // Rather than do form_set_error here, we'll handle displaying errors with the form
+        $form_state['validate_errors'][] = ['element' => $dropdown, 'message' => $message];
+
+        $form_state['rebuild'] = TRUE;
+
+        if (isset($form_state['results'])) {
+          unset($form_state['results']);
+        }
+      }
+    }
+  }
+}
+
+function ig_commerce_wtb_form_submit(&$form, &$form_state) {
+
+  unset($form_state['results']);
+
+  global $language;
+
+  $region_data = ig_commerce_wtb_region_settings();
+  $region_settings = $region_data[$language->language];
+
+  if (!empty($form_state['values']['country'])) {
+    $country = $form_state['values']['country'];
+  } else {
+    $country = strtoupper(substr($language->language, 3, 2));
+  }
+
+  $product = $form_state['values']['product'];
+
+  // Luxemburg shares a form with Belgium, but doesn't have regions
+  if ($region_settings['region'] && $country !== 'LU') {
+    $region = $form_state['values']['region'];
+  } elseif ($region_settings['region'] && !empty($form_state['values']['region'])) {
+    $region = $form_state['values']['region'];
+  } else {
+    $region = NULL;
+  }
+
+  if ($region_settings['type'] && !empty($form_state['values']['type'])) {
+    $type = $form_state['values']['type'];
+  } else {
+    $type = NULL;
+  }
+
+  if (in_array($language->language, wtb_city_locales()) && !empty($form_state['values']['city'])) {
+    $city = $form_state['values']['city'];
+  } else {
+    $city = NULL;
+  }
+
+  $results = ig_commerce_distributor_query($country, $product, $region, $type, $city);
+
+  $form_state['results'] = $results;
+
+  $form_state['rebuild'] = TRUE;
+}
+
+function ig_commerce_wtb_ajax($form, $form_state) {
+
+  $return = [
+    '#type' => 'ajax',
+    '#commands' => [
+      ajax_command_replace('#wtb-category-wrapper', render($form['form-section']['category'])),
+      ajax_command_replace('#wtb-product-wrapper', render($form['form-section']['product'])),
+      ajax_command_replace('#wtb-error-display', render($form['errors'])),
+    ]
+  ];
+
+  if (!empty($form['form-section']['region'])) {
+    $return['#commands'][] = ajax_command_replace('#wtb-region-wrapper', render($form['form-section']['region']));
+  }
+
+  if (!empty($form['form-section']['type'])) {
+    $return['#commands'][] = ajax_command_replace('#wtb-type-wrapper', render($form['form-section']['type']));
+  }
+
+  if (!empty($form['form-section']['city'])) {
+    $return['#commands'][] = ajax_command_replace('#wtb-type-wrapper', render($form['form-section']['city']));
+  }
+
+  if (!empty($form['body']['results'])) {
+    $return['#commands'][] = ajax_command_replace('#wtb-results', render($form['body']['results']));
+  }
+
+  return $return;
+}
+
+function ig_commerce_distributor_query($country = NULL, $product = NULL, $region = NULL, $type = NULL, $city = NULL) {
+  Global $conf;
+  global $language;
+  $lang = $language->language;
+
+  $regions = ig_commerce_wtb_region_settings();
+
+  $region_settings = $regions[$lang];
+
+  $url = $conf['fluke_geo_search_service_url'];
+
+  // Use Apache Solr module features, without enabling it.
+  module_load_include('inc', 'apachesolr', 'apachesolr.interface');
+  module_load_include('php', 'apachesolr', 'Drupal_Apache_Solr_Service');
+  module_load_include('module', 'apachesolr');
+
+  $solr = new DrupalApacheSolrService($url);
+  $query = apachesolr_drupal_query('apachesolr', [], '', '', $solr);
+
+  if (empty($country)) {
+    $country = strtoupper(substr($lang, 3, 2));
+  }
+
+  if (!empty($country)) {
+    // There aren't actually distributors in Luxembourg, but it is represented as a sales region
+    $query->addFilter('ts_country', $country);
+  }
+
+  $query->addParam('facet', 'true');
+
+  $query->addParam('facet.field', 'sm_sales_regions');
+  
+  // Increase limit for returned facets to be greater than default of 100.
+  $query->addParam('facet.limit', 300);
+  $query->addParam('facet.sort', 'count');
+
+  $query->addParam('rows', 200);
+
+  if ($region_settings['type']) {
+    $query->addParam('facet.field', 'ss_distributor_type');
+    if (!empty($type)) {
+      $query->addFilter('ss_distributor_type', $type);
+    }
+  }
+
+  if ($product) {
+    $query->addFilter('sm_products', $product);
+  }
+
+  if ($region && $region_settings['region']) {
+    $query->addFilter('sm_sales_regions', "(\"$region\" or \"Nationwide\")");
+  }
+
+  if (in_array($lang, wtb_city_locales())) {
+    $query->addParam('facet.field', 'ss_city');
+    if (!empty($city)) {
+      $query->addFilter('ss_city', $city);
+    }
+  }
+
+  $query->addParam('sort', 'bs_platinum_technical desc, ss_distributor_name asc');
+
+  $results = $query->search();
+
+  return $results;
+}
+
+function ig_commerce_wtb_categories($language = 'en-us', &$form_state) {
+  $categories = [];
+
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('product_category', $language, 'ecm');
+
+  // List of sub categories to be filtered out
+  $sub_categories = product_sub_categories();
+  $main_cat_translated = [];
+
+  $form_state['sub_categories'] = [];
+
+  // Set up the terms for the base categories
+  foreach ($terms as $term) {
+    foreach ($sub_categories as $term_to_find => $subs) {
+      if ($term->label === $term_to_find) {
+        $main_cat_translated[$term->label] = $term->sm_field_content_title[0];
+      }
+    }
+  }
+
+  foreach ($terms as $top_term) {
+    $is_sub_cat = FALSE;
+    foreach ($sub_categories as $cat => $sub_cats) {
+      if (in_array($top_term->label, $sub_cats)) {
+        $translated = $main_cat_translated[$cat];
+
+        $form_state['sub_categories'][$translated][$top_term->sm_field_content_title[0]] = $top_term->sm_field_content_title[0];
+        $is_sub_cat = TRUE;
+        break;
+      }
+    }
+
+    if ($is_sub_cat)
+      continue;
+
+    if (strpos($top_term->label, 'Accessories') !== 0) {
+      $title = html_entity_decode($top_term->sm_field_content_title[0], ENT_QUOTES, 'UTF-8');
+      $categories[$title] = $title;
+    }
+  }
+
+  ksort($categories);
+
+  return $categories;
+}
+
+/**
+ * The product category doesn't have any hierarchy information, so we track relationships between parent
+ * and sub categories here
+ *
+ * @return array
+ */
+function product_sub_categories() {
+  return [
+    'Infrared Cameras' => [
+      'Infrared camera Expert Series',
+      'Infrared camera Performance Series',
+      'Infrared camera Professional Series',
+    ],
+    'Portable Oscilloscopes' => [
+      'Portable Oscilloscopes 120B Series',
+      'Portable Oscilloscopes 190 Series II',
+    ]
+  ];
+}
+
+function ig_commerce_wtb_theme($existing, $type, $theme, $path) {
+  return [
+    'local_distributor' => [
+      'variables' => ['label', 'premise', 'address', 'city', 'postal_code', 'website', 'phone', 'fax', 'email', 'plat_tech'],
+      'template' => 'local-distributor'
+    ],
+  ];
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function ig_commerce_wtb_ctools_plugin_directory($module, $plugin) {
+  if (($module == 'ctools') && ($plugin == 'content_types')) {
+    return 'plugins/content';
+  }
+}
+
+function ig_commerce_wtb_region_settings() {
+  return [
+    'en-au' => ['country' => ['AU' => 'Australia', 'NZ' => 'New Zealand', 'NC' => 'New Caledonia'], 'region' => TRUE, 'type' => TRUE],
+    'en-gb' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'en-ie' => ['country' => FALSE, 'region' => FALSE, 'type' => FALSE],
+    'en-ca' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'fr-ca' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'en' => ['country' => [
+      'AL' => 'Albania',
+      'BA' => 'Boznia and Herzegovina',
+      'BV' => 'Bouvet Islands',
+      'BG' => 'Bulgaria',
+      'HR' => 'Croatia',// Croatia
+      'CY' => 'Cyprus',
+      'EE' => 'Estonia',
+      'FO' => 'Faroe Islands',
+      'GR' => 'Greece',
+      'GL' => 'Greenland',
+      'HU' => 'Hungary',
+      'IS' => 'Iceland',
+      'IL' => 'Israel',
+      'XK' => 'Kosovo',
+      'LV' => 'Latvia',
+      'LT' => 'Lithuania',
+      'MK' => 'Macedonia',
+      'MT' => 'Malta',
+      'MD' => 'Moldova',
+      'ME' => 'Montenegro',
+      'RO' => 'Romania',
+      'RS' => 'Serbia',
+      'SK' => 'Slovak Republic',
+      'SI' => 'Slovenia'
+    ],
+      'region' => FALSE, 'type' => FALSE], // "Rest of Europe / English
+    'de-at' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'de-ch' => ['country' => FALSE, 'region' => FALSE, 'type' => FALSE],
+    'de-de' => ['country' => FALSE, 'region' => TRUE, 'type' => TRUE],
+    'fr-fr' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'fr-be' => ['country' => ['BE' => 'Belgium', 'LU' => 'Luxembourg'], 'region' => TRUE, 'type' => FALSE],
+    'fr-ch' => ['country' => FALSE, 'region' => FALSE, 'type' => FALSE],
+    'es-es' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'nl-nl' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'nl-be' => ['country' => ['BE' => 'Belgium', 'LU' => 'Luxembourg'], 'region' => TRUE, 'type' => FALSE],
+    'it-it' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'ch-it' => ['country' => FALSE, 'region' => FALSE, 'type' => FALSE],
+    'pt-pt' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'pt-br' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'no-no' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'se-sv' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'fi-fi' => ['country' => FALSE, 'region' => TRUE, 'type' => FALSE],
+    'pl-pl' => ['country' => FALSE, 'region' => FALSE, 'type' => FALSE],
+    'cz-cs' => ['country' => FALSE, 'region' => FALSE, 'type' => FALSE],
+    'ro-ro' => ['country' => FALSE, 'region' => FALSE, 'type' => FALSE],
+  ];
+}
+
+function igcommerce_wtb_page($term) {
+  global $language;
+
+  $filters = array(
+    "label" => $term,
+    "ss_language" => $language->language,
+    'bs_status' => 1,
+    "bundle" => "page"
+  );
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+  $response = fluke_solr_query($filters);
+
+  if (empty($response->response->docs[0])) {
+    drupal_not_found();
+  }
+
+  $doc = $response->response->docs[0];
+
+  igcommerce_utility_head_elements($doc, TRUE);
+
+  $content = !empty($doc->ts_page_body) ? $doc->ts_page_body : '';
+
+  return $content;
+}
+
+/**
+ * This function previously returned mark-up for a modal pop up explaining plat-tech distributors, now it returns the path alias
+ */
+function igcommerce_wtb_get_platinum_tech() {
+
+  global $language;
+
+  $filters = array(
+    "ss_language" => $language->language,
+    'bs_status' => 1,
+    'entity_id' => 8481,
+    'bundle' => 'article',
+  );
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+  $response = fluke_solr_query($filters);
+
+  $content = '';
+
+  if (!empty($response->response->docs[0])) {
+    // Delete this line v if we go back to the modal
+    return '/'.$language->language .'/'. $response->response->docs[0]->ss_path_alias_locale;
+
+    $doc = $response->response->docs[0];
+    $content .= "<div class='modal-header'>";
+    $content .= '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+    $content .= "<h1 class='modal-title'>$doc->ss_field_content_title</h1> ";
+    $content .= '<div class=\'modal-body\'>';
+    $content .= !empty($doc->ts_article_body) ? $doc->ts_article_body : '';
+    $content .= '</div>';
+    $content .= '</div>';
+  } else {
+    return NULL;
+  }
+
+  return $content;
+}
+
+/**
+ * Returns an array of locales that use the city dropdown.
+ *
+ * @return array
+ */
+function wtb_city_locales() {
+  return ['en-ca', 'fr-ca'];
+}

@@ -1,0 +1,55 @@
+/*
+*  Brand settings for FPI
+*  This is the canonical and reference file for the settings that needs to be
+*  in each of the brand-settings-brand.scss file.
+*  If settings are missing from here, they may not appear properly
+*  When the theme is recompiled.
+*  Good luck.
+*
+*  PS, if you like the ASCII, you can get more at
+*  http://www.network-science.de/ascii/
+*
+*/
+
+/*
+*
+*   ____    ____    ______
+*  /\  _`\ /\  _`\ /\__  _\
+*  \ \ \L\_\ \ \L\ \/_/\ \/
+*   \ \  _\/\ \ ,__/  \ \ \
+*    \ \ \/  \ \ \/    \_\ \__
+*     \ \_\   \ \_\    /\_____\
+*      \/_/    \/_/    \/_____/
+*
+*/
+
+/*
+*   COLORS
+*/
+
+$base-font-color              : $gray-very-dark;
+
+$color-primary                : $yellow;              // ** Primary Action buttons **        ** Special action color (other things) **
+
+$color-secondary              : $blue;                // ** Secondary Action buttons **      ** Action Color (links) **
+
+$color-tertiary               : 'not used';           // As of this writing, there is no tertiary color
+
+$base-background-color        : $white;
+$background-color-darkest     : $black;
+$background-color-mid         : $gray-light;
+$background-color-light       : $gray-extra-light;
+
+$action-color                 : $color-secondary;
+$special-action-color         : $color-primary;
+
+$heading-font-color           : $background-color-mid;
+$base-font-color              : $background-color-darkest;
+/*
+*   FONTS
+*/
+
+$base-font-family             : $helvetica;
+$heading-font-family          : $helvetica;
+
+

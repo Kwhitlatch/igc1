@@ -1,0 +1,4 @@
+name = Fluke import product variants
+description = Utility module to import product variants and related translations.
+core = "7.x"
+package = Fluke

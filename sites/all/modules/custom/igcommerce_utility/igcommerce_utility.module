@@ -1,0 +1,4105 @@
+<?php
+
+
+/**
+ * Create strings that should be translatable but don't show by default in the
+ * translation interface;
+ */
+
+
+function igcommerce_utility_flush_caches() {
+  t('See the full specifications');
+  t('Get a Free Demo');
+}
+
+
+/*
+ * Hook_menu(). For fixing url aliase of url huilder and content type of ecm.
+ */
+
+function igcommerce_utility_menu() {
+  $items['admin/settings/batch_fix'] = array(
+    'title' => 'URL Builder Aliases Fix',
+    'description' => 'Fix URL Alias Point to english',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('igcommerce_utility_url_alias_fix_form'),
+    'file' => 'includes/igcommerce_utility.batch.inc',
+    'file path' => drupal_get_path('module', 'igcommerce_utility'),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+function igcommerce_utility_ctools_render_alter(&$info, &$page, &$context){
+
+  // Subtasks to not act on
+  $page_types = [];
+
+  // Don't allow panels to hijack the page title
+  if(!in_array($context['subtask']['name'], $page_types)) {
+
+    $info['title'] = NULL;
+  }
+}
+
+/**
+ * Implements hook_views_query_alter
+ *
+ * This hook is called right before the render process
+ *
+ * @param  object $view View object.
+ */
+function igcommerce_utility_views_query_alter(&$view, &$query) {
+  $site_opco = variable_get('site_opco');
+  if (isset($site_opco) && $site_opco != 0) {
+    if ($view->base_table == 'node') {
+      $alias = $query->add_table('field_data_field_opco');
+      $c = db_or()
+          ->condition($alias . '.field_opco_tid', $site_opco, '=')
+          ->isNull($alias . '.field_opco_tid');
+      $query->add_where(0, $c);
+    }
+  }
+}
+
+/**
+ * @file
+ * This module is a common utility module for igcommerce site, this contain the common functionality shared across the IG Site..
+ */
+function igcommerce_utility_block_info() {
+
+  $blocks['ig_primary_nav'] = array(
+    'info' => t('IG Primary Nav'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['ig_primary_mobile_nav'] = array(
+    'info' => t('IG Primary Mobile Nav'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['ig_user_location'] = array(
+    'info' => t('IG Users Location'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['homepage_latest_news'] = array(
+    'info' => t('Homepage Latest News'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['homepage_alerts'] = array(
+    'info' => t('Homepage Alerts'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['homepage_slideshow'] = array(
+    'info' => t('Homepage Slideshow'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['breadcrumbs_json_ld'] = array(
+      'info' => t('SEO Breadcrumbs JSON_LD'),
+  );
+
+  $blocks['ig_manuals_search_form'] = array(
+    'info' => t('Manuals - Search'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['ig_manuals_search_filter'] = array(
+      'info' => t('Manuals - Filter'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['ig_path_alias_form'] = array(
+      'info' => t('IG Custom Path Alias Form'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+    $blocks['ig_secondary_nav'] = array(
+        'info' => t('IG Secondary Navigation Solr'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+    $blocks['ig_footer_products'] = array(
+        'info' => t('IG Footer 1 Products Solr'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+    $blocks['ig_footer_company'] = array(
+        'info' => t('IG Footer 2 Company Solr'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+    $blocks['ig_footer_customer_service'] = array(
+        'info' => t('IG Footer 3 Customer Service Solr'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+    $blocks['ig_footer_newsletters_signup'] = array(
+        'info' => t('IG Footer 4 Company Newsletter Solr'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+    $blocks['ig_footer_social_links'] = array(
+        'info' => t('IG Footer 5 Social Links Solr'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+    $blocks['ig_footer_terms'] = array(
+        'info' => t('IG Footer 6 Terms Solr'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+  
+  return $blocks;
+}
+
+function igcommerce_utility_block_view($delta = NULL) {
+  switch ($delta) {
+    case 'ig_primary_nav':
+      $block['subject'] = "";
+      $block['content'] = _igcommerce_utility_get_primary_nav_desktop();
+      break;
+
+    case 'ig_primary_mobile_nav':
+      $block['subject'] = "";
+      $block['content'] = _igcommerce_utility_get_primary_nav_mobile();
+      break;
+    case 'ig_secondary_nav':
+        $block['subject'] = "";
+        $block['content'] = _igcommerce_utility_get_footer_links('secondary_nav');
+        break;
+    case 'ig_footer_products':
+        $block['subject'] = t("Products");
+        $block['content'] = _igcommerce_utility_get_footer_links('footer_column_1_products');
+        break;
+    case 'ig_footer_company':
+        $block['subject'] = t("Company");
+        $block['content'] = _igcommerce_utility_get_footer_links('footer_column_2_company');
+        break;
+    case 'ig_footer_customer_service':
+        $block['subject'] = t("Customer Service");
+        $block['content'] = _igcommerce_utility_get_footer_links('footer_column_3_customer_service');
+        break;
+    case 'ig_footer_newsletters_signup':
+        $block['subject'] = "";
+        $block['content'] = _igcommerce_utility_get_footer_links('footer_column_4_fluke_newsletters_signup');
+        break;
+    case 'ig_footer_social_links':
+        $block['subject'] = "";
+        $block['content'] = _igcommerce_utility_get_footer_links('social_links');
+        break;
+    case 'ig_footer_terms':
+        $block['subject'] = "";
+        $block['content'] = _igcommerce_utility_get_footer_links('footer_terms');
+        break;
+    case 'ig_user_location':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_get_users_location();
+      break;
+
+    case 'homepage_latest_news':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_latest_news();
+      break;
+
+    case 'homepage_alerts':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_homepage_alerts();
+      break;
+
+    case 'homepage_slideshow':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_homepage_slideshow();
+      break;
+
+    case 'breadcrumbs_json_ld':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_breadcrumbs_json_ld();
+      break;
+      
+    case 'ig_manuals_search_form':
+      module_load_include('inc', 'igcommerce_utility', '/includes/igcommerce_utility.manuals');
+      $block['subject'] = "";
+      $block['content'] = drupal_get_form('igcommerce_utility_manuals_form_search');
+      break;
+      
+    case 'ig_manuals_search_filter':
+      module_load_include('inc', 'igcommerce_utility', '/includes/igcommerce_utility.manuals');
+      $block['subject'] = "";
+      $block['content'] = drupal_get_form('igcommerce_utility_manuals_form_filter');
+      break;
+
+    case 'ig_path_alias_form':
+      $perm = user_access('create url aliases') || user_access('administer url aliases');
+      if($perm) {
+          module_load_include('inc', 'igcommerce_utility', '/includes/igcommerce_utility.path_alias');
+          $block['subject'] = "Add Missing Path Alias";
+          $block['content'] = drupal_get_form('igcommerce_utility_path_alias_form');
+      }
+      break;
+
+    default:
+      $block = array();
+      break;
+  }
+  return $block;
+}
+
+
+function igcommerce_utility_theme()
+{
+    $module_path = drupal_get_path('module', 'igcommerce_utility');
+    return array(
+        'homepage_latest_news' => array(
+            'template' => 'homepage_latest_news',
+            'variables' => array('items' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+        'homepage_alerts' => array(
+            'template' => 'homepage_alerts',
+            'variables' => array('items' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+        'brightcove_video_player' => array(
+            'template' => 'brightcove-video-player',
+            'variables' => array('settings' => array()),
+            'path' => $module_path . '/templates',
+
+        ),
+        'facebook_metadata' => [
+          'template' => 'facebook-metadata',
+          'path' => $module_path . '/templates',
+          'variables' => [
+            'url' => '',
+            'title' => '',
+            'description' => '',
+            'image' => '',
+            'type' => '',
+            'locale' => '',
+            'appid' => variable_get('facebook_appid', ''),
+          ]
+        ],
+        'facebook_metadata_product_images' => [
+          'template' => 'facebook-metadata-product-images',
+          'variables' => array('fb_image_set' => array()),
+          'path' => $module_path . '/templates',
+        ],
+        'homepage_slideshow' => array(
+            'template' => 'homepage_slideshow',
+            'variables' => array('slides' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+        'igcommerce_utility_manuals_form_filter' => array(
+            'template' => 'manuals-form-filters',
+            'render element' => 'form',
+            'path' => $module_path . '/templates',
+        ),
+        'primary_nav' => array(
+            'template' => 'primary_nav',
+            'variables' => array('items' => NULL,'language' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+        'primary_nav_mobile' => array(
+            'template' => 'primary_nav_mobile',
+            'variables' => array('items' => NULL, 'language' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+        'footer_links' => array(
+            'template' => 'footer_links',
+            'variables' => array('items' => NULL, 'language' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+        'secondary_nav' => array(
+            'template' => 'secondary_nav',
+            'variables' => array('items' => NULL, 'language' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+        'toc_left_nav' => array(
+            'template' => 'toc_left_nav',
+            'variables' => array('items' => NULL, 'language' => NULL),
+            'path' => $module_path . '/templates',
+        ),
+    );
+}
+
+/**
+ * [igcommerce_utility_alerts description]
+ * @return [type] [description]
+ */
+function igcommerce_utility_homepage_alerts() {
+
+    global $language;
+
+    //Adds recall_count variable to show/hide alerts area depending on the amount.
+    //MIG2073
+    if (!$docs = igcommerce_utility_articles_safety_notice_get_entities('current')) {
+      return;
+    }
+
+    $items = array();
+    $recall_count = count($docs);
+
+    $parameter = array();
+    $filter = array();
+
+    // Solr query to fetch support URL.
+    $keyword = "entity_type:taxonomy_term";
+    $parameter[]['rows'] = '1';
+    $parameter[]['fl'] = 'sm_field_url_title';
+    $filter[]['bundle'] = 'url_builder';
+    $filter[]['ss_language'] = $language->language;
+    $filter[]['entity_id'] = '2239';
+
+    $support_url_response = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+
+    if (isset($support_url_response->response->docs) && sizeof($support_url_response->response->docs) > 0) {
+       $support_url = $support_url_response->response->docs[0]->sm_field_url_title[0];
+    }
+    else {
+      $support_url = t('support');
+    }
+
+    // reset these otherwise they have the values from above ;-)
+    $parameter = array();
+    $filter = array();
+
+  // Solr query to fetch support safety notices URL.
+    $keyword = "entity_type:taxonomy_term";
+    $parameter[]['rows'] = '1';
+    $parameter[]['fl'] = 'sm_field_url_title';
+    $filter[]['bundle'] = 'url_builder';
+    $filter[]['ss_language'] = $language->language;
+    $filter[]['entity_id'] = '2258';
+
+    $safety_notices_url_response = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+
+    if (isset($safety_notices_url_response->response->docs) && sizeof($safety_notices_url_response->response->docs) > 0) {
+      $safety_notices_url = $safety_notices_url_response->response->docs[0]->sm_field_url_title[0];
+    }
+    else {
+      $safety_notices_url = t('safety-notices');
+    }
+
+    $url =  $support_url . '/' . $safety_notices_url;
+
+    if (sizeof($recall_count) > 0) {
+      return theme('homepage_alerts', array('items' => $url));
+     }
+
+
+}
+
+
+/**
+ * [igcommerce_utility_latest_news description]
+ * @return [type] [description]
+ */
+function igcommerce_utility_latest_news() {
+  global $language;
+
+  // Solr query to fetch data.
+  $keyword = "entity_type:node";
+  $parameter[]['rows'] = '1';
+  $parameter[]['fl'] = 'ss_field_content_title';
+  $parameter[]['fl'] = 'sm_field_latest_news';
+  $filter[]['bundle'] = 'list';
+  $filter[]['ss_language'] = $language->language;
+  $filter[]['sm_field_latest_news'] = '[" TO *]';
+
+  $response = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+
+  if (!isset($response->response->docs) || sizeof($response->response->docs) == 0) {
+    return;
+  }
+
+  $doc = $response->response->docs[0];
+
+  if (empty($doc->sm_field_latest_news)) {
+    return;
+  }
+
+  foreach ($doc->sm_field_latest_news as $item) {
+    $item = json_decode($item);
+
+    if (!$ndoc = fluke_solr_get_entity($item->target_id, 'node', NULL, $language->language, 'ecm')) {
+      continue;
+    }
+
+    $item->title = $ndoc->ss_field_content_title;
+    $url = NULL;
+
+    switch ($ndoc->bundle) {
+      case 'article':
+      case 'product_display':
+      case 'promotion':
+      case 'toc':
+        $url = $ndoc->path_alias;
+        break;
+      case 'e_link':
+        $url = $ndoc->ss_external_url;
+        break;
+      default:
+        $url = $ndoc->ss_field_content_url;
+    }
+
+    if (!$url) {
+      continue;
+    }
+
+    $item->url = $url;
+
+    $items[] = $item;
+  }
+
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') .'/js/homepage_latest_news.js');
+
+  return theme('homepage_latest_news', array('items' => $items));
+
+  // OLD CODE BELOW
+  if ($result->code == 200) {
+    $news_items = json_decode($result->response->docs[0]->sm_latest_news[0]);
+    return theme('homepage_latest_news', array('items' => $news_items));
+  }
+  else {
+    return NULL;
+  }
+
+}
+
+
+/**
+ *
+ */
+function igcommerce_get_users_location() {
+
+  $url = 'http://freegeoip.net/json/';
+
+  $ip = getenv('HTTP_CLIENT_IP') ?: getenv('HTTP_X_FORWARDED_FOR') ?: getenv('HTTP_X_FORWARDED') ?: getenv('HTTP_FORWARDED_FOR') ?: getenv('HTTP_FORWARDED') ?: getenv('REMOTE_ADDR');
+
+  $json = file_get_contents($url . $ip);
+  $data = $json;//json_decode($json);  //@todo: Do we still use this block?  If we return decoded json it breaks panels admin
+
+  return $data;
+}
+
+/**
+ * Implements hook_node_validate.
+ *
+ * This function validates the node submitted values so that any checks
+ * can be made before saving the node content in db.
+ *
+ * This function checks for certain invalid characters in URL Title field and adds the
+ * title policy with Only A-Z, a-z, 0-9, -, and _ are allowed characters.
+ *
+ * @param object $node Submitted node object , containing node
+ * @param array $form Form array containing unrendered array with elements.
+ * @param array $form_state contains submitted form values.
+ */
+function igcommerce_utility_node_validate($node, $form, &$form_state) {
+  if (isset($form_state['values']['field_url_title'])) {
+    foreach ($form_state['values']['field_url_title'] as $url_titles) {
+      foreach ($url_titles as $url_title) {
+        if (!preg_match("#^[a-zA-Z0-9\s\-\_]|[\?|\?|\?|\?|\?|\|]+$#", $url_title['value'])) {
+          form_set_error('url_title', "Invalid characters were found in the URL title. Only A-Z, a-z, 0-9, -, and _ are allowed");
+        }
+      }
+    }
+  }
+}
+
+/**
+ * This array contains the names of the columns that should be split under products menu for desktop.
+ */
+function igcommerce_utility_primary_nav_columns($language) {
+    if(is_object($language)) {
+      $lang = $language->language;
+    }else{
+      $lang = $language;
+    }
+
+    // This array contains the names of the columns that should be split under products
+    // There used to be a category called "radiation safety", which only half of the sites had, which
+    // necessitated splitting columns uniquely by site. This column splitter MAY no longer be needed.
+    // RRN 7-30-18
+    $locales_column_splitter = array(
+        "cn" => array("electrical-testing", "fluke-software", "temperature-measurement", "awards"),
+        "cs-cz" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "da-dk" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "de-de" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "de-at" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "de-ch" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "en" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-au" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-ca" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-ie" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-gb" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-id" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "en-in" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "en-my" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-ph" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-sg" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-th" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "en-us" => array("condition-monitoring", "fluke-software", "precision-measurement", "awards"),
+        "en-vn" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-es" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "es-ar" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-bo" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-cl" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-co" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "es-cr" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "es-do" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-ec" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-gt" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-mx" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-pe" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-sv" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-uy" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "es-us" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "es-ve" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "fi-fi" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "fr" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "fr-fr" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "fr-be" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "fr-ca" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "fr-ch" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "id-id" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "it-it" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "ja-jp" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "ko-kr" => array("electrical-testing", "fluke-software", "precision-measurement", "new-fluke-products"),
+        "nl-nl" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "nl-be" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "no-no" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "pl-pl" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "pt-br" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "pt-pt" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "ru-ru" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "sv-se" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "th-th" => array("electrical-testing", "fluke-software", "intrinsically-safe", "new-fluke-products"),
+        "tr-tr" => array("electrical-testing", "fluke-software", "temperature-measurement", "new-fluke-products"),
+        "vi-vn" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+        "zh-cn" => array("electrical-testing", "fluke-software", "temperature-measurement", "awards"),
+        "zh-tw" => array("electrical-testing", "fluke-software", "intrinsically-safe", "awards"),
+    );
+    return $locales_column_splitter[$lang];
+}
+
+/**
+ * Pull in primary menu taxonomies from solr
+ */
+function igcommerce_utility_build_primary_nav($screen_size = 'desktop', $position = 'top', $reset = FALSE) {
+    global $language;
+    // Default to top nav
+    $url_path = current_path();
+    $url_pattern = explode("/", $url_path);
+    $cached_menu_name = 'ig_primary_nav_'. count($url_pattern) . '-' . end($url_pattern) . '-' . $screen_size . '-' . $language->language;
+    if($position == 'left') {
+        $cached_menu_name = 'ig_left_nav_'.$screen_size.'-'.$language->language;
+    }
+
+    $items = &drupal_static(__FUNCTION__);
+    if (!isset($items)) {
+      if ($cache = cache_get($cached_menu_name)) {
+          $items = $cache->data;
+      }
+        else {
+            $filters['filters'] = array(
+                'ss_language' => $language->language,
+                'entity_type' => 'taxonomy_term',
+                'bundle' => 'url_builder',
+                'sm_term_depth' => 2,
+            );
+
+            if($position == 'top') {
+                $filters['filters']['bs_field_include_on_primary_navi'] = TRUE;
+            }
+            if($position == 'left') {
+                $filters['filters']['bs_field_hide_from_toc_left_navi'] = FALSE;
+            }
+
+            $filters['fl'] = 'entity_id,im_parent,bs_see_all_link,bs_field_include_on_primary_navi,ss_field_url,sm_name_field,sm_field_content_title,ss_path_alias_locale,sm_field_url_title';
+            $filters['sort'] = 'entity_id asc';
+            $filters['rows'] = 1000;
+            $query = fluke_solr_get_connection();
+            $query = fluke_solr_add_filters($query, $filters);
+            $response = fluke_solr_query($query);
+            $items = array();
+            $lang_local = igcommerce_utility_get_local();
+            if(count($response->response->docs) > 0) {
+                $level1_total = 0;
+                $url_pattern = explode("/",current_path());
+
+                foreach ($response->response->docs as $level1) {
+                    $level1_active = 'flevel1';
+                    $destination = isset($level1->ss_field_url) ? 'external' : 'internal';
+                    //$link = isset($level1->ss_field_url) ? $level1->ss_field_url : $lang_local.'/'.$level1->ss_path_alias_locale;
+                    $link = isset($level1->ss_field_url) ? urldecode($level1->ss_field_url) : urldecode($level1->ss_path_alias_locale);
+                    $level1_class = ($level1->sm_name_field[0] == "Products") ? 'nav-column col-md-5ths' : 'nav-column col-md-12';
+                    $items[$level1_total]['url'] = $level1->sm_field_url_title[0];
+                    $items[$level1_total]['en_us_url'] = str_replace(' ', '-', strtolower($level1->sm_name_field[0]));
+                    $items[$level1_total]['link'] = $link;
+                    $items[$level1_total]['name'] = $level1->sm_field_content_title[0];
+                    $items[$level1_total]['en_us_name'] = $level1->sm_name_field[0];
+                    $items[$level1_total]['destination'] = $destination;
+                    $items[$level1_total]['class'] = $level1_class;
+                    $items[$level1_total]['id'] = $level1->entity_id;
+                    $url_title = explode('/', $level1->ss_path_alias_locale);
+                    if (isset($url_pattern[0]) && str_replace(' ', '-', strtolower($level1->sm_name_field[0])) === $url_pattern[0] || ($url_pattern[0] == t('product') && $url_title[0] == t('products'))) {
+                      $level1_active .= " active-trail active";
+                    }
+                    $items[$level1_total]['active_trail_indicator'] = isset($level1_active)?$level1_active:'';
+
+        //                    //if (!empty($url_pattern[0]) && !empty($level1->sm_field_url_title[0]) && !empty($url_pattern[1])) {
+        //                      if (str_replace(' ', '-', strtolower($level1->sm_name_field[0])) === $url_pattern[0] || $url_pattern[1] === t('product')) {
+        //                        $level1_active = " active-trail";
+        //                      }
+        //                    //}
+        //
+        //                    $items[$level1_total]['active_trail_indicator'] = (isset($level1_active) && !empty($level1_active))?$level1_active:'';
+                    $level1_no_sub = FALSE;
+
+                    $filters2['filters'] = array(
+                        'ss_language' => $language->language,
+                        'entity_type' => 'taxonomy_term',
+                        'bundle' => 'url_builder',
+                        'im_parent' => $level1->entity_id,
+                        'sm_term_depth' => 3,
+                    );
+                    if($position == 'top') {
+                        $filters2['filters']['bs_field_include_on_primary_navi'] = TRUE;
+                    }
+                    if($position == 'left') {
+                        $filters2['filters']['bs_field_hide_from_toc_left_navi'] = FALSE;
+                    }
+                    $filters2['fl'] = 'ss_path_alias,entity_id,im_parent,bs_see_all_link,bs_field_include_on_primary_navi,ss_field_url,sm_name_field,sm_field_content_title,ss_path_alias_locale,sm_field_url_title';
+                    $filters2['sort'] = 'is_weight asc';
+                    $filters2['rows'] = 1000;
+                    $query2 = fluke_solr_get_connection();
+                    $query2 = fluke_solr_add_filters($query2, $filters2);
+                    $response2 = fluke_solr_query($query2);
+                    $level2_total = 0;
+                    if(count($response2->response->docs) > 0) {
+                        $response2_docs = $response2->response->docs;
+
+                        // Since where to buy isn't a TOC page, we need to repeat it here for mobile nav
+                        if($screen_size === 'mobile' && $level1->entity_id === 2263) { // Where to buy term id
+                          array_unshift($response2_docs, $level1);
+                        }
+
+                        foreach($response2_docs as $level2) {
+                            $level2_active = 'flevel2';
+
+                            $destination = isset($level2->ss_field_url) ? 'external' : 'internal';
+
+                            if(!empty($level2->ss_path_alias) && $level2->ss_path_alias == "products/radiation-safety") {
+                                $link = rawurldecode($level2->ss_field_url);
+                            } else {
+                                $link = isset($level2->ss_field_url) ? urldecode($level2->ss_field_url) : urldecode($level2->ss_path_alias_locale);
+                            }
+        //                            if(!fluke_solr_validate_node_exists($level2->ss_path_alias_locale) && $destination == 'internal') {
+        //                                watchdog('missing_solr_content',
+        //                                    "No solr content for path: %path",
+        //                                    array('%path' => $link),
+        //                                    WATCHDOG_WARNING
+        //                                );
+        //                                continue;
+        //                            }
+
+                            $items[$level1_total]['children'][$level2_total]['url'] = isset($level2->sm_field_url_title) ? $level2->sm_field_url_title[0] : strtolower($level2->sm_field_content_title[0]);
+                            $items[$level1_total]['children'][$level2_total]['en_us_url'] = str_replace(' ', '-', strtolower($level2->sm_name_field[0]));
+                            $items[$level1_total]['children'][$level2_total]['link'] = $link;
+                            $items[$level1_total]['children'][$level2_total]['name'] = $level2->sm_field_content_title[0];
+                            $items[$level1_total]['children'][$level2_total]['en_us_name'] = $level2->sm_name_field[0];
+                            $items[$level1_total]['children'][$level2_total]['destination'] = $destination;
+                            if (isset($url_pattern[1]) && $level2->sm_field_url_title[0] === $url_pattern[1]) {
+                                $level2_active .= " active-trail active";
+                            }
+                            $items[$level1_total]['children'][$level2_total]['active_trail_indicator'] = (isset($level2_active) && !empty($level2_active))?$level2_active:'';
+                            $level1_no_sub = TRUE;
+                            $level2_no_sub = FALSE;
+
+                            $filters3['filters'] = array(
+                                'ss_language' => $language->language,
+                                'entity_type' => 'taxonomy_term',
+                                'bundle' => 'url_builder',
+                                'im_parent' => $level2->entity_id,
+                                'sm_term_depth' => 4,
+                            );
+                            if($position == 'top') {
+                                $filters3['filters']['bs_field_include_on_primary_navi'] = TRUE;
+                            }
+                            if($position == 'left') {
+                                $filters3['filters']['bs_field_hide_from_toc_left_navi'] = FALSE;
+                            }
+                            $filters3['fl'] = 'entity_id,im_parent,bs_see_all_link,bs_field_include_on_primary_navi,ss_field_url,sm_name_field,sm_field_content_title,ss_path_alias_locale,sm_field_url_title';
+                            $filters3['sort'] = 'is_weight asc';
+                            $filters3['rows'] = 1000;
+                            $query3 = fluke_solr_get_connection();
+                            $query3 = fluke_solr_add_filters($query3, $filters3);
+                            $response3 = fluke_solr_query($query3);
+
+                            $level3_total = 0;
+                            if(count($response3->response->docs) > 0) {
+                                foreach($response3->response->docs as $level3) {
+                                    $level3_active = 'flevel3';
+
+                                    $destination = isset($level3->ss_field_url) ? 'external' : 'internal';
+                                    $link = isset($level3->ss_field_url) ? urldecode($level3->ss_field_url) : urldecode($level3->ss_path_alias_locale);
+
+        //                                    if(!fluke_solr_validate_node_exists($level3->ss_path_alias_locale) && $destination == 'internal') {
+        //                                        watchdog('missing_solr_content',
+        //                                            "No solr content for path: %path",
+        //                                            array('%path' => $link),
+        //                                            WATCHDOG_WARNING
+        //                                        );
+        //                                        continue;
+        //                                    }
+
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['url'] = isset($level3->sm_field_url_title) ? $level3->sm_field_url_title[0] : strtolower($level3->sm_field_content_title[0]);
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['en_us_url'] = str_replace(' ', '-', strtolower($level3->sm_name_field[0]));
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['link'] = $link;
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['name'] = $level3->sm_field_content_title[0];
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['en_us_name'] = $level3->sm_name_field[0];
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['destination'] = $destination;
+//                                    if (isset($url_pattern[2]) && isset($level3->sm_field_url_title)) {
+//                                      if($level3->sm_field_url_title[0]  === $url_pattern[2]) {
+                                    
+                                    $sm_field_url_title = empty($level3->sm_field_url_title[0]) ? NULL : $level3->sm_field_url_title[0];
+                                    if (isset($url_pattern[2]) && $sm_field_url_title === $url_pattern[2]) {
+                                        $level3_active .= " active-trail active";
+                                    }
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['active_trail_indicator'] = (isset($level3_active) && !empty($level3_active)) ? $level3_active : '';
+                                    $level2_no_sub = TRUE;
+                                    $level3_no_sub = FALSE;
+
+                                    $filters4['filters'] = array(
+                                        'ss_language' => $language->language,
+                                        'entity_type' => 'taxonomy_term',
+                                        'bundle' => 'url_builder',
+                                        'im_parent' => $level3->entity_id,
+                                        'sm_term_depth' => 5,
+                                    );
+                                    if($position == 'top') {
+                                        $filters4['filters']['bs_field_include_on_primary_navi'] = TRUE;
+                                    }
+                                    if($position == 'left') {
+                                        $filters4['filters']['bs_field_hide_from_toc_left_navi'] = FALSE;
+                                    }
+                                    $filters4['fl'] = 'entity_id,im_parent,bs_see_all_link,bs_field_include_on_primary_navi,ss_field_url,sm_name_field,sm_field_content_title,ss_path_alias_locale,sm_field_url_title';
+                                    $filters4['sort'] = 'is_weight asc';
+                                    $filters4['rows'] = 1000;
+                                    $query4 = fluke_solr_get_connection();
+                                    $query4 = fluke_solr_add_filters($query4, $filters4);
+                                    $response4 = fluke_solr_query($query4);
+
+                                    $level4_total = 0;
+                                    if(count($response4->response->docs) > 0) {
+                                        foreach($response4->response->docs as $level4) {
+                                            $level4_active = 'flevel4';
+
+                                            $destination = isset($level4->ss_field_url) ? 'external' : 'internal';
+                                            $link = isset($level4->ss_field_url) ? $level4->ss_field_url : $level4->ss_path_alias_locale;
+
+        //                                            if(!fluke_solr_validate_node_exists($level4->ss_path_alias_locale) && $destination == 'internal') {
+        //                                                watchdog('missing_solr_content',
+        //                                                    "No solr content for path: %path",
+        //                                                    array('%path' => $link),
+        //                                                    WATCHDOG_WARNING
+        //                                                );
+        //                                                continue;
+        //                                            }
+
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['url'] = isset($level4->sm_field_url_title) ? $level4->sm_field_url_title[0] : strtolower($level4->sm_field_content_title[0]);
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['en_us_url'] = str_replace(' ', '-', strtolower($level4->sm_name_field[0]));
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['link'] = $link;
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['name'] = $level4->sm_field_content_title[0];
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['en_us_name'] = $level4->sm_name_field[0];
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['destination'] = $destination;
+                                            if (isset($url_pattern[3]) && $level4->sm_field_url_title[0] === $url_pattern[3]) {
+                                                $level4_active .= " active-trail";
+                                            }
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['active_trail_indicator'] = (isset($level4_active) && !empty($level4_active))?$level4_active:'';
+                                            $level4_total++;
+                                            $level3_no_sub = TRUE;
+                                        }
+                                    }
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['show_children'] = $level3_no_sub;
+                                    $level3_total++;
+                                }
+                            } else { // no children for level 2
+
+                            }
+                            
+                            // show all link enabled
+                            if (!empty($level2->bs_see_all_link)) {
+                              $destination = isset($level2->ss_field_url) ? 'external' : 'internal';
+                              $level2_no_sub = TRUE;
+                              $link = isset($level2->ss_field_url) ? urldecode($level2->ss_field_url) : urldecode($level2->ss_path_alias_locale);
+                              $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['active_trail_indicator'] = (isset($level3_active) && !empty($level3_active)) ? $level3_active : '';
+                              $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['url'] = isset($level2->sm_field_url_title) ? $level2->sm_field_url_title[0] : strtolower($level2->sm_field_content_title[0]);
+                              $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['en_us_url'] = str_replace(' ', '-', strtolower($level2->sm_name_field[0]));
+                              $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['link'] = $link;
+                              $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['name'] = t('See all');
+                              $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['en_us_name'] = 'See all';
+                              $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['destination'] = $destination;
+                              
+                            }
+                            $level2_class = (!$level2_no_sub) ? ' second-lvl-no-child' : '';
+                            $items[$level1_total]['children'][$level2_total]['show_children'] = $level2_no_sub;
+                            $items[$level1_total]['children'][$level2_total]['class'] = $level2_class;
+                            $level2_total++;
+                        }
+                        $items[$level1_total]['show_children'] = $level1_no_sub;
+                        $level1_total++;
+                    }
+                }
+            }
+             //store the localized version of the menu in cache
+             cache_set($cached_menu_name, $items, 'cache');
+        }
+    }
+
+    return $items;
+}
+
+/**
+ * @return string
+ * @throws Exception
+ * Return a themed left nav
+ */
+function igcommerce_utility_get_toc_left_nav() {
+    global $language;
+    $url_path = current_path();
+    $url_pattern = explode("/", $url_path);
+    $cached_menu_name = 'left_nav_'.end($url_pattern).'_desktop_'.$language->language;
+
+    // If article page appear highlight the term
+    if ((in_array('safety-notices', $url_pattern) && count($url_pattern) > 2) ||
+        (in_array('press-releases', $url_pattern) && count($url_pattern)> 2) ||
+        (in_array('software-downloads', $url_pattern) && count($url_pattern)> 2 )) {
+
+        array_pop($url_pattern);
+        $url_path = implode('/', $url_pattern);
+    }
+
+    $options = array();
+    $options['bs_field_hide_from_toc_left_navi'] = 0;
+    
+    $items = &drupal_static(__FUNCTION__);
+    if (!isset($items)) {
+//        if ($cache = cache_get($cached_menu_name)) {
+//            $items = $cache->data;
+//        }
+//        else {
+
+            $toc_menu_term = $url_pattern[0];
+            if (!$menu_term = _taxonomy_term_load_by_url_title_solr($toc_menu_term, 'url_builder', 'en-us')) {
+                return '';
+            }
+
+            $response = igcommerce_utility_load_term_children($menu_term->entity_id, $options);
+            $items = array();
+            $lang_local = igcommerce_utility_get_local();
+            if($response != FALSE) {
+                $level1_total = 0;
+                foreach ($response as $level1) {
+                    $level1_active = 'flnlevel1';
+                    $link = isset($level1->ss_field_url) ? rawurldecode($level1->ss_field_url) : rawurldecode($level1->ss_path_alias_locale);
+                    $destination = isset($level1->ss_field_url) ? 'external' : 'internal';
+                    if($level1->ss_path_alias == "products/radiation-safety") {
+                        $link = rawurldecode($level1->ss_field_url);
+                        $destination = 'internal';
+                    }
+                    $level1_class = ($level1->sm_name_field[0] == "Products") ? 'nav-column col-md-5ths' : 'nav-column col-md-12';
+                    $items[$level1_total]['url'] = isset($level1->sm_field_url_title)?$level1->sm_field_url_title[0]:strtolower($level1->sm_name_field[0]);
+                    $items[$level1_total]['en_us_url'] = str_replace(' ', '-', strtolower($level1->sm_name_field[0]));
+                    $items[$level1_total]['link'] = $link;
+                    $items[$level1_total]['hide'] = isset($level1->bs_field_hide_from_toc_left_navi) ? $level1->bs_field_hide_from_toc_left_navi : FALSE;
+                    $items[$level1_total]['name'] = $level1->sm_field_content_title[0];
+                    $items[$level1_total]['en_us_name'] = $level1->sm_name_field[0];
+                    $items[$level1_total]['destination'] = $destination;
+                    $items[$level1_total]['class'] = $level1_class;
+                    $items[$level1_total]['id'] = $level1->entity_id;
+                    if (isset($url_pattern[1]) &&
+                      $url_pattern[1] === str_replace(' ', '-', strtolower($level1->sm_name_field[0])) ||
+                      explode('/', $level1->ss_path_alias)[1] === $url_pattern[1]
+                    ) {
+                        $level1_active .= " active-trail active";
+                        //Only show wrapped if nav item has children
+                        $expand_wrapper1 = 'expanded-wrapper'; //adds a class to parent of current active term.
+                        $expand1 = 'expanded';
+                        $display1 = 'block'; // expands the block of current active term.
+                    } else {
+                        $display1 = 'none';
+                        $level1_active = "";
+                        $expand_wrapper1 = ''; //adds a class to parent of current active term.
+                        $expand1 = '';
+                    }
+                    $items[$level1_total]['active_trail_indicator'] = isset($level1_active)?$level1_active:'';
+                    $items[$level1_total]['expand_wrapper'] = isset($expand_wrapper1)?$expand_wrapper1:'';
+                    $items[$level1_total]['expand'] = isset($expand1)?$expand1:'';
+                    $items[$level1_total]['display'] = isset($display1)?$display1:'';
+                    $level1_no_sub = FALSE;
+
+                    $response2 = igcommerce_utility_load_term_children($level1->entity_id, $options);
+                    $level2_total = 0;
+                    if($response2 != FALSE && count($response2) > 0) {
+                        foreach($response2 as $level2) {
+
+                            $destination = isset($level2->ss_field_url) ? 'external' : 'internal';
+
+                            $link = isset($level2->ss_field_url) ? rawurldecode($level2->ss_field_url) : rawurldecode($level2->ss_path_alias_locale);
+                            $last_link_value = explode('/', $link);
+                            $level2_active = 'flnlevel2 '. end($last_link_value);
+                            $items[$level1_total]['children'][$level2_total]['url'] = isset($level2->sm_field_url_title)?$level2->sm_field_url_title[0]:strtolower($level1->sm_name_field[0]);
+                            $items[$level1_total]['children'][$level2_total]['en_us_url'] = str_replace(' ', '-', strtolower($level2->sm_name_field[0]));
+                            $items[$level1_total]['children'][$level2_total]['link'] = $link;
+                            $items[$level1_total]['children'][$level2_total]['hide'] = isset($level2->bs_field_hide_from_toc_left_navigat) ? $level2->bs_field_hide_from_toc_left_navigat : FALSE;
+                            $items[$level1_total]['children'][$level2_total]['name'] = $level2->sm_field_content_title[0];
+                            $items[$level1_total]['children'][$level2_total]['en_us_name'] = $level2->sm_name_field[0];
+                            $items[$level1_total]['children'][$level2_total]['destination'] = $destination;
+                            $items[$level1_total]['children'][$level2_total]['id'] = $level2->entity_id;
+                            $url_title = explode('/', $level2->ss_path_alias_locale);
+                            $link_parts = explode('/', $level2->ss_path_alias);
+                      
+                            if (isset($url_pattern[1]) &&
+                              ($url_pattern[count($url_pattern)-2] == $url_title[count($url_title)-2] && end($url_pattern) == end($url_title)) ||
+                              ($link_parts[0] == $url_pattern[0] && $link_parts[1] == $url_pattern[1] && (count($link_parts) > 2 && count($url_pattern) > 2) && ($link_parts[2] == $url_pattern[2]))
+                            ) {
+                                $level2_active .= " active-trail active";
+                                $expand_wrapper2 = 'expanded-wrapper'; //adds a class to parent of current active term.
+                                $expand2 = 'expanded';
+                                $display2 = 'block'; // expands the block of current active term.
+                            }
+                            $items[$level1_total]['children'][$level2_total]['active_trail_indicator'] = isset($level2_active)?$level2_active:'';
+                            $items[$level1_total]['children'][$level2_total]['expand_wrapper'] = isset($expand_wrapper2)?$expand_wrapper2:'';
+                            $items[$level1_total]['children'][$level2_total]['expand'] = isset($expand2)?$expand2:'';
+                            $items[$level1_total]['children'][$level2_total]['display'] = isset($display2)?$display2:'';
+
+                            $level1_no_sub = TRUE;
+                            $level2_no_sub = FALSE;
+
+                            $response3 = igcommerce_utility_load_term_children($level2->entity_id, $options);
+                            $level3_total = 0;
+                            if($response3 != FALSE && count($response3) > 0) {
+                                foreach($response3 as $level3) {
+                                    $level3_active = 'flnlevel3';
+
+                                    $destination = isset($level3->ss_field_url) ? 'external' : 'internal';
+                                    $link = isset($level3->ss_field_url) ? $level3->ss_field_url : $level3->ss_path_alias_locale;
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['url'] = isset($level3->sm_field_url_title)?$level3->sm_field_url_title[0]:strtolower($level3->sm_name_field[0]);
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['en_us_url'] = str_replace(' ', '-', strtolower($level3->sm_name_field[0]));
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['link'] = $link;
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['name'] = $level3->sm_field_content_title[0];
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['en_us_name'] = $level3->sm_name_field[0];
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['destination'] = $destination;
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['id'] = $level3->entity_id;
+                                    $url_title = explode('/', $level3->ss_path_alias_locale);
+                                    
+                                    if (isset($url_pattern[2]) &&
+                                      end($url_pattern) === str_replace(' ', '-', strtolower($level3->sm_name_field[0])) ||
+                                      in_array(end($url_title), $url_pattern)
+                                    ) {
+                                        $level3_active .= " active-trail active";
+                                        $expand_wrapper3 = 'expanded-wrapper'; //adds a class to parent of current active term.
+                                        $expand3 = 'expanded';
+                                        $display3 = 'block'; // expands the block of current active term.
+                                    }
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['active_trail_indicator'] = isset($level3_active) ? $level3_active : '';
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['expand_wrapper'] = isset($expand_wrapper3) ? $expand_wrapper3 : '';
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['expand'] = isset($expand3) ? $expand3 : '';
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['display'] = isset($display3) ? $display3 : '';
+                                    $level2_no_sub = TRUE;
+                                    $level3_no_sub = FALSE;
+
+                                    $response4 = igcommerce_utility_load_term_children($level3->entity_id, $options);
+
+                                    $level4_total = 0;
+                                    if($response4 != FALSE && count($response4->response->docs) > 0) {
+                                        foreach($response4 as $level4) {
+                                            $level4_active = 'flnlevel4';
+
+                                            $destination = isset($level4->ss_field_url) ? 'external' : 'internal';
+                                            $link = isset($level4->ss_field_url) ? $level4->ss_field_url : $level4->ss_path_alias_locale;
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['url'] = isset($level4->sm_field_url_title) ? $level4->sm_field_url_title[0] :  strtolower($level4->sm_name_field[0]);
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['en_us_url'] = str_replace(' ', '-', strtolower($level4->sm_name_field[0]));
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['link'] = $link;
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['name'] = $level4->sm_field_content_title[0];
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['en_us_name'] = $level4->sm_name_field[0];
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['destination'] = $destination;
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['id'] = $level4->entity_id;
+                                            $url_title = explode('/', $level4->ss_path_alias_locale);
+                                            if (isset($url_pattern[3]) && $url_title[3] === $url_pattern[3]) {
+                                                $level4_active .= " active-trail active";
+                                                $expand_wrapper4 = 'expanded-wrapper'; //adds a class to parent of current active term.
+                                                $expand4 = 'expanded';
+                                                $display4 = 'block'; // expands the block of current active term.
+                                            }
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['active_trail_indicator'] = isset($level4_active)?$level4_active:'';
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['expand_wrapper'] = isset($expand_wrapper4)?$expand_wrapper4:'';
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['expand'] = isset($expand4)?$expand4:'';
+                                            $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['children'][$level4_total]['display'] = isset($display4)?$display4:'';
+                                            $level4_total++;
+                                            $level3_no_sub = TRUE;
+                                        }
+                                    }
+                                    $items[$level1_total]['children'][$level2_total]['children'][$level3_total]['show_children'] = $level3_no_sub;
+                                    $level3_total++;
+                                }
+                            }
+                            $level2_class = (!$level2_no_sub) ? ' second-lvl-no-child' : '';
+                            $items[$level1_total]['children'][$level2_total]['show_children'] = $level2_no_sub;
+                            $items[$level1_total]['children'][$level2_total]['class'] = $level2_class;
+                            $level2_total++;
+                        }
+                        $items[$level1_total]['show_children'] = $level1_no_sub;
+                    }
+                    $level1_total++;
+                }
+            }
+            // store the localized version of the menu in cache
+            cache_set($cached_menu_name, $items, 'cache');
+        //}
+    }
+    return theme('toc_left_nav', array('items' => $items, 'language' => $language));
+}
+
+/**
+ * @return string
+ * @throws Exception
+ * Return a themed desktop version of primary nav
+ */
+function _igcommerce_utility_get_primary_nav_desktop() {
+    global $language;
+    $items = igcommerce_utility_build_primary_nav('mobile', 'top', FALSE);
+    $column_splitter = igcommerce_utility_primary_nav_columns($language);
+    return theme('primary_nav', array('items' => $items, 'column_splitter' => $column_splitter, 'language' => $language));
+}
+
+/**
+ * @return string
+ * @throws Exception
+ * Return a themed mobile version of primary nav
+ */
+function _igcommerce_utility_get_primary_nav_mobile() {
+    global $language;
+    $items = igcommerce_utility_build_primary_nav($screen_size = 'desktop', 'top', FALSE);
+    return theme('primary_nav_mobile', array('items' => $items, 'language' => $language));
+}
+
+/**
+ * @return string
+ * @throws Exception
+ * Return a themed left nav
+ */
+function _igcommerce_utility_get_left_nav_mobile() {
+    global $language;
+    $items = igcommerce_utility_build_primary_nav($screen_size = 'desktop', $reset = FALSE);
+    return theme('primary_nav_mobile', array('items' => $items, 'language' => $language->language));
+}
+
+// Get all the footer nav links
+function _igcommerce_utility_get_footer_links($bundle) {
+  global $language;
+  $cached_menu_name = 'ig_footer_links_'.$bundle.'-'.$language->language;
+  $items = &drupal_static($cached_menu_name);
+  if (!isset($items)) {
+    if ($cache = cache_get($cached_menu_name)) {
+      $items = $cache->data;
+    } else {
+      $params = array(
+        'bundle' => $bundle,
+        'sort' => 'is_weight asc',
+        'entity_type' => 'taxonomy_term',
+        'ss_language' => $language->language,
+        'ss_env_id' => 'ecm'
+      );
+      if ($bundle != 'secondary_nav') {
+        $params['bs_field_show_on_locale_'] = TRUE;
+      }
+      $lang_local = igcommerce_utility_get_local();
+      $result = fluke_solr_load_taxonomy_terms_by_vocabulary($bundle, $params);
+      if ($result && count($result) > 0) {
+        $i = 0;
+        foreach ($result as $item) {
+          $items[$i]['title'] = isset($item->ss_field_content_title) ? $item->ss_field_content_title : $item->ss_name_field;
+          $items[$i]['qrchina'] = igcommerce_utility_format_image('//dam-assets.fluke.com.cn/s3fs-public/footer_qrcode_for_gh_79b973535a4c.jpg', FALSE, FALSE, "美国福禄克（Fluke)");
+          $items[$i]['class'] = '';
+          $items[$i]['label'] = $item->label;
+          
+          if (isset($item->ss_field_url) && strlen($item->ss_field_url) > 0) {
+            $link = $item->ss_field_url;
+            if($item->ss_name_field == 'Fluke accessories' && $item->ss_language != 'en-us' && $item->ss_language != 'pl-pl') {
+              $url_path_builder = json_decode($item->sm_url_path_builder[0]);
+              array_pop($url_path_builder);
+              $url_path_builder = array_reverse($url_path_builder);
+              $link = implode('/', $url_path_builder);
+            }
+
+            $items[$i]['link'] = $link;
+            $items[$i]['target'] = '';
+            if (strpos($link, 'http') !== false) {
+              $items[$i]['target'] = "_blank";
+            }
+          } elseif (isset($item->ss_locale_specific_url) && !empty($item->ss_locale_specific_url)) {
+            // Adding custom class for social link icons
+            $items[$i]['link'] = $item->ss_locale_specific_url;
+            $items[$i]['target'] = "_blank";
+            $items[$i]['class'] = $item->ss_wrapper_class;
+          } else {
+            $url_path_builder = json_decode($item->sm_url_path_builder[0]);
+            array_pop($url_path_builder);
+            $url_path_builder = array_reverse($url_path_builder);
+            $link = implode('/', $url_path_builder);
+            //$items[$i]['link'] = $lang_local . '/' . $url;
+            $items[$i]['link'] = $link;
+            $items[$i]['target'] = '';
+          }
+          // Adding custom class for secondary nav
+          if (isset($item->sm_field_additional_class) && !empty($item->sm_field_additional_class)) {
+            $items[$i]['class'] = $item->sm_field_additional_class[0];
+          }
+          $i++;
+        }
+      }
+      // store the localized version of the menu in cache
+      cache_set($cached_menu_name, $items, 'cache');
+    }
+  }
+  if($bundle == 'secondary_nav') {
+    return theme('secondary_nav', array('items' => $items, 'bundle' => $bundle, 'language' => $language));
+  }
+  return theme('footer_links', array('items' => $items, 'bundle' => $bundle, 'language' => $language));
+}
+
+/**
+ * Implements hook_pathauto_alias_alter()
+ *
+ * This can alter the url alias generate before it get saved to db, Hence as per requirement
+ * and in ticket - FWGR-935 , Im removing fluke-ig from the URL Alias.
+ *
+ * @param string $alias generate url alias.
+ * @param array $context  The context
+ */
+function igcommerce_utility_pathauto_alias_alter(&$alias, array &$context) {
+
+  $pieces = explode("/", $alias);
+
+  if ($pieces[0] === 'file') {
+    return;
+  }
+
+  $opco_settings = variable_get('opco_strip_settings');
+  $opco_exclude = explode(',', $opco_settings);
+  if (!empty($opco_exclude)) {
+    // Strips out fluke-ig from URL Alias if it exists in URL.
+    $opco_exists = _igcommerce_utility_strpos($alias, $opco_exclude);
+    if ($opco_exists !== FALSE) {
+      $alias = str_replace($opco_exists . "/", "", $alias);
+    }
+  }
+}
+
+/**
+ * Function to check the string in a string.
+ *
+ * @param string $haystack The haystack
+ * @param array $needles The needles
+ * @param integer $offset The offset
+ *
+ * @return boolean ( description_of_the_return_value )
+ */
+function _igcommerce_utility_strpos($haystack, $needles = array(), $offset = 0) {
+  $chr = array();
+  foreach ($needles as $needle) {
+    $res = strpos($haystack, $needle, $offset);
+    if ($res !== FALSE) {
+      $chr[$needle] = $needle;
+    }
+  }
+  if (empty($chr))
+    return FALSE;
+  return min($chr);
+}
+
+/*
+ * hook__module_implements_alter(). Execute igcommerce_utility module after the
+ * metatag module.
+ */
+
+function igcommerce_utility_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter') {
+    $group = $implementations['igcommerce_utility'];
+    unset($implementations['igcommerce_utility']);
+    $implementations['igcommerce_utility'] = $group;
+  }
+}
+
+/*
+ * hook_form_alter. Make title and description required field for russian
+ * language.
+ */
+
+function igcommerce_utility_form_alter(&$form, &$form_state, $form_id) {
+  global $language;
+
+  switch ($form_id) {
+    case 'toc_node_form':
+    case 'promotion_node_form':
+    case 'event_node_form':
+      if ($language->language == 'ru-ru') {
+        $form['metatags']['und']['basic']['title']['value']['#required'] = TRUE;
+        $form['metatags']['und']['basic']['description']['value']['#required'] = TRUE;
+      }
+      // Validation for restricting 150 character.
+      $form['#validate'][] = 'igcommerce_utility_content_type_form_validate';
+      break;
+
+    case 'metatag_panels_form':
+      if ($language->language == 'ru-ru') {
+        $form['metatags']['und']['basic']['title']['value']['#required'] = TRUE;
+        $form['metatags']['und']['basic']['description']['value']['#required'] = TRUE;
+      }
+      break;
+
+    case 'views_ui_edit_display_form':
+      $form['options']['metatags']['und']['basic']['title']['value']['#required'] = TRUE;
+      $form['options']['metatags']['und']['basic']['description']['value']['#required'] = TRUE;
+      break;
+  }
+}
+
+/*
+ * Custom validation for 150 character restrication.
+ */
+
+function igcommerce_utility_content_type_form_validate($form, &$form_state) {
+  global $language;
+  if (!empty($form_state['values']['field_short_description_summary']['und'])) {
+    $short_summary = $form_state['values']['field_short_description_summary']['und'][0]['value'];
+    if (strlen($short_summary) >= 150) {
+      form_set_error('field_short_description_summary', t('Short Summary description not more than 150 character.'));
+    }
+  }
+}
+
+/**
+ * hook_preprocess_page(). for setting meta tag titile and description.
+ */
+//TODO convert to SOLR lookup
+function igcommerce_utility_preprocess_page(&$variables) {
+
+  $definitive = &drupal_static('igcommerce_utility_head_elements', FALSE);
+
+  // If we found a definitive source for our metadata then unset the metatags module array.
+  if($definitive){
+    if(!empty($variables['page']['content']['metatags']['global'])) {
+      foreach ($variables['page']['content']['metatags']['global'] as $key => $item) {
+        if ($key !== 'canonical') {
+          unset($variables['page']['content']['metatags']['global'][$key]);
+        }
+      }
+    }elseif(!empty($variables['page']['content']['metatags']['global:404'])){
+      foreach ($variables['page']['content']['metatags']['global:404'] as $key => $item) {
+        if ($key !== 'canonical') {
+          unset($variables['page']['content']['metatags']['global:404'][$key]);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image($image_url_desktop, $image_url_tablet, $image_url_mobile, $alt, $default_image = NULL, $class = NULL, $title = NULL, $use_x2 = FALSE) {
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+    
+    $img_class = 'lazyload';
+    
+    if ($class) {
+      $img_class .= ' ' . $class;
+    }
+    
+    // Provide defaults for alt and title if needed
+    if (!$alt && !$title) {
+      $metatags = drupal_static('ig_metatags');
+      if (!empty($metatags['title']['value'])) {
+        $title = $metatags['title']['value'];
+      } else {
+        $title = menu_get_active_title();
+      }
+      
+      $alt = $title;
+    }
+    
+    if (!$alt) {
+      $alt = $title;
+    }
+    if (!$title) {
+      $title = $alt;
+    }
+
+    // Alter urls for chinese domain
+    igcommerce_utility_alter_links($image_url_desktop);
+    igcommerce_utility_alter_links($image_url_mobile);
+    igcommerce_utility_alter_links($image_url_tablet);
+
+    // this is a way to generate s3 images on the fly like how drupal's imagecache module implements
+    if (variable_get('dam_image_deliver', FALSE)) {
+      $image_url_desktop = igcommerce_utility_dam_image_deliver($image_url_desktop);
+      $image_url_tablet = igcommerce_utility_dam_image_deliver($image_url_tablet);
+      $image_url_mobile = igcommerce_utility_dam_image_deliver($image_url_mobile);
+    }
+    
+    $output = '<picture>';
+    $output .= '<source srcset="' . $image_url_desktop . '" media="(min-width: ' . variable_get('large_desktop_min_width', 1280) . 'px)" data-original-src="' . $image_url_desktop . '"/>';
+    $output .= '<source srcset="' . $image_url_desktop . '" media="(min-width: ' . variable_get('medium_desktop_min_width', 1033) .
+        'px) and (max-width: ' . variable_get('medium_desktop_max_width', 1279) . 'px)" data-original-src="' . $image_url_desktop . '"/>';
+    $output .= '<source srcset="' . $image_url_tablet . '" media="(min-width: ' . variable_get('tablet_min_width', 768) . 'px) and (max-width: ' . variable_get('tablet_max_width', 1032) . 'px)" data-original-src="' . $image_url_tablet . '"/>';
+    $output .= '<source srcset="' . $image_url_mobile . '" media="(max-width: ' . variable_get('mobile_max_width', 767) . 'px)" data-original-src="' . $image_url_mobile . '"/>';
+    $output .= '<img class="' .  $img_class . '" src="' . $image_url_desktop . '" alt="' . $alt . '" title="' . $title . '" onerror="applyDefaultImg(this);" />';
+    $output .= '</picture>';
+
+    return $output;
+}
+
+/**
+ * Replaces dam-asset url with DAM s3fs generation link to ensure the image is up-to-date. Good to use with crawler to
+ * ensure entire site has fresh images.
+ */
+function igcommerce_utility_dam_image_deliver($url) {
+  if (!$url) {
+    return $url;
+  }
+  
+  $path = $url;
+  
+  $path = str_replace('http://dam-assets.fluke.com/', '', $path);
+  $path = str_replace('http://dam-assets.fluke.com.cn/', '', $path);
+  $path = str_replace('https://dam-assets.fluke.com/', '', $path);
+  $path = str_replace('https://dam-assets.fluke.com.cn/', '', $path);
+  $path = str_replace('//dam-assets.fluke.com/', '', $path);
+  $path = str_replace('//dam-assets.fluke.com.cn/', '', $path);
+  $path = str_replace('dam-assets.fluke.com/', '', $path);
+  $path = str_replace('dam-assets.fluke.com.cn/', '', $path);
+  
+  if (strpos($path, 's3fs-public/styles/') !== FALSE) {
+    $parts = explode('/', $path);
+    array_shift($parts); // s3fs-public
+    array_shift($parts); // styles
+    $style_name = array_shift($parts);
+    array_shift($parts); // public
+    $path = implode('/', $parts);
+    $hash = image_style_path_token($style_name, 'public://' . $path);
+    $url = 'https://live-fluke-dam.pantheonsite.io/s3/files/styles/' . $style_name . '/public/' . $path . '?itok=' . $hash;
+  }
+  
+  return $url;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_homepage($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 1033px)' srcset='{$images['original__size']}' >";
+  $output .= "<source media='(min-width: 526px)' srcset='{$images['1032x620_homepage']}' >";
+  $output .= "<img src='{$images['778x290_homepage']}' srcset='{$images['1557x580_homepage']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_product_slideshow_main($images, $alt = NULL, $title = NULL) {
+  
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  // Alter urls for chinese domain
+  foreach ($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+  // The data-zoom-image is fed into the image zoomer.  We chose the 2x version (1228x819)
+  // instead of the origional (1500x1000) because some origional images are smaller.
+  // using the 2x version reduces quality overall, but provides a consistent user experience. MIG4294 -RRN 10-3-18
+  $output = "<img src='{$images['product_slideshow_main']}' srcset='{$images['product_slideshow_main_2x']} 2x' alt='$alt' title='$title' data-zoom-image='https:{$images['product_slideshow_main_2x']}' onerror='applyDefaultImg(this);'>";
+
+  return $output;
+}
+
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_homepage_featured($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+  
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 1033px)' srcset='{$images['768_4-col']}, {$images['768_4-col_2x']} 2x' >";
+  $output .= "<source media='(min-width: 768px)' srcset='{$images['1033_9-3-split_3-col']}, {$images['1033_9-3-split_3-col_2x']} 2x' >";
+  $output .= "<img src='{$images['0px_12-col']}' srcset='{$images['0px_12-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+  
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_product_category($images, $alt = NULL, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 768px)' srcset='{$images['768_4-col']}, {$images['768_4-col_2x']} 2x' >";
+  $output .= "<source media='(min-width: 525px)' srcset='{$images['525_6-col']}, {$images['525_6-col_2x']} 2x' >";
+  $output .= "<img src='{$images['0px_12-col']}' srcset='{$images['0px_12-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_blog_featured($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 768px)' srcset='{$images['400x267']}, {$images['800x534']} 2x' >";
+  $output .= "<source media='(min-width: 525px)' srcset='{$images['768_4-col']}, {$images['768_4-col_2x']} 2x' >";
+  $output .= "<img src='{$images['0px_12-col']}' srcset='{$images['0px_12-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_blog_top_stories($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 768px)' srcset='{$images['400x267']}, {$images['800x534']} 2x' >";
+  $output .= "<source media='(min-width: 525px)' srcset='{$images['768_4-col']}, {$images['768_4-col_2x']} 2x' >";
+  $output .= "<img src='{$images['0px_12-col']}' srcset='{$images['0px_12-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ *
+ * This is used for the blog TOC Recent Stories,
+ * the Webcard TOC Related Products,
+ * and the webcard related products.
+ */
+function igcommerce_utility_format_image_blog_recent_stories($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 768px)' srcset='{$images['1033_9-3-split_3-col']}, {$images['1033_9-3-split_3-col_2x']} 2x' >";
+  $output .= "<img src='{$images['0px_12-col']}' srcset='{$images['0px_12-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_webcard_large($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 768px)' srcset='{$images['card_large']}' >";
+  $output .= "<img src='{$images['card_mobile']}' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_webcard_small($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 768px)' srcset='{$images['card_small']}' >";
+  $output .= "<img src='{$images['card_mobile']}' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_top_sellers($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<img src='{$images['768_4-col']}' srcset='{$images['768_4-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_related_products($images, $alt, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<img src='{$images['768_4-col']}' srcset='{$images['768_4-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ */
+function igcommerce_utility_format_image_product_toc($images, $alt = NULL, $title = NULL) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/img_src.js');
+  
+  // Provide defaults for alt and title if needed
+  if (!$alt && !$title) {
+    $metatags = drupal_static('ig_metatags');
+    if (!empty($metatags['title']['value'])) {
+      $title = $metatags['title']['value'];
+    } else {
+      $title = menu_get_active_title();
+    }
+
+    $alt = $title;
+  }
+
+  if (!$alt) {
+    $alt = $title;
+  }
+  if (!$title) {
+    $title = $alt;
+  }
+
+  // if image is not array, create the image styles
+  if (is_string($images)) {
+    $images = igcommerce_utility_get_images($images);
+  }
+  
+  // Alter urls for chinese domain
+  foreach($images as &$image) {
+    igcommerce_utility_alter_links($image);
+  }
+
+  $output = '<picture>';
+  $output .= "<source media='(min-width: 1033px)' srcset='{$images['1033_9-3-split_3-col']}, {$images['1033_9-3-split_3-col_2x']} 2x' >";
+  $output .= "<source media='(min-width: 525px)' srcset='{$images['525_6-col']}, {$images['525_6-col_2x']} 2x' >";
+  $output .= "<img src='{$images['0px_12-col']}' srcset='{$images['0px_12-col_2x']} 2x' alt='$alt' title='$title' onerror='applyDefaultImg(this);'>";
+  $output .= '</picture>';
+
+  return $output;
+}
+
+
+/**
+ * Return a no image found URI
+ */
+function igcommerce_utility_no_image_found($size = 'desktop') {
+
+    $path_to_image = "/" . path_to_theme() . '/images/';
+
+    switch ($size) {
+
+        case 'desktop':
+            $path_to_image .= variable_get('no_image_found_desktop', NULL);
+            break;
+
+        case 'tablet':
+            $path_to_image .= variable_get('no_image_found_tablet', NULL);
+            break;
+
+        case 'mobile':
+            $path_to_image .= variable_get('no_image_found_mobile', NULL);
+            break;
+
+        default:
+            $path_to_image .= variable_get('no_image_found_desktop', NULL);
+            break;
+    }
+
+
+    return $path_to_image;
+}
+
+/**
+ * Handle the various scenarios where there are three possible images - desktop, tablet, and mobile
+ * And only some of those images exist.
+ */
+function igcommerce_utility_determine_banner_image($image_url_desktop = FALSE, $image_url_tablet = FALSE, $image_url_mobile = FALSE, $alt = NULL) {
+
+    $default_banner = variable_get('default_banner_image', '//data.fluke.com/sites/default/files/solution-oil-gas-banner_placeholder-1920x290.jpg');
+
+    $image_url_desktop = igcommerce_utility_s3_check($image_url_desktop);
+    $image_url_tablet = igcommerce_utility_s3_check($image_url_tablet);
+    $image_url_mobile = igcommerce_utility_s3_check($image_url_mobile);
+
+    $banner_images = array();
+
+    /** the following scenarios may occur with banner images -- editorial may load
+    one or more of the following:  desktop, tablet, and mobile
+
+    Scenario  Desktop Tablet  Mobile
+    1        Y      Y      Y
+    2        Y      Y      N
+    3        Y      N      N
+    4        Y      N      Y
+    5        N      Y      Y
+    6        N      N      Y
+    7        N      Y      N
+    8        N      N      N
+     * */
+    // scenario 1
+    if ($image_url_desktop && $image_url_tablet && $image_url_mobile) {
+        $banner_images['desktop'] = $image_url_desktop;
+        $banner_images['tablet'] = $image_url_tablet;
+        $banner_images['mobile'] = $image_url_mobile;
+    }
+
+    // scenario 2
+    if ($image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+        $banner_images['desktop'] = $image_url_desktop;
+        $banner_images['tablet'] = $image_url_tablet;
+        $banner_images['mobile'] = $image_url_tablet;
+    }
+
+    // scenario 3
+    if ($image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+        $banner_images['desktop'] = $image_url_desktop;
+        $banner_images['tablet'] = $image_url_desktop;
+        $banner_images['mobile'] = $image_url_desktop;
+    }
+
+    // scenario 4
+    if ($image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+        $banner_images['desktop'] = $image_url_desktop;
+        $banner_images['tablet'] = $image_url_desktop;
+        $banner_images['mobile'] = $image_url_mobile;
+    }
+
+    // Scenario 5
+    if (!$image_url_desktop && $image_url_tablet && $image_url_mobile) {
+        $banner_images['desktop'] = $image_url_tablet;
+        $banner_images['tablet'] = $image_url_tablet;
+        $banner_images['mobile'] = $image_url_mobile;
+    }
+
+    // scenario 6
+    if (!$image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+        $banner_images['desktop'] = $image_url_mobile;
+        $banner_images['tablet'] = $image_url_mobile;
+        $banner_images['mobile'] = $image_url_mobile;
+    }
+
+    // scenario 7
+    if (!$image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+        $banner_images['desktop'] = $image_url_tablet;
+        $banner_images['tablet'] = $image_url_tablet;
+        $banner_images['mobile'] = $image_url_tablet;
+    }
+
+    // scenario 8
+    if (!$image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+        $banner_images['desktop'] = $default_banner;
+        $banner_images['tablet'] = $default_banner;
+        $banner_images['mobile'] = $default_banner;
+    }
+
+    return igcommerce_utility_format_image($banner_images['desktop'], $banner_images['tablet'], $banner_images['mobile'], $alt, $default_banner);
+}
+
+/**
+ * Handle the various scenarios where there are three possible images - desktop, tablet, and mobile
+ * And only some of those images exist.
+ */
+function igcommerce_utility_determine_toc_image($image_url_desktop = FALSE, $image_url_tablet = FALSE, $image_url_mobile = FALSE, $alt = NULL, $class = NULL, $title = NULL) {
+
+    $default_image = variable_get('no_image_found_desktop', '/sites/all/themes/figstrap/images/no_image_available.jpg');
+
+    $image_url_desktop = igcommerce_utility_s3_check($image_url_desktop);
+    $image_url_tablet = igcommerce_utility_s3_check($image_url_tablet);
+    $image_url_mobile = igcommerce_utility_s3_check($image_url_mobile);
+
+    $article_images = array();
+    
+    /** the following scenarios may occur with banner images -- editorial may load
+    one or more of the following:  desktop, tablet, and mobile
+
+    Scenario  Desktop Tablet  Mobile
+    1        Y      Y      Y
+    2        Y      Y      N
+    3        Y      N      N
+    4        Y      N      Y
+    5        N      Y      Y
+    6        N      N      Y
+    7        N      Y      N
+    8        N      N      N
+     * */
+    // scenario 1
+    if ($image_url_desktop && $image_url_tablet && $image_url_mobile) {
+        $article_images['desktop'] = $image_url_desktop;
+        $article_images['tablet'] = $image_url_tablet;
+        $article_images['mobile'] = $image_url_mobile;
+    }
+
+    // scenario 2
+    if ($image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+        $article_images['desktop'] = $image_url_desktop;
+        $article_images['tablet'] = $image_url_tablet;
+        $article_images['mobile'] = $image_url_tablet;
+    }
+
+    // scenario 3
+    if ($image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+        $article_images['desktop'] = $image_url_desktop;
+        $article_images['tablet'] = $image_url_desktop;
+        $article_images['mobile'] = $image_url_desktop;
+    }
+
+    // scenario 4
+    if ($image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+        $article_images['desktop'] = $image_url_desktop;
+        $article_images['tablet'] = $image_url_desktop;
+        $article_images['mobile'] = $image_url_mobile;
+    }
+
+    // Scenario 5
+    if (!$image_url_desktop && $image_url_tablet && $image_url_mobile) {
+        $article_images['desktop'] = $image_url_tablet;
+        $article_images['tablet'] = $image_url_tablet;
+        $article_images['mobile'] = $image_url_mobile;
+    }
+
+    // scenario 6
+    if (!$image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+        $article_images['desktop'] = $image_url_mobile;
+        $article_images['tablet'] = $image_url_mobile;
+        $article_images['mobile'] = $image_url_mobile;
+    }
+
+    // scenario 7
+    if (!$image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+        $article_images['desktop'] = $image_url_tablet;
+        $article_images['tablet'] = $image_url_tablet;
+        $article_images['mobile'] = $image_url_tablet;
+    }
+
+    // scenario 8
+    if (!$image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+        $article_images['desktop'] = $default_image;
+        $article_images['tablet'] = $default_image;
+        $article_images['mobile'] = $default_image;
+    }
+
+    // Change to s3 url if set
+    return igcommerce_utility_format_image($article_images['desktop'], $article_images['tablet'], $article_images['mobile'], $alt, $default_image, $class, $title);
+}
+
+// Replace DAM url with S3 bucket url
+function igcommerce_utility_s3_check($file_url = FALSE) {
+
+    //Change to s3 url if set
+    $protocol = '';
+    $default_url = variable_get('dam_default_files_url', 'data.fluke.com/sites/default/files');
+    $s3_url = variable_get('s3_bucket_url', '');
+
+    if ($file_url && !empty($s3_url)) {
+        if (strpos( $file_url, $default_url ) !== FALSE) {
+            $file_url = str_replace($default_url, $s3_url, $file_url);
+        }
+
+        if (strpos($file_url, 'https://flukedam.s3-us-west-2.amazonaws.com') !== FALSE) {
+            $file_url = str_replace('https://flukedam.s3-us-west-2.amazonaws.com/s3fs-public', $s3_url, $file_url);
+        }
+
+        if (strpos($file_url, 'https://data.fluke.com/sites/default/files') !== FALSE) {
+            $file_url = str_replace('https://data.fluke.com/sites/default/files', $s3_url, $file_url);
+        }
+
+        if (strpos($file_url, 'https://data.fluke.com/sites/default/files') !== FALSE) {
+            $file_url = str_replace('https://data.fluke.com/sites/default/files', $s3_url, $file_url);
+        }
+
+        if (strpos($file_url, 'http://live-fluke-dam.pantheonsite.io/sites/default/files') !== FALSE) {
+            $file_url = str_replace('http://live-fluke-dam.pantheonsite.io/sites/default/files', $s3_url, $file_url);
+        }
+
+        if (strpos($file_url, '//data.fluke.com/sites/default/files') !== FALSE) {
+            $file_url = str_replace('//data.fluke.com/sites/default/files', $s3_url, $file_url);
+        }
+
+        if (strpos($file_url, 'https://') !== FALSE) {
+            $file_url = str_replace('https://', 'http://', $file_url);
+        }
+
+        if (strpos($file_url, 'http://') === FALSE) {
+            $file_url = trim($file_url, '//');
+            $file_url =  'http://' . $file_url;
+        }
+
+        if (strpos($file_url, 'http://http://') !== FALSE) {
+            $file_url = str_replace('http://http://', 'http://', $file_url);
+        }
+        //return str_replace($default_url, $s3_url, $file_url);
+    }
+
+    // Finally replace http with https if the site is using https
+    if (isset($_SERVER['HTTPS']) && strpos($file_url, 'http://') !== FALSE) {
+        $file_url = str_replace('http://', 'https://', $file_url);
+    }
+
+    return $file_url;
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function igcommerce_utility_token_info() {
+    $info['tokens']['site']['language-code'] = array(
+        'name' => t('Language code'),
+        'description' => t('The current language code.'),
+    );
+
+    // Brightcove
+    $info['types']['brightcove'] = array(
+        'name' => 'Brightcove',
+        'description' => 'Tokens for brightcove rendering',
+        'needs-data' => 'brightcove',
+    );
+    $info['tokens']['brightcove']['embed'] = array(
+        'name' => t('Brightcove Embed URL'),
+        'description' => t('Brightcove iframe src url given a node id'),
+        'dynamic' => TRUE,
+    );
+    $info['tokens']['brightcove']['modal'] = array(
+        'name' => t('Brightcove Modal URL'),
+        'description' => t('Brightcove modal anchor attributes given a node id'),
+        'dynamic' => TRUE,
+    );
+    
+    // TOC URL
+    $info['types']['toc'] = array(
+        'name' => 'TOC URL',
+        'description' => 'Tokens for translated url given en-us url',
+        'needs-data' => 'toc',
+    );
+    $info['tokens']['toc']['url'] = array(
+        'name' => t('TOC URL'),
+        'description' => t('Tokens for translated url given en-us url'),
+        'dynamic' => TRUE,
+    );
+    return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function igcommerce_utility_tokens($type, $tokens, array $data = array(), array $options = array()) {
+    $replacements = array();
+    global $language;
+    
+    foreach ($tokens as $name => $original) {
+      if ($type == 'site') {
+         if ($name == "language-code") {
+           $replacements[$original] = $language->language;
+         }
+      } elseif ($type == 'brightcove') {
+        $parts = explode(':', $name);
+        $nid = $parts[1];
+        if (!$node = fluke_solr_get_entity($nid, 'node', 'video', $language->language)) {
+          continue;
+        }
+      
+        if ($parts[0] == 'embed') {
+          $replacements[$original] = $node->ss_field_content_url . '&iframe=true';
+        }
+        if ($parts[0] == 'modal') {
+          drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/video.js');
+          $replacements[$original] = $node->ss_field_content_url . '&iframe=true&autoplay=true" class="colorbox-load';
+        }
+      } elseif ($type == 'toc') {
+        if (!$path = igcommerce_utility_url_get_locale_path($name, $language->language)) {
+          // No path found? set to original path
+          $path = $name;
+        }
+        $replacements[$original] = url($path, array('alias' => TRUE, 'language' => $language));
+        
+      }
+    }
+    
+    return $replacements;
+}
+
+/**
+ * Missing translation_path_get_translation function found in XMLsitemap multilingual.
+ *
+ * See //api.drupal.org/api/drupal/modules%21translation%21translation.module/function/translation_path_get_translations/6.x
+ *
+ */
+function translation_path_get_translations($path) {
+  $paths = array();
+  // Check for a node related path, and for its translations.
+  if ((preg_match("!^node/([0-9]+)(/.+|)$!", $path, $matches)) && ($node = node_load((int) $matches[1])) && !empty($node->tnid)) {
+    foreach (translation_node_get_translations($node->tnid) as $language => $translation_node) {
+      $paths[$language] = 'node/' . $translation_node->nid . $matches[2];
+    }
+  }
+  return $paths;
+}
+
+/**
+ * Loads all translations for a given entity
+ */
+function igcommerce_utility_get_entity_translations($entity_type, $bundle, $entity_id) {
+  $filters['filters'] = array(
+      'entity_type' => $entity_type,
+      'entity_id' => $entity_id,
+      'bundle' => $bundle,
+      //'!ss_language' => 'en-us', // grab all except en-us
+  );
+
+  $filters['rows'] = 1000;
+
+  $query = fluke_solr_get_connection();
+  $query = fluke_solr_add_filters($query, $filters);
+  $response = fluke_solr_query($query);
+
+  $docs = $response->response->docs;
+
+  return $docs;
+}
+
+function igcommerce_utility_sync_path_alias($entity_id = NULL, $reset = FALSE) {
+    $filters = array();
+    $max = 300; // max number of records to process in batches
+
+    $settings = variable_get('igc_path_alias_cron', array('start' => 0, 'offset' => 0));
+
+    if ($reset) {
+        $settings['start'] = 0;
+        $settings['offset'] = 0;
+    }
+
+    $date = new DateTime('now');
+    $date_formatted = $date->format("Y-m-d\TH:i:s.z\Z");
+
+    $filters['filters'] = array(
+        'entity_type' => 'node',
+        'bundle' => '(article OR toc)', // only interested in articles or toc bundles
+        'ss_language' => 'en-us', // only interested to grab en-us first
+        //'bs_status' => TRUE, // only interested in published nodes
+    );
+
+    if ($entity_id) {
+        $filters['filters']['entity_id'] = $entity_id;
+    }
+
+    // Sorting by creation date
+    $filters['sort'] = array('ds_created' => 'asc');
+
+    $filters['rows'] = $max;
+
+    // Check for updated nodes
+    if (!empty($settings['start']) && !$entity_id) {
+        $date = $settings['start'];
+        $filters['filters']['ds_changed'] = '{' . $date . ' TO *}';
+    }
+
+    if (!$entity_id) {
+        $filters['start'] = $settings['offset'];
+    }
+
+    $query = fluke_solr_get_connection();
+    $query = fluke_solr_add_filters($query, $filters);
+    $response = fluke_solr_query($query);
+
+    $docs = $response->response->docs;
+
+    if (count($docs) == $max) {
+        // Increase offset for next run
+        $settings['offset'] += $max;
+    } else {
+        // Reset offset and set date
+        $settings['offset'] = 0;
+        $settings['start'] = $date_formatted;
+    }
+
+    foreach ($docs as $doc) {
+        // These are all published so make sure there are path aliases
+        // Get translated entities
+        $entities = igcommerce_utility_get_entity_translations($doc->entity_type, $doc->bundle, $doc->entity_id);
+        $source = $doc->ss_path_alias;
+        // Loop through each translated entity and ensure that there is a path alias
+        foreach ($entities as $entity) {
+            if ($entity->ss_language == 'en-us') {
+                continue; // skip en-us
+            }
+            if(isset($entity->path_alias)) {
+
+                // This is the alias that should be in IGC
+                $path = $entity->path_alias;
+
+                // Delete alias if this entity isn't published
+                if (!$entity->bs_status) {
+                    $criteria = array('source' => $path, 'language' => $entity->ss_language);
+                    path_delete($criteria);
+                    continue;
+                }
+
+                // Skip if it doesn't appear to be translated
+                if ($path == $source) {
+                    continue;
+                }
+
+                // Check if an alias exists
+                $conditions = array('source' => $source, 'language' => $entity->ss_language);
+
+                if (!$alias = path_load($conditions)) {
+                    // Doesn't exist, so add the alias
+                    $alias = array('source' => $source, 'alias' => $path, 'language' => $entity->ss_language);
+                    path_save($alias);
+                } else {
+                    // Ensure the IGC alias here matches $path
+                    if ($alias['alias'] != $path) {
+                        // Not a match, so update the local alias
+                        $alias['alias'] = $path;
+                        path_save($alias);
+                    }
+                }
+            }
+        }
+    }
+
+    variable_set('igc_path_alias_cron', $settings);
+
+}
+
+function igcommerce_utility_save_update_alias_process_old($entity_id = NULL, $max = 30) {
+    watchdog('Solr_path_alias', "Starting pulling path alias from solr");
+
+    // Delete url_alias where source = ''
+    db_query("DELETE FROM url_alias WHERE source = ''");
+
+    $filters = array();
+    $source = '';
+    $path = '';
+    // Sorting by id as it is unique enough for this operation
+    $filters['q'] = 'entity_type:node AND bs_status:1 AND bundle:("toc" OR "product_display" OR "article") AND ss_language:en-us';
+    $filters['fl'] = 'path_alias,ss_path_alias,entity_id,bundle,entity_type,ss_language';
+    $filters['rows'] = $max;
+    $filters['sort'] = "id asc";
+    // We use 'cursorMark' to track which page we are on in the query
+    $filters['cursorMark'] = "*";
+    if ($entity_id) {
+        $filters['filters']['entity_id'] = $entity_id;
+    }
+
+    $date = new DateTime('now');
+    $date_formatted = $date->format("Y-m-d\TH:i:s.z\Z");
+
+    // Sorting by creation date
+    //$filters['sort'] = array('ds_created' => 'asc');
+
+    $query = fluke_solr_get_connection();
+    $query = fluke_solr_add_filters($query, $filters);
+    $response = fluke_solr_query($query);
+
+    $docs = $response->response->docs;
+    $total_pages = $response->response->numFound / $max;
+    // Count the pages
+    $page = 1;
+    $source_document = 1;
+
+    while(count($docs) > 0) {
+        // Get the cursorMark for the next request
+        $cursorMark = $response->nextCursorMark;
+        foreach ($docs as $doc) {
+            // These are all published so make sure there are path aliases
+            // Get translated entities
+            $entities = igcommerce_utility_get_entity_translations($doc->entity_type, $doc->bundle, $doc->entity_id);
+
+            // TO DO: I am doing this here because TOCs switched translated url to ss_path_alias while the rest are different
+            $source = isset($doc->path_alias) ? $doc->path_alias : $doc->ss_path_alias;
+
+            // Product display is missing product prefix, so add create that here.
+            $prefix = ($doc->bundle == 'product_display') ? 'product' : '';
+
+            // Log content with empty sources
+            if (empty(trim($source))) {
+                watchdog('Solr_path_alias',
+                    "No source found for: Entity_id:%eid | Bundle:%bundle | Type:%entity_type | Lang:%lang",
+                    array('%eid' => $doc->entity_id, '%bundle' => $doc->bundle, '%entity_type' => $doc->entity_type, '%lang' => $doc->ss_language),
+                    WATCHDOG_ERROR
+                );
+            }
+            if (!empty(trim($source))) {
+
+                // Loop through each translated entity and ensure that there is a path alias
+                $local_document = 0;
+                foreach ($entities as $entity) {
+                    if ($entity->ss_language == 'en-us') {
+                        continue; // skip en-us
+                    }
+                    if (isset($entity->path_alias)) {
+
+                        // This is the alias that should be in IGC
+                        $path = $entity->path_alias;
+                        // If article, toc, product_display or promotions use ss_path_alias_locale field
+                        if(isset($entity->ss_path_alias_locale)) {
+                            $path = $entity->ss_path_alias_locale;
+                        }
+
+                        // Delete alias if this entity isn't published
+                        if (!$entity->bs_status) {
+                            $criteria = array('source' => $source, 'language' => $entity->ss_language);
+                            path_delete($criteria);
+                            continue;
+                        }
+
+                        // Skip if it doesn't appear to be translated
+                        if ($path == $source) {
+                            continue;
+                        }
+
+                        if($doc->bundle == 'product_display') {
+                            // Delete the old path without the product prefix
+                            $criteria = path_load(array('source' => $source, 'language' => $entity->ss_language));
+                            if (isset($criteria['pid'])) {
+                                path_delete($criteria['pid']);
+                            }
+
+                            $lang_prefix = t($prefix, array(), array('langcode' => $entity->ss_language));
+                            // If product display, prepend prefix and save the full path alias
+                            // Cover for product VS accessories VS kits
+                            igcommerce_utility_save_update_alias(
+                                $prefix . '/' . $source,
+                                $lang_prefix . '/' . $path,
+                                $entity->ss_language);
+                            continue;
+                        } else {
+                            if ($doc->bundle == 'toc' && isset($entity->sm_url_path_builder[0])) {
+
+                                // Delete the old path without the products prefix
+                                $criteria = path_load(array('source' => $source, 'language' => $entity->ss_language));
+                                if (isset($criteria['pid'])) {
+                                    path_delete($criteria['pid']);
+                                }
+
+                                //$link_array = json_decode($entity->sm_url_path_builder[0]);
+                                //array_pop($link_array);
+                                //$final_array = array_reverse($link_array);
+                                //$path = implode('/', $final_array);
+
+                            }
+                            // Create alias for each level of url for each translated local
+                            $local_path = explode('/', $path);
+                            $source_path = explode('/', $source);
+
+
+                            if (isset($local_path[0]) && isset($source_path[0])) {
+                                igcommerce_utility_save_update_alias(
+                                    $source_path[0],
+                                    $local_path[0],
+                                    $entity->ss_language);
+
+                            }
+                            if (isset($local_path[1]) && isset($source_path[1])) {
+                                igcommerce_utility_save_update_alias(
+                                    $source_path[0] . '/' . $source_path[1],
+                                    $local_path[0] . '/' . $local_path[1],
+                                    $entity->ss_language
+                                );
+                            }
+                            if (isset($local_path[2]) && isset($source_path[2])) {
+                                igcommerce_utility_save_update_alias(
+                                    $source_path[0] . '/' . $source_path[1] . '/' . $source_path[2],
+                                    $local_path[0] . '/' . $local_path[1] . '/' . $local_path[2],
+                                    $entity->ss_language);
+                            }
+                            if (isset($local_path[3]) && isset($source_path[3])) {
+                                igcommerce_utility_save_update_alias(
+                                    $source_path[0] . '/' . $source_path[1] . '/' . $source_path[2] . '/' . $source_path[3],
+                                    $local_path[0] . '/' . $local_path[1] . '/' . $local_path[2] . '/' . $local_path[3],
+                                    $entity->ss_language);
+                            }
+                            if (isset($local_path[4]) && isset($source_path[4])) {
+                                igcommerce_utility_save_update_alias(
+                                    $source_path[0] . '/' . $source_path[1] . '/' . $source_path[2] . '/' . $source_path[3] . '/' . $source_path[4],
+                                    $local_path[0] . '/' . $local_path[1] . '/' . $local_path[2] . '/' . $local_path[3] . '/' . $local_path[4],
+                                    $entity->ss_language);
+                            }
+                            if (isset($local_path[5]) && isset($source_path[5])) {
+                                igcommerce_utility_save_update_alias(
+                                    $source_path[0] . '/' . $source_path[1] . '/' . $source_path[2] . '/' . $source_path[3] . '/' . $source_path[4] . '/' . $source_path[5],
+                                    $local_path[0] . '/' . $local_path[1] . '/' . $local_path[2] . '/' . $local_path[3] . '/' . $local_path[4] . '/' . $local_path[5],
+                                    $entity->ss_language);
+                            }
+                            if (isset($local_path[6]) && isset($source_path[6])) {
+                                igcommerce_utility_save_update_alias(
+                                    $source_path[0] . '/' . $source_path[1] . '/' . $source_path[2] . '/' . $source_path[3] . '/' . $source_path[4] . '/' . $source_path[5] . '/' . $source_path[6],
+                                    $local_path[0] . '/' . $local_path[1] . '/' . $local_path[2] . '/' . $local_path[3] . '/' . $local_path[4] . '/' . $local_path[5] . '/' . $local_path[6],
+                                    $entity->ss_language);
+                            }
+                        }
+                    }
+                    $local_document++;
+                }
+                watchdog('Solr_path_alias',
+                    "Processed locals: %doc | source:%source",
+                    array('%doc' => $local_document, '%source' => $source)
+                );
+
+            }
+            watchdog('Solr_path_alias',
+                "Processed source documents: %doc | source:%source | Local:%local_path",
+                array('%doc' => $source_document.'/'.$response->response->numFound, '%source' => $source, '%local_path' => $path)
+            );
+            $source_document++;
+        }
+        // We run this query again with the next cursormarker pointer
+        // Sorting by id as it is unique enough for this operation
+        // We use 'cursorMark' to track which page we are on in the query
+        $filters['q'] = 'entity_type:node AND bs_status:1 AND bundle:("toc" OR "product_display" OR "article") AND ss_language:en-us';
+        $filters['fl'] = 'path_alias,ss_path_alias,entity_id,bundle,entity_type,ss_language';
+        $filters['rows'] = $max;
+        $filters['sort'] = "id asc";
+        if ($entity_id) {
+            $filters['filters']['entity_id'] = $entity_id;
+        }
+        $filters['cursorMark'] = $cursorMark;
+
+        $query = fluke_solr_get_connection();
+        $query = fluke_solr_add_filters($query, $filters);
+        $response = fluke_solr_query($query);
+        $docs = $response->response->docs;
+
+        watchdog('Custom_path_alias',
+            "Completed Page: %page",
+            array('%page' => $page.'/'.$total_pages)
+        );
+        $page++;
+    }
+}
+
+// Process path alias
+function igcommerce_utility_save_update_alias($source, $local_path, $lang) {
+
+    // Check if an alias exists
+    $conditions = array('source' => $source, 'language' => $lang);
+    $alias = path_load($conditions);
+
+    if(!isset($alias['pid'])) {
+        // Doesn't exist, so add the alias
+        $alias = array('source' => $source, 'alias' => $local_path, 'language' => $lang);
+        path_save($alias);
+    }
+
+    if(isset($alias['alias']) && $alias['alias'] != $local_path) {
+        $alias['alias'] = $local_path;
+        path_save($alias);
+    }
+}
+
+/**
+ * Implements hook_cron() to grab latest url_builder paths from solr and create aliases here for panels pages to work
+ * properly since content types for articles and tocs are no longer on igc.
+ */
+function igcommerce_utility_cron() {
+  // Commented this out as it is being done in UI now for easy access: admin/settings/batch_fix
+  //igcommerce_utility_sync_path_alias();
+    //igcommerce_utility_save_update_alias_process(NULL,30);
+  
+  // Delete url_alias where source = ''
+  db_query("DELETE FROM url_alias WHERE source = ''");
+  igcommerce_utility_generate_menu_path_alias();
+}
+
+function igcommerce_utility_get_entity_translations_by_path($path) {
+  $filters['filters'] = array(
+      'ss_path_alias' => '"' . $path . '"',
+      '-ss_language' => 'en-us',
+  );
+  
+  $filters['rows'] = 100;
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, $filters);
+  $response = fluke_solr_query($filters);
+  
+  if (empty($response->response->docs[0])) {
+    return array();
+  }
+  
+  $docs = $response->response->docs;
+  
+  return $docs;
+}
+
+function igcommerce_utility_generate_menu_path_alias() {
+  $links = db_query("SELECT * FROM {menu_links} WHERE language = 'en-us'");
+  
+  foreach ($links as $link) {
+    $path = $link->link_path;
+    // Ignore if this is an external url
+    if (url_is_external($path)) {
+      continue;
+    }
+    // Ignore if this using a token
+    if (strpos($path, '<') !== FALSE) {
+      continue;
+    }
+    
+    // Get translated entities
+    $entities = igcommerce_utility_get_entity_translations_by_path($link->link_path);
+    $source = $path;
+    
+    // Loop through each translated entity and ensure that there is a path alias
+    foreach ($entities as $entity) {
+      if ($entity->ss_language == 'en-us') {
+        continue; // skip en-us
+      }
+
+      // Delete alias if this entity isn't published
+      if (isset($entity->bs_status) && !$entity->bs_status) {
+        $criteria = array('source' => $path, 'language' => $entity->ss_language);
+        path_delete($criteria);
+        continue;
+      }
+      // Check ss_path_alias_locale
+      if (empty($entity->ss_path_alias_locale)) {
+        continue;
+      }
+      
+      $path_alias = $entity->ss_path_alias_locale;
+      
+      // Skip if it doesn't appear to be translated
+      if ($path_alias == $source) {
+        continue;
+      }
+      
+      // Check if an alias exists
+      $conditions = array('source' => $source, 'language' => $entity->ss_language);
+      
+      if (!$alias = path_load($conditions)) {
+        // Doesn't exist, so add the alias
+        $alias = array('source' => $source, 'alias' => $path_alias, 'language' => $entity->ss_language);
+        path_save($alias);
+      } else {
+        // Ensure the IGC alias here matches $path
+        if ($alias['alias'] != $path_alias) {
+          // Not a match, so update the local alias
+          $alias['alias'] = $path_alias;
+          path_save($alias);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Returns the taxonomy terms for a given vocabulary
+ * @param string $name
+ * @param string $bundle
+ * @param string $lang
+ * @return object term or false if no result found
+ */
+function _taxonomy_terms_load_by_vocabulary_solr($bundle, $lang = FALSE, $env = 'ecm') {
+  if (!$lang) {
+    global $language;
+    $lang = $language->language;
+  }
+
+  $cache_id = 'taxonomy_' . $bundle . '_' . $lang .'_'. $env;
+
+    if ($cache = cache_get($cache_id, 'cache_igcommerce')) {
+      $docs = $cache->data;
+    }
+    else {
+      $filters['filters'] = array(
+        'entity_type' => 'taxonomy_term',
+        'ss_language' => $lang,
+        'bundle' => $bundle,
+        'ss_env_id' => $env,
+      );
+
+      $filters['rows'] = 1000;
+      $query = fluke_solr_get_connection();
+      $filters = fluke_solr_add_filters($query, $filters);
+      $response = fluke_solr_query($filters);
+
+      if (empty($response->response->docs[0])) {
+        return array();
+      }
+
+      $docs = $response->response->docs;
+
+      // Cache the data.
+      cache_set($cache_id, $docs, 'cache_igcommerce');
+    }
+//}
+
+  return $docs;
+}
+
+/**
+ * Returns the taxonomy term object given a name
+ * @param string $name
+ * @param string $bundle
+ * @param string $lang
+ * @return object term or false if no result found
+ */
+function _taxonomy_term_load_by_name_solr($name, $bundle, $lang = FALSE) {
+  $return = FALSE;
+
+  if (!$lang) {
+    global $language;
+    $lang = $language->language;
+  }
+
+  // Check to see if term is in cached vocabs in cache_igcommerce
+  $cache_id = 'taxonomy_' . $bundle . '_' . $lang;
+//$doc = &drupal_static(__FUNCTION__);
+//if (!isset($doc)) {
+    if ($cache = cache_get($cache_id, 'cache_igcommerce')) {
+      $terms = $cache->data;
+      // Now we need to find the term in the cached vocab data.
+      // Get list of node types to display from settings page.
+      $filter_doc = array_filter($terms, function($value) use ($name) {
+        return strtolower($value->label) == strtolower($name);
+      });
+
+      $return = reset($filter_doc);
+    }
+    else {
+      // Get the term data from Solr, since it wasn't found in cache.
+      $filters = array(
+        "sm_name_field" => '"' . $name . '"',
+        "entity_type" => 'taxonomy_term',
+        "ss_language" => $lang,
+        "bundle" => $bundle,
+      );
+
+      $query = fluke_solr_get_connection();
+      $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+      $response = fluke_solr_query($filters);
+
+      if (empty($response->response->docs[0])) {
+        return $return;
+      }
+
+      foreach ($response->response->docs as $doc) {
+        if (strtolower($doc->label) == strtolower($name)) {
+          $cache[$name][$bundle][$lang] = $doc;
+          $return = $doc;
+        }
+      }
+    }
+//}
+
+  return $return;
+}
+
+/**
+ * Returns the taxonomy term object given a url-title
+ * @param string $title
+ * @param string $bundle
+ * @param string $lang
+ * @return object term or false if no result found
+ */
+function _taxonomy_term_load_by_url_title_solr($title, $bundle, $lang = FALSE) {
+  if (!$lang) {
+    global $language;
+    $lang = $language->language;
+  }
+
+  if ($cache = &drupal_static(__FUNCTION__)) {
+    if (!empty($cache[$title][$bundle][$lang])) {
+      return $cache[$title][$bundle][$lang];
+    }
+  }
+
+  $filters = array(
+      "sm_field_url_title" => '"' . $title . '"',
+      "entity_type" => 'taxonomy_term',
+      "ss_language" => $lang,
+      "bundle" => $bundle,
+  );
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+  $response = fluke_solr_query($filters);
+
+  if (empty($response->response->docs[0])) {
+    return FALSE;
+  }
+
+  foreach ($response->response->docs as $doc) {
+    if ($doc->sm_field_url_title[0] == $title) {
+      $cache[$title][$bundle][$lang] = $doc;
+      return $doc;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns the topic taxonomy term object given a url-title for a news article listing page
+ * @param string $title
+ * @param string $bundle
+ * @param string $lang
+ * @return object term or false if no result found
+ */
+function _taxonomy_term_load_news_topic_by_url_title_solr($title, $lang = FALSE) {
+  $bundle = 'topic';
+
+  if (!$lang) {
+    global $language;
+    $lang = $language->language;
+  }
+
+  if ($cache = &drupal_static(__FUNCTION__)) {
+    if (!empty($cache[$title][$bundle][$lang])) {
+      return $cache[$title][$bundle][$lang];
+    }
+  }
+
+  $filters = array(
+    "ss_url_builder_url_title" => '"' . $title . '"',
+    "entity_type" => 'taxonomy_term',
+    "ss_language" => $lang,
+    "bundle" => $bundle,
+  );
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+  $response = fluke_solr_query($filters);
+
+  if (empty($response->response->docs[0])) {
+    return FALSE;
+  }
+
+  return $response->response->docs[0];
+}
+
+/**
+ * Returns the taxonomy term object
+ * @param integer entity_id
+ * @param string $lang
+ * @return object term or false if no result found
+ */
+function _taxonomy_term_load_solr($id, $lang = FALSE, $env = FALSE) {
+  if (!$lang) {
+    global $language;
+    $lang = $language->language;
+  }
+
+  if ($cache = &drupal_static(__FUNCTION__)) {
+    if (!empty($cache[$id][$lang])) {
+      return $cache[$id][$lang];
+    }
+  }
+
+  $filters = array(
+      "entity_id" => $id,
+      "entity_type" => 'taxonomy_term',
+      "ss_language" => $lang,
+  );
+
+  if ($env) {
+    $filters['ss_env_id'] = $env;
+  }
+  
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $filters, 'rows' => 100));
+  $response = fluke_solr_query($filters);
+
+  if (!empty($response->response->docs[0])) {
+    $cache[$id][$lang] = $response->response->docs[0];
+    return $response->response->docs[0];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Load immediate children of taxonomy term given a parent name
+ * @param string $parent
+ *
+ * returns an array of child terms
+ */
+function igcommerce_utility_load_term_children($parent, $options = array(), $lang = FALSE) {
+  if (!$lang) {
+    global $language;
+    $lang = $language->language;
+  }
+
+  if ($cache = &drupal_static(__FUNCTION__)) {
+    if (!empty($cache[$parent][$lang])) {
+      return $cache[$parent][$lang];
+    }
+  }
+
+  $filters = array(
+      "bundle" => 'url_builder',
+      "entity_type" => 'taxonomy_term',
+      "ss_language" => $lang,
+      "im_parent" => $parent,
+  );
+
+  if(!empty($options)) {
+      foreach ($options as $key => $value) {
+         $filters[$key] = $value;
+      }
+  }
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $filters, 'rows' => 1000));
+  $response = fluke_solr_query($filters);
+
+  $docs = $response->response->docs;
+  stable_uasort($docs, '_igc_sort_weight');
+
+  if (!empty($docs[0])) {
+    $cache[$parent][$lang] = $docs;
+    return $docs;
+  }
+
+  return FALSE;
+}
+
+
+/**
+ * Stable uasort
+ */
+function stable_uasort(&$array, $cmp_function) {
+  if(count($array) < 2) {
+    return;
+  }
+  $halfway = count($array) / 2;
+  $array1 = array_slice($array, 0, $halfway, TRUE);
+  $array2 = array_slice($array, $halfway, NULL, TRUE);
+
+  stable_uasort($array1, $cmp_function);
+  stable_uasort($array2, $cmp_function);
+  if(call_user_func($cmp_function, end($array1), reset($array2)) < 1) {
+    $array = $array1 + $array2;
+    return;
+  }
+  $array = array();
+  reset($array1);
+  reset($array2);
+  while(current($array1) && current($array2)) {
+    if(call_user_func($cmp_function, current($array1), current($array2)) < 1) {
+      $array[key($array1)] = current($array1);
+      next($array1);
+    } else {
+      $array[key($array2)] = current($array2);
+      next($array2);
+    }
+  }
+  while(current($array1)) {
+    $array[key($array1)] = current($array1);
+    next($array1);
+  }
+  while(current($array2)) {
+    $array[key($array2)] = current($array2);
+    next($array2);
+  }
+  return;
+}
+
+/**
+ * Sorts an array by sm_field_content_title
+ */
+function _igc_sort_content_title($a, $b) {
+  return $a->sm_field_content_title[0] < $b->sm_field_content_title[0] ? -1 : 1;
+}
+
+/**
+ * Sorts an array by is_weight
+ */
+function _igc_sort_weight($a, $b) {
+  $a_weight = is_object($a) && isset($a->is_weight) ? $a->is_weight : 0;
+  $b_weight = is_object($b) && isset($b->is_weight) && isset($b->is_weight) ? $b->is_weight : 0;
+
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+
+  return $a_weight < $b_weight ? -1 : 1;
+}
+
+/**
+ * Creates the homepage slideshow.
+ *
+ * The slide content comes from a solr query.
+ * Uses the flexslider api's flexslider_add() to add javascript libraries and
+ * instantiate the slideshow for the specified ID.
+ *
+ * The flexslider settings are unusual, in that they are set through the GUI at
+ * admin/config/media/flexslider (This the flexslider recommended method).
+ * The html must be structured to support the flexslider specific settings.
+ * Woothemes bought flexslider. You can see their site for the html structures.
+ * Instantiating flexslider programatically instead of using Drupal Views is
+ * not well documented.  I used the html pattern found on this page:
+ * http://flexslider.woothemes.com/thumbnail-controlnav.html
+ *
+ * The themeing is in the theme layer in
+ * _pane-igcommerce-utility-homepage-slideshow.scss
+ *
+ */
+function igcommerce_utility_homepage_slideshow() {
+  global $language;
+
+  $filters['filters'] = array(
+    'ss_language' => $language->language,
+    'entity_type' => 'node',
+    'bundle' => 'slideshow',
+    'bs_status' => TRUE,
+    'bs_field_promoted_to_homepage' => TRUE,
+  );
+
+  $filters['sort'] = array('ds_created' => 'desc');
+
+  $filters['rows'] = 1;
+
+  $query = fluke_solr_get_connection();
+  $query = fluke_solr_add_filters($query, $filters);
+  $response = fluke_solr_query($query);
+
+  if (empty($response->response)) {
+    return;
+  }
+
+  // Check to make sure any docs were returned from Solr.
+  if (count($response->response->docs) > 0) {
+    $doc = $response->response->docs[0];
+    $slides = array();
+
+    // Get slides for homepage slideshow if they are defined for this locale.
+    // Also check to make sure thare are slides, even if a result was found.
+    if (isset($doc->sm_field_slideshow_home)) {
+      foreach ($doc->sm_field_slideshow_home as $slide) {
+        $s = json_decode($slide);
+        if (empty($s->image_url)) {
+          continue;
+        }
+        igcommerce_utility_alter_links($s->image_url);
+
+        $styles_to_get = [
+          0 => 'original__size',
+          1 => '1032x620_homepage',
+          2 => '778x290_homepage',
+          3 => '1557x580_homepage',
+          4 => 'slideshow_thumbnail_2x'
+        ];
+
+        $styles = igcommerce_utility_get_images_styles($s->image_url, $styles_to_get);
+
+        $s->image = igcommerce_utility_format_image_homepage($styles, $s->image_alt);
+        //$image_url_desktop, $image_url_tablet, $image_url_mobile
+        // Uncomment when style derivatives are being created sucessfully
+        $s->image_thumb_url = $styles['slideshow_thumbnail_2x'];
+
+        $slides[] = $s;
+      }
+    }
+  }
+  if (empty($slides)) {
+    return;
+  }
+
+  // Instantiates flexslider for #homepage-flexslider
+  flexslider_add('homepage-flexslider', 'clone_of_flexslider_default_slider_thumbnail_controlnav');
+  return theme('homepage_slideshow', array('slides' => $slides));
+}
+
+function igcommerce_utility_slideshow_image_helper($val, &$image_url){
+  $s3_url = variable_get('s3_bucket_url', '');
+  $default_assets_url = 'data.fluke.com/sites/default/files';
+
+  if (strpos($val['url'], $default_assets_url)){
+    $val['url'] = str_replace($default_assets_url, $s3_url, $val['url']);
+  }
+  $styles = igcommerce_utility_get_images($val['url']);
+  $image_url = igcommerce_utility_format_image_product_slideshow_main($styles);
+  $image_url = str_replace( 'https://', '//', $image_url ); // Removed https:// with // for Slideshow image
+  $val['url'] = igcommerce_utility_s3_check($val['url']);
+  $val['thumb'] = $styles['slideshow_thumbnail'];
+  return $val;
+}
+
+
+function igcommerce_utility_get_images_styles($url) {
+  $image_style = array();
+  $styles = igcommerce_utility_get_image_style_names();
+  
+  $settings = array('ig_default_img' => variable_get('no_image_found_desktop', '/sites/all/themes/figstrap/images/no_image_available.jpg'));
+  drupal_add_js($settings, 'setting');
+  
+  $s3_domain = 'dam-assets.fluke.com';
+
+  $s3_domain_china = 'dam-assets.fluke.com.cn';
+  $s3_pubfolder = 's3fs-public';
+
+  $styled = FALSE;
+  // Check if image is already styled
+  if (strpos($url, '/styles/') !== FALSE) {
+    $styled = TRUE;
+  }
+
+  //if the china domain is in the url, then use that
+  if (strpos($url, $s3_domain_china) !== FALSE) {
+    $s3_domain = $s3_domain_china;
+  }
+
+  if ($styled) {
+    $count = 0;
+    foreach ($styles as $style) {
+      if ($count) {
+        break;
+      }
+      $url = str_replace('/styles/' . $style . '/public', '', $url, $count);
+    }
+  }
+  
+  $uri = explode($s3_pubfolder . '/', $url)[1];
+  
+  $path = '//' . $s3_domain . '/' . $s3_pubfolder;
+
+  // Make sure the image is a dam-asset, if it isn't then have every style use the same image.
+  // After all we don't prevent them from putting in the url of an image not in the dam
+  if(isset($uri) && strpos($url, $s3_domain) !== FALSE && isset($path)) {
+    foreach($styles as $style){
+      $image_style[$style] = $path . "/styles/$style/public/$uri";
+    }
+  }else{
+
+    // Image doesn't appear to come from one of the active versions of the dam, just use the url as is
+    foreach($styles as $style) {
+      $image_style[$style] = $url;
+    }
+  }
+
+  // this is a way to generate s3 images on the fly like how drupal's imagecache module implements
+  if (variable_get('dam_image_deliver', FALSE)) {
+    foreach ($image_style as $style_name => &$url) {
+      $url = igcommerce_utility_dam_image_deliver($url);
+    }
+  }
+  
+  return $image_style;
+}
+
+// Adding JSON_LD script for breadcrumbs on every page except homepage
+function igcommerce_utility_breadcrumbs_json_ld() {
+    global $language;
+
+    $url = $_SERVER["REQUEST_URI"];
+    if(strpos($_SERVER["REQUEST_URI"], '?')) {
+        $url = strtok($_SERVER["REQUEST_URI"],'?');
+    }
+    $parts = explode('/', $url);
+    unset($parts[0]);
+    unset($parts[1]);
+    array_unshift($parts, 'fluke-ig');
+
+    if (!is_array($parts)) {
+        return;
+    }
+    $parts = array_reverse($parts);
+    $path = json_encode($parts);
+    $path = str_replace('"', '\"', $path);
+
+    $query = fluke_solr_get_connection();
+    $query = fluke_solr_add_filters($query, array(
+        'filters' => array(
+            'ss_language' => $language->language,
+            'sm_url_path_builder' => '"' . $path . '"',
+            'bundle' => "url_builder",
+            'entity_type' => 'taxonomy_term',
+        ),
+        'rows' => 300,
+    ));
+
+    $data = fluke_solr_query($query);
+
+    if($data->response->numFound > 0) {
+        $url_path_builder = json_decode($data->response->docs[0]->sm_url_path_builder[0]);
+        $vid_URL_Builder = array_slice($data->response->docs[0]->sm_vid_URL_Builder, 0, count($url_path_builder));
+        array_pop($vid_URL_Builder);
+        array_pop($url_path_builder);
+        $url_paths = array_reverse(array_combine(array_reverse($vid_URL_Builder), $url_path_builder));
+    }
+
+    if(empty($url_paths)) { return NULL; }
+
+    $schema = new stdClass();
+    $schema->{'@context'} = 'http://schema.org';
+    $schema->{'@type'} = 'BreadcrumbList';
+    $schema->itemListElement = array();
+    $i = 1;
+    $count = 0;
+    $total = count($url_paths);
+    $itemListElement = array();
+    foreach ($url_paths as $url_name => $url_path) {
+        $bread_url = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]/" . $language->language.'/'.implode('/', $url_paths);
+        $itemListElement[$count]['@type'] = 'ListItem';
+        $itemListElement[$count]['position'] = $total;
+        $itemListElement[$count]['item'] = new stdClass();
+        $itemListElement[$count]['item']->{'@type'} = 'WebPage';
+        $itemListElement[$count]['item']->{'@id'} = $bread_url;
+        $itemListElement[$count]['item']->name = $url_name;
+        array_pop($url_paths);
+        $i++;
+        $count++;
+        $total--;
+    }
+
+    usort($itemListElement, function($a, $b) {
+        return $a['position'] - $b['position'];
+    });
+    $schema->itemListElement = $itemListElement;
+    $schema = str_replace('\\', '', json_encode($schema));
+
+    return $schema;
+
+}
+
+function igcommerce_utility_get_images($url) {
+  $image_style = array();
+  
+  $settings = array('ig_default_img' => variable_get('no_image_found_desktop', '/sites/all/themes/figstrap/images/no_image_available.jpg'));
+  drupal_add_js($settings, 'setting');
+  
+  $s3_domain = 'dam-assets.fluke.com';
+
+  $s3_domain_china = 'dam-assets.fluke.com.cn';
+
+  // Check if image is already styled
+  $url = preg_replace("~\/styles\\/([a-zA-z0-9_-])+\\/public~", "", $url);
+
+  $styles = igcommerce_utility_get_image_style_names();
+
+  // Make sure the image is a dam-asset, if it isn't then have every style use the same image.
+  // After all we don't prevent them from putting in the url of an image not in the dam
+  if(strpos($url, $s3_domain) !== FALSE) {
+
+    //if the china domain is in the url, then use that
+    if(strpos($url, $s3_domain_china) !== FALSE){
+      $s3_domain = $s3_domain_china;
+    }
+
+    $s3_pubfolder = 's3fs-public';
+
+    $uri = explode($s3_pubfolder . '/', $url)[1];
+
+    $path = '//' . $s3_domain . '/' . $s3_pubfolder;
+
+    foreach ($styles as $style) {
+      $image_style[$style] = $path . '/styles/' . $style . '/public/' . $uri;
+    }
+
+    $image_style['field_thumbnail_url'] = $path . '/styles/thumbnail/public/' . $uri;
+    $image_style['field_media_thumbnail_url'] = $path . '/styles/media_thumbnail/public/' . $uri;
+    $image_style['field_medium_url'] = $path . '/styles/medium/public/' . $uri;
+    $image_style['field_large_url'] = $path . '/styles/large/public/' . $uri;
+    $image_style['field_original_size_url'] = $path . '/styles/original__size/public/' . $uri;
+    $image_style['field_original_url'] = $path . '/' . $uri;
+  } else {
+    // Image doesn't appear to come from one of the active versions of the dam, just use the url as is
+    foreach ($styles as $style) {
+      $image_style[$style] = $url;
+    }
+    
+    $image_style['field_thumbnail_url'] = $url;
+    $image_style['field_media_thumbnail_url'] = $url;
+    $image_style['field_medium_url'] = $url;
+    $image_style['field_large_url'] = $url;
+    $image_style['field_original_url'] = $url;
+    $image_style['slideshow_thumbnail'] = $url;
+  }
+
+  // this is a way to generate s3 images on the fly like how drupal's imagecache module implements
+  if (variable_get('dam_image_deliver', FALSE)) {
+    foreach ($image_style as $style_name => &$url) {
+      $url = igcommerce_utility_dam_image_deliver($url);
+    }
+  }
+  
+  return $image_style;
+}
+
+function igcommerce_utility_get_image_style_names() {
+  $styles = array(
+      '3_2_preview',
+      'square_thumbnail',
+      'original__size',
+      'large',
+      'slideshow_thumbnail',
+      '1032x620_homepage',
+      '1557x580_homepage',
+      '778x290_homepage',
+      '1033_3-col',
+      '1033_3-col_2x',
+      '768_3-col',
+      '768_3-col_2x',
+      '0px_12-col',
+      '0px_12-col_2x',
+      'product_slideshow_main',
+      '768_4-col',
+      '768_4-col_2x',
+      '1033_9-3-split_3-col',
+      '1033_9-3-split_3-col_2x',
+      '525_6-col',
+      '525_6-col_2x',
+      'product_slideshow_main_2x',
+      'slideshow_thumbnail_2x',
+      '525_12-col',
+      '525_12-col_2x',
+      '768_5-col',
+      '768_5-col_2x',
+      '400x267',
+      '800x534',
+      'card_large',
+      'card_small',
+      'card_mobile',
+  );
+  
+  return $styles;
+}
+/**
+ *
+ * @param unknown $url
+ */
+function igcommerce_utility_alter_links(&$url) {
+  global $language;
+  
+  if (!$url) {
+    return;
+  }
+  
+  // change .cn link
+  if (in_array($language->language, array('cn', 'zh-cn'))) {
+    $count = 0;
+    str_replace('dam-assets.fluke.com.cn/', 'dam-assets.fluke.com.cn/', $url, $count);
+    if ($count) {
+      return;
+    }
+  
+    $count = 0;
+    
+    str_replace('dam-assets.fluke.com/', 'dam-assets.fluke.com.cn/', $url, $count);
+  
+    if ($count) {
+      $url = str_replace('dam-assets.fluke.com/', 'dam-assets.fluke.com.cn/', $url);
+    }
+  }
+}
+
+function hook_file_url_alter(&$uri) {
+  igcommerce_utility_alter_links($uri);
+}
+
+function igcommerce_utility_url_outbound_alter(&$path, &$options, $original_path) {
+  igcommerce_utility_alter_links($path);
+  
+  // return this for now
+  return;
+  
+  global $language;
+  
+  if ($language == 'en-us') {
+    return;
+  }
+  
+  if (url_is_external($path)) {
+    return;
+  }
+  
+  if (!$path) {
+    return;
+  }
+  
+  if (strpos($path, '<') !== FALSE) {
+    return;
+  }
+  
+  if (!empty($options['language'])) {
+    return;
+  }
+  
+  if (path_is_admin($path)) {
+    return;
+  }
+  
+  if ($path == '#') {
+    return;
+  }
+  
+  if (substr($path, 0, 7) == 'panels/') {
+    return;
+  }
+  
+  $url = igcommerce_utility_url_get_locale_path($path, $language->language);
+  if(!empty($url)) {
+    $path = $url;
+  }
+}
+
+function igcommerce_utility_format_search_terms($string) {
+  $terms = explode(' ', $string);
+  $query = array();
+  $terms[] = $string;
+  foreach ($terms as $term) {
+    $query[] = $term;
+    $query[] = '*' . $term;
+    $query[] = $term . '*';
+    $query[] = '*' . $term . '*';
+  }
+  
+  return '(' . implode(' OR ', $query) . ')';
+}
+
+
+function igcommerce_utility_url_get_en_us_path($path, $lang) {
+    $cache = &drupal_static(__FUNCTION__);
+    
+    if (!empty($cache[$path][$lang])) {
+      return $cache[$path][$lang];
+    }
+    
+    $options = array(
+        'filters' => array(
+            //'ss_language' => $lang,
+            'ss_path_alias_locale' => '"' . $path . '"',
+            //'entity_type' => 'node',
+        ),
+        'rows' => 1,
+    );
+    
+    if ($lang) {
+      $options['filters']['ss_language'] = $lang;
+    }
+    
+    $query = fluke_solr_get_connection();
+    $query = fluke_solr_add_filters($query, $options);
+    $data = fluke_solr_query($query);
+    
+    if (!empty($data->response->docs[0]->ss_path_alias)) {
+      $cache[$path][$lang] = $data->response->docs[0]->ss_path_alias;
+      return $data->response->docs[0]->ss_path_alias;
+    }
+    
+    $cache[$path][$lang] = $path;
+    return;
+}
+
+function igcommerce_utility_url_get_locale_path($path, $lang) {
+  $cache = &drupal_static(__FUNCTION__);
+
+  if (!empty($cache[$path][$lang])) {
+    return $cache[$path][$lang];
+  }
+
+  $options = array(
+      'filters' => array(
+          'ss_language' => $lang,
+          'ss_path_alias' => '"' . $path . '"',
+      ),
+      'rows' => 1,
+  );
+
+  if ($lang) {
+    $options['filters']['ss_language'] = $lang;
+  }
+
+  $query = fluke_solr_get_connection();
+  $query = fluke_solr_add_filters($query, $options);
+  $data = fluke_solr_query($query);
+
+  if (!empty($data->response->docs[0]->ss_path_alias_locale)) {
+    $cache[$path][$lang] = $data->response->docs[0]->ss_path_alias_locale;
+    return $data->response->docs[0]->ss_path_alias_locale;
+  }
+
+  $cache[$path][$lang] = $path;
+}
+
+function igcommerce_utility_url_inbound_alter(&$path, $original_path, $path_language) {
+    global $language;
+    $initial_path = $path;
+    $cache = &drupal_static(__FUNCTION__);
+    
+    if (!empty($cache[$path])) {
+      return $cache[$path];
+    }
+    
+    if($language->language != 'en-us' || !drupal_valid_path($path, $dynamic_allowed = FALSE)) {
+        if($path == $original_path) {
+            $url = igcommerce_utility_url_get_en_us_path($path, $language->language);
+            if(!empty($url)) {
+                $path = $url;
+            }
+        }
+    }
+    
+    $cache[$initial_path] = $path;
+//     $path: The en-us path_alias value
+//     $options: The local path_alias value
+//    dpm($path, '$path');
+//    dpm($original_path, '$original_path');
+//    dpm($path_language, '$path_language');
+}
+
+
+
+/**
+ * Implements hook_html_head_alter().
+ *
+ * Add IG meta tags
+ */
+function igcommerce_utility_html_head_alter(&$elements) {
+  $tags = drupal_static('ig_metatags', array());
+  
+  if (!empty($tags)) {
+    foreach ($tags as $tag) {
+      $value = $tag['value'];
+      $value = str_replace('&nbsp;', ' ', $value);
+      // Remove any HTML code that might have been included.
+      $value = strip_tags($value);
+      // Strip errant whitespace.
+      $value = str_replace(array("\r\n", "\n", "\r", "\t"), ' ', $value);
+      $value = str_replace('  ', ' ', $value);
+      $value = str_replace('  ', ' ', $value);
+      $value = trim($value);
+      
+      if (empty($value)) {
+        continue;
+      }
+      
+      $elements['metatag_ig_' . $tag['name']] = array(
+        '#tag' => 'meta',
+        '#attributes' => array('name' => $tag['name'], 'content' => $value),
+        '#type' => 'html_tag',
+      );
+    }
+  }
+  global $base_url;
+  global $ig_original_path;
+  global $language;
+
+  if(drupal_get_http_header('Status') == '404 Not Found'){
+    unset($elements['metatag_canonical']);
+  }else if(!drupal_is_front_page()) {
+
+    $path = $base_url . '/' . calculate_canonical_path($ig_original_path);
+
+    $elements['metatag_canonical']['#value'] = $path;
+    unset($elements['metatag_canonical']['#attached']); //MIG2424: Removed this to prevent duplicate canonical url error in validation
+  }else if(drupal_is_front_page()){
+    $language_local = igcommerce_utility_get_local();
+    $path = $base_url . $language_local;
+    $elements['metatag_canonical']['#value'] = $path;
+    // Also set the canonical header in the response
+    //$value = '<'.$path.'>; rel="canonical"';// MIG2424: Removed this to prevent duplicate canonical url error in validation
+    //drupal_add_http_header('Link', $value);
+    unset($elements['metatag_canonical']['#attached']);
+  }
+}
+
+/**
+ * Logic for determining the canonical url of path
+ *
+ * @param $path : typically global $ig_original_path. Leave out the protocol and domain
+ * @param null $language : language object (not the string)
+ * @return mixed
+ */
+function calculate_canonical_path($path, $language = NULL){
+  if($language === NULL){
+    global $language;
+  }
+
+  // Special handling of German child locales for products and learning
+  $special_de_paths = ['produkt', 'produkte', 'mehr-erfahren'];
+
+  foreach($special_de_paths as $de_path) {
+    $path_check = $language->language . '/' . $de_path;
+    if ($language->parent === 'de-de' && strpos($path, $path_check) === 0) {
+      // For the paths specified, canonical should be de-de rather than the child language
+      $canonical_path = str_replace($language->language, 'de-de', $path);
+      break;
+    }
+  }
+
+  // @todo: Add additional rules for determining canonical urls here
+
+  // If none of the logic above applies, then the canonical will just be the path
+  if(!isset($canonical_path)){
+    $canonical_path = $path;
+  }
+
+  return $canonical_path;
+}
+
+/**
+ * @return string
+ * Returns empty string if .cn local or /[local] if not .cn
+ */
+function igcommerce_utility_get_local() {
+    global $language;
+
+    $language_default = variable_get('language_default');
+    if ($language_default->language == 'cn') {
+        return '';
+    } else {
+        return '/'.$language->language;
+    }
+}
+
+/**
+ * Call this after retrieving the primary document or url builder term related to a page.  Set $definitive = True
+ * to prevent subsequent calls from overriding the values.  Alternatively, this is called in the ig_neato theme without arguments,
+ * and it will attempt to find the document associated with a page.
+ *
+ * @param null $doc
+ * @param bool $definitive : Whether this attempt to set the title should not allow overrides later in the process
+ */
+function igcommerce_utility_head_elements($doc = NULL, $definitive = FALSE){
+  // Track whether we have already successfuly populated the head elements
+  $definitive_head_is_set = &drupal_static(__FUNCTION__, FALSE);
+
+  if($definitive_head_is_set){
+    return;
+  }
+
+  $format = 'D, d M Y H:i:s \G\M\T';
+  $date = date($format, REQUEST_TIME + (24 * 60 * 60));
+  drupal_add_http_header('Expires', $date);
+
+  if(!is_object($doc)){
+    global $language;
+
+    $path = drupal_get_path_alias(current_path(), $language->language);
+    $doc = fluke_solr_get_item_by_path_alias($path);
+
+    if(!is_object($doc)){
+      return;
+    }
+  }
+
+  if($definitive){
+    // The head elements have been set by a definitive source, don't allow other calls...
+    // ...to this function to overwrite the values.
+    $definitive_head_is_set = TRUE;
+  }
+  igcommerce_utility_add_metatags($doc);
+}
+
+/**
+ * Alternative function to set meta title, description, etc... that doesn't use a solr doc.
+ *
+ * @param $title
+ * @param $description
+ * @param bool $definitive
+ */
+function igcommerce_utility_head_elements_alt($title, $description, $definitive = TRUE){
+  $definitive_head_is_set = &drupal_static('igcommerce_utility_head_elements', FALSE);
+
+  if($definitive_head_is_set){
+    return;
+  }
+
+  $format = 'D, d M Y H:i:s \G\M\T';
+  $date = date($format, REQUEST_TIME + (24 * 60 * 60));
+  drupal_add_http_header('Expires', $date);
+
+  igcommerce_utility_add_metatags_set($title, $description);
+
+  $definitive_head_is_set = $definitive;
+}
+
+function igcommerce_utility_add_metatags($doc) {
+
+  global $language;
+
+  if(!is_object($doc)){
+    return;
+  }
+
+  $title = _head_elements_get_title($doc);
+
+  $desc = _head_elements_get_description($doc);
+
+  $keywords = !empty($doc->tm_meta_keywords[0]) ? $doc->tm_meta_keywords[0] : '';
+
+  igcommerce_utility_add_metatags_set($title, $desc, $keywords);
+
+  // Add fb metatags everywhere but china.
+  if($language->language != 'cn') {
+    igcommerce_utility_articles_facebook_metadata($desc, $title, $doc);
+  }
+}
+
+function igcommerce_utility_add_metatags_set($title = '', $desc = '', $keywords = ''){
+  $metatags = &drupal_static('ig_metatags', array());
+
+  if(!empty($title)) {
+    $title .= ' | '.t('Fluke');
+
+    $title = ucwords($title);
+
+    drupal_set_title($title);
+    $metatags['title'] = array('name' => 'title', 'value' => $title);
+    metatag_set_preprocess_variable('html', 'head_title', $title);
+    metatag_set_preprocess_variable('html', 'title', $title);
+  }
+
+  if (!empty($desc)) {
+    $desc = strip_tags($desc);
+    $metatags['description'] = array('name' => 'description', 'value' => $desc);
+    metatag_set_preprocess_variable('html', 'description', $desc);
+  }
+
+  if(!empty($keywords)) {
+    $metatags['keywords'] = array('name' => 'keywords', 'value' => $keywords);
+    metatag_set_preprocess_variable('html', 'keywords', $keywords);
+  }
+}
+
+/**
+ * Logic for determining the page title and meta title
+ *
+ * @param $doc
+ * @return null
+ */
+function _head_elements_get_title($doc){
+  $h1_fields = [
+    'page' => 'ss_page_h1_title',
+    'article' => 'ss_article_h1_title',
+    'toc' => 'ss_field_h1_title',
+    'url_builder' => 'ss_url_builder_term_h1_title'
+  ];
+
+  if(!empty($doc->bundle) && !empty($h1_fields[$doc->bundle])){
+    $h1_field_name = $h1_fields[$doc->bundle];
+  }
+
+  if(!empty($doc->tm_meta_title[0])) {
+    return $doc->tm_meta_title[0];
+  } else
+  if(isset($h1_field_name) && !empty($doc->{$h1_field_name})){
+    return $doc->{$h1_field_name};
+  } else if (!empty($doc->ss_field_content_title)) {
+    return $doc->ss_field_content_title;
+  }else if(!empty($doc->sm_field_content_title[0])){
+    return $doc->sm_field_content_title[0];
+  }
+
+  return NULL;
+}
+
+/**
+ * Analyze document and determine the best field to use for meta description
+ *
+ * @param $doc
+ * @return null
+ */
+function _head_elements_get_description($doc){
+  $desc = NULL;
+
+  $summary_fields = [
+    'page' => 'ss_page_short_summary',
+    'article' => 'ss_article_short_summary',
+  ];
+
+  $body_fields = [
+    'article' => 'ts_article_body',
+    'page' => 'ts_page_body',
+  ];
+
+  if(!empty($summary_fields[$doc->bundle])){
+    $summary_field = $summary_fields[$doc->bundle];
+  }
+
+  if(!empty($body_fields[$doc->bundle])){
+    $body_field = $body_fields[$doc->bundle];
+  }
+
+  if (!empty($doc->tm_meta_description[0])) {
+    $desc = $doc->tm_meta_description[0];
+  }else if (isset($summary_field) && !empty($doc->{$summary_field})) {
+    $desc = $doc->{$summary_field};
+  }else if(!empty($doc->tm_short_description_summary[0])){
+    $desc = $doc->tm_short_description_summary[0];
+  }else if(!empty($doc->ts_description_field)){
+    $desc = $doc->ts_description_field;
+  }else if(!empty($doc->tm_description_field[0])){
+    $desc = $doc->tm_description_field[0];
+  }else if(isset($body_field) && !empty($doc->{$body_field})){
+    $desc = text_summary($doc->{$body_field});
+  }else if (!empty($doc->sm_description[0])) {
+    $desc = $doc->sm_description[0];
+  }
+
+  return strip_tags($desc);
+}
+
+function igcommerce_utility_boot(){
+  // Save the original path of the request so we can use it later (example: for canonical meta tag)
+  global $ig_original_path;
+  $ig_original_path = $_GET['q'];
+}
+
+
+function _export_meta() {
+  //ss_language:cn%20AND%20ss_env_id:ecm%20AND%20ss_path_alias_locale:["%20TO%20*]%20AND%20-ss_path_alias_locale:node/*
+
+  $options = array(
+      "ss_env_id" => 'ecm',
+      "ss_language" => 'cn',
+      "ss_path_alias_locale" => '[" TO *]',
+      '-ss_path_alias_locale' => 'node/*'
+  );
+
+  $fields = array(
+    'ss_path_alias_locale',
+    'entity_id',
+    'bundle',
+    'ss_language',
+    'ss_field_url_title',
+    'tm_meta_title',
+    'sm_field_content_title',
+    'tm_meta_description',
+    'sm_description',
+    'ts_description_field',
+    'tm_description_field',
+    'ss_article_short_summary',
+    'ss_page_short_summary',
+    'ts_article_body',
+    'ts_page_body'
+  );
+  //$fl = 'ss_path_alias_locale,entity_id,bundle,ss_language,ss_field_url_title,tm_meta_title,tm_meta_description,tm_short_description_summary,ss_field_content_title';
+
+  //$fl = implode(',', $fields);
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $options, 'rows' => 20000)); //'fl' => $fl));
+  $response = fluke_solr_query($filters);
+
+  $rows = array();
+  $row = array('path' => 'Path', 'bundle' => 'Type', 'entity_id' => 'ID', 'title' => 'Meta Title', 'desc' => 'Meta Description');
+  $rows[] = $row;
+
+  $empty_titles = 0;
+  $empty_descriptions = 0;
+
+  foreach ($response->response->docs as $doc) {
+    $row = array();
+    if(strpos($doc->ss_path_alias, 'solutions') === 0){
+      //@todo: remember to remove this if we try to run other languages!
+      // Skip solutions since it doesn't show for china
+      continue;
+
+    }
+
+    $row['path'] = $doc->ss_path_alias_locale;
+    $row['bundle'] = $doc->bundle;
+    $row['entity_id'] = $doc->entity_id;
+    $title = _head_elements_get_title($doc);
+    $row['title'] = '';
+    if(!empty($title)) {
+      $title .= ' | '.t('Fluke');
+      $title = ucwords($title);
+      $row['title'] = $title;
+    }
+
+    $entity_type = $doc->entity_type;
+    
+    $row['desc'] = '';
+    $desc = _head_elements_get_description($doc);
+    
+    if (!empty($desc)) {
+      $desc = strip_tags($desc);
+      $row['desc'] = $desc;
+    }
+
+    if($entity_type === 'node'){
+      $row['edit_link'] = "http://live-fluke-ecm.pantheonsite.io/cn/node/{$row['entity_id']}/edit";
+    }elseif($entity_type === 'taxonomy_term'){
+      $row['edit_link'] = "http://live-fluke-ecm.pantheonsite.io/cn/taxonomy/term/{$row['entity_id']}/edit";
+    }
+
+    if(empty($title)){
+      $empty_titles ++;
+    }
+
+    if(empty($desc)){
+      $empty_descriptions ++;
+    }
+
+    $rows[] = $row;
+  }
+  /*
+  $rows[] = $fields;
+  
+  foreach ($response->response->docs as $doc) {
+    $row = array();
+    foreach ($fields as $key => $field) {
+      $row[$key] = '';
+      if (!empty($doc->{$field})) {
+        $value = $doc->{$field};
+        if (is_array($value)) {
+          $row[$key] = $value[0];
+        } else {
+          $row[$key] = $value;
+        }
+        $row[$key] = strip_tags($row[$key]);
+      }
+    }
+    $rows[] = $row;
+    
+  }
+  */
+  
+  $fp = fopen('file.csv', 'w');
+  
+  foreach ($rows as $fields) {
+    fputcsv($fp, $fields);
+  }
+
+  drupal_set_message("Empty titles: $empty_titles | Empty Descriptions: $empty_descriptions");
+  
+  fclose($fp);
+  //dpm(count($response->response->docs));
+}
+
+/**
+ * Searches a string for the pattern node/### and replaces with it's proper path_alias
+ */
+function igcommerce_utility_convert_links_to_alias($string, $lang = NULL) {
+  if (!$lang) {
+    global $language;
+    $lang = $language->language;
+  }
+  
+  $string = token_replace($string);
+  $matches = array();
+
+  // match 'node/123' and '/node/123'
+  preg_match_all('~["\']node\\/\\d.*?[\'"]|["\']\\/node\\/\\d.*?[\'"]~', $string, $matches, PREG_PATTERN_ORDER);
+  if (!empty($matches[0])) {
+    foreach ($matches[0] as $match) {
+      $path = trim($match, '"/');
+      $parts = explode('/', $path);
+      if (!empty($parts[1])) {
+        $entity_id = $parts[1];
+      } else {
+        continue;
+      }
+      $alias = NULL;
+      if (!$entity = fluke_solr_get_entity($entity_id, 'node', NULL, $lang, 'ecm', FALSE, TRUE)) {
+        continue;
+      }
+      if (!empty($entity->ss_external_url)) {
+        $alias = urldecode($entity->ss_external_url); //decode so any query parameters do not break. see MIG-3841
+      } else {
+        if (!empty($entity->ss_path_alias_locale)) {
+          $alias = $entity->ss_path_alias_locale;
+        }
+      }
+  
+      if ($alias && $alias != $path) {
+        $alias = url($alias, array('absolute' => TRUE));
+        $string = str_replace($match, "'$alias'", $string);
+      }
+    }
+  }
+  
+  return $string;
+}
+
+/**
+ * Implements hook_tokens_alter to use translated path for current-page:url:absolute tokens
+ */
+function igcommerce_utility_tokens_alter(array &$replacements, array $context) {
+  $options = $context['options'];
+  
+  foreach ($context['tokens'] as $name => $original) {
+    if ($original == '[current-page:url:absolute]') {
+      global $language;
+      $path = current_path();
+      if ($url = igcommerce_utility_url_get_locale_path($path, $language->language)) {
+        $replacements[$original] = url($url, array('absolute' => TRUE));
+      }
+    }
+  }
+}
+
+function igcommerce_utility_nav_query($filters = array(), $level = 0) {
+    if(count($filters) > 0) {
+        foreach ($filters as $name => $value) {
+            $filters['filters'][$name] = $value;
+        }
+        //$filters['fl'] = 'entity_id,im_parent,bs_field_include_on_primary_navi,ss_field_url,sm_name_field,sm_field_content_title,ss_path_alias_locale,sm_field_url_title';
+        $filters['sort'] = 'is_weight asc';
+        if($level == 0) {
+            $filters['sort'] = 'entity_id asc';
+        }
+        $filters['rows'] = 1000;
+        $query = fluke_solr_get_connection();
+        $query = fluke_solr_add_filters($query, $filters);
+        $response = fluke_solr_query($query);
+        return $response;
+    }
+    return FALSE;
+}
+
+
+/**
+ * Due to how quicktabs renders links and the lack of a hook to alter before it provides a render array, we have to
+ * to a str_replace of $_GET['q'] with the translated path if found. This is due to MIG-3139
+ * @param unknown $qt
+ */
+function igcommerce_utility_fix_qt_links(&$qt) {
+  global $language;
+
+  foreach ($qt['content']['content']['tabs']['tablinks'] as $key => &$link) {
+    if ($path = igcommerce_utility_url_get_locale_path($_GET['q'], $language->language)) {
+      $link['#href'] = str_replace($_GET['q'], $path, $link['#href']);
+    }
+  }
+}
+
+
+function igcommerce_utility_redirect_alter($redirect) {
+
+    unset($redirect->redirect_options);
+    $redirect->redirect_options = array();
+    return $redirect;
+
+}

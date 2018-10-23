@@ -1,0 +1,152 @@
+// THere are three types of Where-to-buy pages.
+
+// ###### PRICESPIDER #####
+// EN-US & ES-US use pricespider. This comes in through an iframe, so all styling
+// is done by pricespider.  They won't let you make changes, so you have to submit 
+// all theme changes as a support ticket.
+
+// ###### CUSTOM WTB TOOL #####
+// Used on more popular rest of world sites, like france and germany:
+// /en-ca/where-to-buy
+// Styled via this page.  
+
+// ##### ACCORDION TABLES #####
+// Less popular and oddball pages have an accordion full of tables, such as 
+// /en/where-to-buy
+// The styles for these are mostly default, with the %standardized-tables applied.
+
+.page-where-to-buy {
+  // The EN version is slightly different. This page is uniquely styled for all locales.
+  &.i18n-en {
+    h2 {
+      font-size: 24px;
+    } 
+  }
+  background-color: $gray-e;
+  // ###### CUSTOM WTB TOOL #####
+  .form-submit,
+  .wtb-wrapper {
+    h3 {
+      margin-top: .5em;
+    }
+    // Drops the throbber below the input box.
+    .ajax-progress.ajax-progress-throbber {
+      position: absolute;
+      .throbber {
+        position: absolute;
+        margin-left: 10px;
+        top: 43px;
+        z-index: 99;
+      }
+      .message {
+        padding-left: 30px;
+        position: absolute;
+        top: 40px;
+        width: 300px;
+        z-index: 99; 
+      }
+    }
+    .chosen-container.error .chosen-single{
+      border-color: red;
+    }
+  .chosen-drop,
+  a.chosen-single {
+    padding: 1.1rem  3rem;
+    border: 1px solid #ccc;
+    width: 100%;
+    background-color: white;
+    box-sizing: border-box;
+    font-size: 1.6rem;
+    margin-bottom: 0.75em;
+    transition: border-color;
+    width: 100%;
+        line-height: 1.2; // will cut off descenders if it's less
+      }
+    }
+  #wtb-check-distributor {
+    clear: both;
+    padding-top: 10px;
+      @extend .messages;
+      @extend .notice;
+      margin-top: 20px;
+      width: 100%;
+  }
+  #wtb-error-display {
+    clear: both;
+    padding-top: 10px;
+    ul {
+      @extend .messages;
+      @extend .error;
+      margin-top: 20px;
+    }
+  }
+  .results-column-wrapper {
+    padding: 20px 0;
+    clear: both;
+    .results-column {  
+      flex-wrap: wrap;
+      display: flex;
+    }
+  }
+  .distributor {
+    background-color: white;
+    padding: 20px;
+    margin-bottom: 25px;
+    @include media($screen-xs) {
+      display: flex; // for bottom-aligning the button
+      flex-direction: column;
+    }
+    .phone-label,
+    .fax-label,
+    .email-label {
+      font-weight: 700;
+    }
+    .email {
+      flex-grow: 1; //Pushes the button down consistently
+    }
+    .distributor-website {
+      margin-top: 30px;
+      align-self: flex-start; // works with .email to keep the button at the bottom.
+    }
+  }
+  // Keeps the dropdowns pretty on all formats.
+  .distributor,
+  .form-submit,
+  .wtb-wrapper {
+    @include span-columns(12);
+    @include media($tablet) {
+      @include span-columns(6);
+      @include omega(even);
+    }
+    @include media($desk) {
+      @include omega-reset(even);   // reset the grid from above
+      @include span-columns(4);     // apply span
+      @include omega(3n);           // remove right margin from last column
+    }
+  }
+  .form-type-select {
+    margin-top: 0;
+  }
+  .form-submit {
+    clear: both;
+  }
+
+// ##### ACCORDION TABLES #####
+  #accordion {
+    .panel-body table:last-of-type {
+      margin-bottom: 30px;
+    }
+    table {
+      @extend %standardized-table;
+      margin: 10px 0;
+      border: 1px solid $gray-c;
+      @include media($desk) {
+        width: 75%;        
+      }
+      @include media($desk-lg) {
+        width: 50%;
+      }
+    }
+  }
+}
+

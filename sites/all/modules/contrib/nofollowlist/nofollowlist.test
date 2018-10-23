@@ -1,0 +1,126 @@
+<?php
+
+/**
+ * @file
+ * Tests for nofollowlist.module.
+ */
+
+/**
+ * Tests the rel="nofollow" whitelist functionality.
+ */
+class NofollowListTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Nofollowlist',
+      'description' => 'Tests nofollowlist functionality.',
+      'group' => 'Nofollowlist',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('nofollowlist');
+  }
+
+  /**
+   * Sets up nofollowlist basic configuration.
+   *
+   * Enables nofollowlist filter for the full html text format and configures
+   * either whitelist of blacklist mode.
+   *
+   * @param string $mode
+   *   The nofollowlist mode. Can be 'white' for whitelist or 'black' for
+   *   blacklist.
+   * @param string $hosts
+   *   List of domains to use in blacklist or whitelist mode.
+   */
+  function setupNofollowlist($mode, $hosts) {
+    // Create an admin user.
+    $admin = $this->drupalCreateUser(array('administer filters', 'administer nodes', 'bypass node access', 'edit any page content', 'use text format full_html'));
+    $this->drupalLogin($admin);
+    // Configure whitelist.
+    // Go to full html text format configuration page.
+    $this->drupalGet('admin/config/content/formats/full_html');
+    // Enable nofollow filter.
+    $edit['filters[filter_nofollow][status]'] = 1;
+    $this->drupalPost('admin/config/content/formats/full_html', $edit, t('Save configuration'));
+    // Go to full html text format configuration page.
+    $this->drupalGet('admin/config/content/formats/full_html');
+    // Set to whitelist.
+    $edit['filters[filter_nofollow][settings][nofollowlist_option]'] = $mode;
+    $edit['filters[filter_nofollow][settings][nofollowlist_hosts]'] = $hosts;
+    $this->drupalPost('admin/config/content/formats/full_html', $edit, t('Save configuration'));
+  }
+
+  /**
+   * Tests whitelist functionality.
+   *
+   * Tests that:
+   *   - rel="nofollow" is not added to links that are on the whitelist.
+   *   - rel="nofollow" is not added to internal links.
+   *   - rel="nofollow" is added to links that are not on the whitelist.
+   */
+  function testNoRelFollowOnWhitelist() {
+    $this->setupNofollowlist('white', "drupal.org\nwww.drupal.org");
+    // Add page.
+    $this->drupalGet('node/add/page');
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    // Add drupal.org link.
+    $body_text = '<a href="http://drupal.org">drupal.org</a>';
+    // Add www.drupal.org link.
+    $body_text .= '<a href="http://www.drupal.org">wwwdrupal.org</a>';
+    // Add internal link.
+    $body_text .= '<a href="/drupal.org">internal link to drupal</a>';
+    // Add external link.
+    $body_text .= '<a href="http://www.example.com">example.com</a>';
+    $edit['body[und][0][value]'] = $body_text;
+    // Full html text format.
+    $edit['body[und][0][format]'] = 'full_html';
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    // Check that drupal.org link does not have a rel="nofollow".
+    $this->assertPattern('|<a href="http://drupal.org">drupal.org</a>|', 'Drupal.org link does not have rel="nofollow".');
+    // Check that www.drupal.org does not have a rel="nofollow".
+    $this->assertPattern('|<a href="http://www.drupal.org">wwwdrupal.org</a>|', 'Www.drupal.org link does not have rel="nofollow".');
+    // Check that drupal internal link does not hav a rel="nofollow".
+    $this->assertPattern('|<a href="/drupal.org">internal link to drupal</a>|', 'Internal link does not have rel="nofollow".');
+    // Check that example.com has a rel=nofollow.
+    $this->assertPattern('|<a href="http://www.example.com" rel="nofollow">example.com</a>|', 'Example.com link does not have rel="nofollow".');
+  }
+
+  /**
+   * Tests blacklist functionality.
+   *
+   * Tests that:
+   *   - rel="nofollow" is added to links that are on the blacklist.
+   *   - rel="nofollow" is not added to internal links.
+   *   - rel="nofollow" is not added to links that are not on the blacklist.
+   */
+  function testNoRelFollowOnBlacklist() {
+    $this->setupNofollowlist('black', "drupal.org\nwww.drupal.org");
+    // Add page.
+    $this->drupalGet('node/add/page');
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    // Add drupal.org link.
+    $body_text = '<a href="http://drupal.org">drupal.org</a>';
+    // Add www.drupal.org link.
+    $body_text .= '<a href="http://www.drupal.org">wwwdrupal.org</a>';
+    // Add internal link.
+    $body_text .= '<a href="/drupal.org">internal link to drupal</a>';
+    // Add external link.
+    $body_text .= '<a href="http://www.example.com">example.com</a>';
+    $edit['body[und][0][value]'] = $body_text;
+    // Full html text format.
+    $edit['body[und][0][format]'] = 'full_html';
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    // Check that drupal.org link does has a rel="nofollow".
+    $this->assertPattern('|<a href="http://drupal.org" rel="nofollow">drupal.org</a>|', 'Drupal.org link has rel="nofollow".');
+    // Check that www.drupal.org has a rel="nofollow".
+    $this->assertPattern('|<a href="http://www.drupal.org" rel="nofollow">wwwdrupal.org</a>|', 'Www.drupal.org link has rel="nofollow".');
+    // Check that drupal internal link does not hav a rel="nofollow".
+    $this->assertPattern('|<a href="/drupal.org">internal link to drupal</a>|', 'Internal link does not have rel="nofollow".');
+    // Check that example.com does not have a rel=nofollow.
+    $this->assertPattern('|<a href="http://www.example.com">example.com</a>|', 'Example.com link does not have rel="nofollow".');
+  }
+}

@@ -1,0 +1,192 @@
+.fluke-icon {
+  font-family: 'fluke-icon-font' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+}
+
+/* This extend adds gray background boxes and bg hover colors, see footer.scss for example */
+%social-boxes {
+  background-color: $gray-a;
+  color: $white;
+  float: left;
+  display: inline-block;
+  font-size: 2.2rem;
+  height: 4rem;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+  padding-top: .9rem;
+  text-align: center;
+  transform: translateZ(0);
+  transition-property: transform;
+  transition: .1s;
+  width: 4rem;
+  &:hover {
+    transform: scale(1.1);
+    z-index: 2;
+  }
+  &.fluke-icon-facebook:hover {
+    background-color: $facebook;
+  }
+  &.fluke-icon-linkedin:hover {
+    background-color: $linkedin;
+  }
+  &.fluke-icon-twitter:hover  {
+    background-color: $twitter;
+  }
+  &.fluke-icon-google-plus:hover {
+    background-color: $google-plus;
+  }
+  &.fluke-icon-youtube:hover {
+    background-color: $youtube;
+  }
+  &.fluke-icon-instagram:hover {
+    // This uses a radial gradient, so you must use background vs. background-color
+    background: $instagram;
+  }
+  &.fluke-icon-naver:hover {
+    background-color: $naver;
+  }
+  &.fluke-icon-tmall:hover {
+    background-color: $tmall;
+  }
+  &.fluke-icon-youku:hover {
+    background-color: $youku;
+  }
+  &.fluke-icon-vk:hover {
+    background-color: $vk;
+  }
+  &.fluke-icon-weibo:hover {
+    background-color: $weibo;
+  }
+}
+//Social Share Styles found on Webcards. Hiding images / using already created styles for footer social icons
+a[data-additionalclass="facebook"], a[data-additionalclass="google-plus"],
+a[data-additionalclass="linkedin"], a[data-additionalclass="twitter"],
+a[data-additionalclass="reddit"], a[data-additionalclass="figstrap-mail"]
+{
+  text-decoration: none;
+  @extend %social-boxes; // Pulling in social styles. Modifications to make smaller below
+  width: 3rem; 
+  height: 3rem;
+  font-size: 1.9rem;
+  margin-right: 0.25rem;
+  padding-top: 0; 
+  &:hover {
+    transform: scale(1.1);
+    z-index: 2;
+  }
+  // Hiding image. Images shouldn't be used for social, we should be using icons
+  img{
+    display: none;
+  } 
+  @extend .fluke-icon;
+  &:before{
+    padding-top: .6rem;
+    display: block;
+  }
+}
+//Facebook
+a[data-additionalclass="facebook"]{
+  &:hover {
+    background-color: $facebook;
+  }
+  &:before{
+    content: "\f09a";
+  }
+}
+//Google Plus
+a[data-additionalclass="google-plus"]{
+  &:hover {
+    background-color: $google-plus;
+  }
+  &:before{
+    content: "\f0d5";
+  }
+}
+//Linked In
+a[data-additionalclass="linkedin"]{
+  &:hover {
+    background-color: $linkedin;
+  }
+  &:before{
+    content: "\f0e1";
+  }
+}
+//Twitter
+a[data-additionalclass="twitter"]{
+  &:hover {
+    background-color: $twitter;
+  }
+  &:before{
+    content: "\f099";
+  }
+}
+//Reddit
+a[data-additionalclass="reddit"]{
+  &:hover {
+    background-color: $reddit;
+  }
+  &:before{
+    content: "\f281";
+  }
+}
+//Mail
+a[data-additionalclass="figstrap-mail"]{
+  &:hover {
+    background-color: $blue;
+  }
+  &:before{
+    content: "\f0e0";
+  }
+}
+//TODO: update social icons view to remove .hide class
+//
+//<a href="[field_language_locale_specific_u_1]" title="[name]" class="fluke-icon" target="_blank"><span aria-hidden="true" class="fluke-icon fluke-icon-[field_wrapper_class_]">[name]</span></a>
+
+// .fluke-icon {
+//   padding: .25em;
+//   position: relative;
+//   height: 40px;
+//   width: 40px;
+//   overflow: hidden;
+//   display: inline-block;
+//   font-size: 1.7em;
+//   height: 40px;
+//   margin-right: 10px;
+//   margin-top: 10px;
+//   padding-top: 9px;
+//   text-align: center;
+//   transform: translateZ(0);
+//   transition-property: transform;
+//   transition: .1s;
+// }
+
+//   $social:  (facebook,        $facebook,          1),
+//             (google-plus,     $google-plus,       2),
+//             (linkedin,       $linkedin,         3);
+
+
+
+//   @each $socialnetwork, $color, $icon in $social{
+//     #fluke-icon-#{socialnetwork}{
+//       background-color: $gray-9;
+//       position: relative;
+//       &:after{
+//         top: 0;
+//         left: 0;
+//         font-family: FontAwesome;
+//         content: $icon;
+//         height: 100%;
+//         width: 100%;
+//       }
+//       &:hover{
+//         background-color: $color;
+//         transform: scale(1.1);
+//         z-index: 2;
+//       }
+//     }
+//   }

@@ -1,0 +1,4 @@
+name = IG Commerce Where to Buy
+description = Search for distributors based on product selection
+core = "7.x"
+package = IG Commerce

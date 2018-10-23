@@ -1,0 +1,117 @@
+/*
+*  Brand settings default file.
+*  This is the canonical and reference file for the settings that needs to be
+*  in each of the brand-settings-brand.scss file.
+*  If settings are missing from here, they may not appear properly
+*  When the theme is recompiled.
+*  Good luck.
+*
+*  PS, if you like the ASCII, you can get more at
+*  http://www.network-science.de/ascii/
+*
+*/
+
+/*
+*        ____      ____      ____     _                          ________
+*      //    ) ) //   / /  //   / / // | |     //   / / / /     /__  ___/
+*     //    / / //____    //___    //__| |    //   / / / /        / /
+*    //    / / / ____    / ___    / ___  |   //   / / / /        / /
+*   //    / / //        //       //    | |  //   / / / /        / /
+*  //____/ / //____/ / //       //     | | ((___/ / / /____/ / / /
+*
+*
+*/
+
+/*
+*   COLORS
+*/
+
+$base-font-color              : $gray-very-dark;
+
+$color-primary                : $yellow;              // ** Primary Action buttons **        ** Special action color (other things) **
+
+$color-secondary              : $blue-medium;         // ** Secondary Action buttons **      ** Action Color (links) **
+
+$color-tertiary               : 'not used';           // As of this writing, there is no tertiary color
+
+$base-background-color        : $white;
+
+$background-color-darkest     : $gray-21;             // Navigation
+
+$background-color-dark        : $gray-dark;           // Footer first, Navigation Hover, Search initial
+
+$background-color-mid         : $gray-medium;         // Search hover
+
+$background-color-light       : $gray-light;
+
+$background-color-very-light  : $gray-very-light;    // Sidebars
+
+//millions of grays
+$black                        : $black;
+$gray-almost-black            : $gray-21;
+$gray-darkest                 : $gray-28;
+$gray-darker                  : $gray-3;
+$gray-dark                    : $gray-4;
+$gray-medium                  : $gray-6;
+$gray-light                   : $gray-a;
+$gray-lighter                 : $gray-c;
+$gray-lightest                : $gray-e;
+$gray-almost-white            : $gray-f;
+$white                        : $white;
+
+$action-color                 : $color-secondary;
+$special-action-color         : $color-primary;
+
+$heading-font-color           : $background-color-mid;
+$base-font-color              : $background-color-darkest;
+/*
+*   FONTS
+*/
+
+$base-font-family                     : $helvetica;
+$heading-font-family                  : $roboto;
+
+$font-family-base                     : $helvetica;
+$font-family-heading                  : $roboto;
+
+$font-size-base                       : 16px;
+
+$body-background                      : $white;
+// $body-text                            : $gray; // This is defined elsewhere
+$body-text-special                    : $black;
+
+$country-picker-inactive              : rgba($black, .5);
+$country-picker-active-desk           : linear-gradient(lighten($background-color-darkest, 5%), $background-color-darkest);
+$country-picker-active-mobile         : $background-color-darkest;
+$country-picker-text                  : $white;
+$country-picker-text-active           : $action-color;
+
+$nav-primary-background               : $background-color-darkest;
+$nav-primary-background-hover         : $gray-very-dark;
+$nav-primary-text                     : $white;
+$nav-primary-text-special             : $special-action-color;
+
+$nav-secondary-background             : $background-color-dark;
+$nav-secondary-text                   : $white;
+$nav-secondary-text-special           : $special-action-color;
+
+$footer-primary-background            : $gray-darker;
+$footer-primary-text                  : $white;
+$footer-primary-text-heading          : $white;
+$footer-primary-text-special          : $special-action-color;
+
+$footer-secondary-background          : $background-color-darkest;
+$footer-secondary-text                : $white;
+$footer-secondary-text-heading        : $gray-light;
+$footer-secondary-text-special        : $special-action-color;
+
+$sidebar-background                   : $gray-light;
+$sidebar-text                         : $black;
+$sidebar-special-text                 : $action-color;
+
+$products-section-background          : $gray-light;
+$products-section-text                : $black;
+
+$alert-warning                        : $yellow;
+$alert-error                          : $red;
+$alert-success                        : $green;

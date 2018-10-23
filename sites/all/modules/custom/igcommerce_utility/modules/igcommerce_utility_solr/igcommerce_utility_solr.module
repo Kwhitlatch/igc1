@@ -1,0 +1,1912 @@
+<?php
+
+/*
+ * Handle the indexing of solr.
+ */
+
+function igcommerce_utility_solr_apachesolr_index_document_build(ApacheSolrDocument $document, $entity, $entity_type) {
+  if (!empty($entity) && !empty($entity->language)) {
+    $entityLanguage = $entity->language;
+    switch ($entity_type) {
+      case 'node':
+        switch ($entity->type) {
+          // Handle the event content type.
+          case 'event':
+            module_load_include('inc', 'igcommerce_utility_solr', 'includes/igcommerce_utility_solr.event');
+            igcommerce_utility_solr_event_content_type($document, $entity, $entity_type);
+            break;
+
+          // Handle the Promotion content type.
+          case 'promotion':
+            module_load_include('inc', 'igcommerce_utility_solr', 'includes/igcommerce_utility_solr.promotion');
+            igcommerce_utility_solr_promotion_content_type($document, $entity, $entity_type);
+            break;
+
+          // Handle the Elink content type.
+          case 'e_link':
+            module_load_include('inc', 'igcommerce_utility_solr', 'includes/igcommerce_utility_solr.elink');
+            igcommerce_utility_solr_elink_content_type($document, $entity, $entity_type);
+            break;
+
+          // Handle the Toc content type.
+          case 'toc':
+            module_load_include('inc', 'igcommerce_utility_solr', 'includes/igcommerce_utility_solr.toc');
+            igcommerce_utility_solr_toc_content_type($document, $entity, $entity_type);
+            break;
+
+          // Handle the List content type.
+          case 'lists':
+            module_load_include('inc', 'igcommerce_utility_solr', 'includes/igcommerce_utility_solr.list');
+            igcommerce_utility_solr_list_content_type($document, $entity, $entity_type);
+            break;
+          // Handle the Survey content type.
+          case 'survey':
+            module_load_include('inc', 'igcommerce_utility_solr', 'includes/igcommerce_utility_solr.survey');
+            igcommerce_utility_solr_survey_content_type($document, $entity, $entity_type);
+            break;
+
+          // Handle the CTA Web Card Lead Gen.
+//          case 'cta_web_card_lead_gen':
+//            module_load_include('inc', 'igcommerce_utility_solr', 'includes/igcommerce_utility_solr.ctawebcard');
+//            igcommerce_utility_solr_ctawebcard_content_type($document, $entity, $entity_type);
+//            break;
+        }
+        break;
+    }
+  }
+}
+
+/*
+ * HOOK_block_info().
+ * IGCommerce popular category blocks
+ */
+
+function igcommerce_utility_solr_block_info() {
+  // Custom block for showing popular category in search result page.
+  $blocks['search_404_popular_product_category'] = array(
+    'info' => t('Search 404 - Popular Product catgory'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['search_filters'] = array(
+      'info' => t('Search Filters'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['search_keyword'] = array(
+      'info' => t('Search Keyword'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['search_results'] = array(
+      'info' => t('Search Results'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  
+  return $blocks;
+}
+
+/*
+ * HOOK_block_view().
+ * Handle block view of product category.
+ */
+
+function igcommerce_utility_solr_block_view($delta = NULL) {
+  // Handle popular product category view.
+  switch ($delta) {
+    case 'search_404_popular_product_category':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_solr_popular_product_category();
+      break;
+    case 'search_filters':
+      $block['subject'] = "";
+      $block['content'] = drupal_get_form('igcommerce_utility_solr_form_filters');
+      break;      
+    case 'search_keyword':
+      $block['subject'] = "";
+      $block['content'] = drupal_get_form('igcommerce_utility_solr_search_form');
+      break;
+    case 'search_results':
+      $results = igcommerce_utility_solr_search_results();
+      $block['subject'] = "";
+      $block['content'] = $results['content'];
+      break;      
+  }
+
+  return $block;
+}
+
+/**
+ * Keyword search for main site search
+ */
+function igcommerce_utility_solr_search_form($form, &$form_state) {
+  // Add some basic css
+  drupal_add_css(drupal_get_path('module', 'igcommerce_utility_solr') . '/css/search.css');
+  
+  $keyword = '';
+  $urlpath = $_SERVER['REQUEST_URI']; //Use this variable to help determain if page is 404, blank search, or search with results
+  if ((strpos($urlpath, 'page') !== false) && (strpos($urlpath, '?keyword') !== false)){
+    $keyword = $_GET['keyword'];
+    $prefix = t('Search results'); 
+  } 
+  elseif ((strpos($urlpath, 'page') !== false) && (strpos($urlpath, '?keyword') == false)) {
+    $keyword = $_GET['keyword'];
+    $prefix = t('Search'); 
+  }
+  else {
+    $prefix = t('404 page not found');
+  }
+
+  igcommerce_utility_head_elements_alt($prefix, $prefix, TRUE);
+  
+  $form = array();
+  $form_state['rebuild'] = TRUE;
+
+  $form['keyword'] = array(
+      '#type' => 'textfield',
+      '#attributes' => array('placeholder' => t('Enter keywords')),
+      '#default_value' => $keyword,
+      //'#description' => t('Can\'t find what you are looking for? Try using quotes (") around your search.'),
+      '#prefix' => '<h1>' . $prefix . '</h1>',
+      //'#element_validate' => array('_validate_keyword'),
+      //'#required' => TRUE,
+  );
+
+  $form['search'] = array(
+      '#type' => 'submit',
+      '#value' => t('Search'),
+  );
+
+  return $form;
+}
+
+function _validate_keyword($element, &$form_state, $form) {
+  if (empty($element['#value'])) {
+    form_error($element, t('A search term is required.'));
+    return;
+  }
+  
+  if (strlen($element['#value']) < 3) {
+    form_error($element, t('Search term is too short.'));
+    return;    
+  }
+}
+
+function igcommerce_utility_solr_search_results() {
+  global $language;
+  global $solr_search_results_stats;
+  
+  $return['count'] = 0;
+  $return['content'] = NULL;
+  
+  if (arg(0) == 'admin') {
+    return $return;
+  }
+  
+//  $cache = &drupal_static(__FUNCTION__);
+  
+//  if ($cache) {
+  //  return $cache;
+//  }
+
+  $solr_search_results_stats = array();
+  
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/paginate.js');
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/video.js');
+  
+  $keyword = NULL;
+  $sort_order = NULL;
+  $fq_filters = igcommerce_utility_solr_search_filters_load_selected();
+  $keywords = array();
+  
+  if (!empty($_GET['keyword'])) {
+    $keyword = trim($_GET['keyword']);
+    $keywords = explode(' ' ,$keyword);
+    foreach ($keywords as $text) {
+      $keywords[] = strtoupper($text);
+      $keywords[] = strtolower($text);
+      $keywords[] = ucfirst($text);
+    }  
+  }
+
+  if (empty($keyword) && empty($fq_filters)) {
+    return $return;
+  }
+  
+  if (!empty($_GET['sort'])) {
+    $sort_order = $_GET['sort'];    
+  }
+  
+  /*
+   Exclude these
+   a) field_restricted_to_internal_use
+   b) field_restricted_to_author_of_as
+   c) field_pp_confidential
+   d) field_pp_do_not_show_item_on_t
+   */
+  $filters = array(
+      'entity_type' => 'node',
+      'bundle' => '(article OR video OR document OR manual OR product_display OR fcal)',
+      'ss_language' => $language->language,
+      'bs_status' => TRUE, // only interested in published content
+      '-is_field_restricted_to_internal_use' => 1,
+      '-is_field_restricted_to_author_of_as' => 1,
+      '-is_field_pp_confidential' => 1,
+      '-is_field_pp_do_not_show_item_on_t' => 1,
+  );
+
+  $software_term = _taxonomy_term_load_by_name_solr('Software downloads', 'url_builder', $language->language);
+  $manuals_term = _taxonomy_term_load_by_name_solr('Manuals', 'url_builder', $language->language);
+  
+  foreach ($fq_filters as $parent => $children) {    
+    if ($parent == $software_term->sm_field_content_title[0]) {
+      $filters['ss_executable_type'] = 'software';      
+    }
+    
+    if ($parent == t('Videos')) {
+      $filters['ss_video_type'] = 'videos';
+    } 
+    
+    if ($parent == t('Demos')) {
+      $filters['ss_video_type'] = 'demos';
+    }
+    
+    foreach ($children as $key => $child) {
+      if (!is_numeric($key)) {
+        $filters['ss_path_alias'][] = $key . '*';
+      } else {
+        switch($parent) {
+          case $manuals_term->sm_field_content_title[0]:
+            $filters['is_field_manual_type_tid'][] = $key;
+            break;
+          case t('Documents'):
+            $filters['is_document_type'][] = $key;            
+            break;
+          case $software_term->sm_field_content_title[0]:
+            $filters['im_field_product_category'][] = $key;                        
+            break;
+          case t('Videos'):
+            $filters['im_field_product_category'][] = $key;            
+            break;
+          case t('Demos'):
+            $filters['im_field_product_category'][] = $key;            
+            break;
+        } 
+      }
+    }
+  }
+  
+  // Add top level categories if seen in $_GET
+  $categories = array();
+  
+  if (isset($_GET['category'])) {
+    $categories = explode(',', $_GET['category']);
+  }
+  $config = array(
+      'fluke' => array(
+          'term' => 'Fluke'
+      ),
+      'learn' =>array(
+          'term' => 'Learn'
+      ),
+      'training' => array(
+          'term' => 'Training'
+      ),
+      'manuals' => array(
+          'bundle' => 'manual'
+      ),
+      'documents' =>array(
+          'bundle' => 'document'
+      ),
+      'software_downloads' =>array(
+          'bundle' => 'executable'
+      ),
+      'videos' => array(
+          'bundle' => 'video'
+      )
+  );
+  if (!empty($categories)) {
+    // Define array to hold filter keys and values.
+    $params = array();
+    // We always want nodes.
+    $params['entity_type'] = 'node';
+    // Loop through each filter and apply fiters as needed.
+    foreach ($categories as $filter_value) {
+      switch ($filter_value) {
+        case 'learn':
+          // This filters to article nodes that have the term 'Learn'
+          // somewhere in the hierarchy of the selected URL Builder term.
+          // This is contained in sm_vid_URL_Builder.
+          $params['bundle'] = 'article';
+          // The terms names stored in this field are not translated
+          // see (apachesolr_multilingual_term_reference_indexing_callback_implementation())
+          $params['sm_vid_URL_Builder'] = 'Learn';
+          break;
+        case 'fluke':
+        case 'training':
+          // This uses the 'Fluke' term in URL Builder vocab, so we'll search both on
+          // the tid in im_field_url_builder.
+          //$term_name = $config[$filter_value]['term'];
+          //$term = _taxonomy_term_load_by_name_solr($term_name, 'url_builder');
+          // TODO make this dynamic and not hard-coded
+          $tid = 2268;
+          // Apply filters.
+          //$params['im_vid_url_builder'][] = $tid;
+          //$params['tm_parent'][] = 'fluke';
+          break;
+        case 'products':
+          $params['bundle'][] = 'product_display';
+          $params['bundle'][] = 'fcal';
+          break;
+        case 'manuals':
+        case 'documents':
+        case 'software_downloads':
+        case 'videos':
+          $bundle = $config[$filter_value]['bundle'];
+          $params['bundle'][] = $bundle;
+          break;
+        case 'demos':
+          // TODO: only add demos if video not already selected.
+          $params['bundle'][] = 'video';
+          $params['sm_vid_Video_Type'] = 'Demos';
+          break;
+      }
+    }
+    
+    foreach ($params as $field => $values) {
+      if (is_array($values)) {
+        $filters[$field] = '(' . implode(' OR ', $values) . ')';
+      }
+      else {
+        $filters[$field] = $values;
+      }
+    }
+  }  
+  
+  // Add AND to filters
+  foreach ($filters as $key => $values) {
+    if (is_array($values)) {
+      $filters[$key] = '(' . implode(' AND ', $values) . ')';
+    }
+  }
+  
+  $options = array(
+    'rows' => 200,
+    'filters' => $filters,
+  );
+  
+  if ($keyword) {
+    // Strip the word 'Fluke" from query string if entered.
+    $keyword = trim(preg_replace('/[F|f]luke/', '', $keyword));
+    /* approach revised on 5/16/2018 by TT -- pass the keywords to the fluke solr function where they
+       are broken into individual fqs */
+    $options['keyword'] = $keyword;
+  }
+  
+  // This query could get heavy so limiting which fields are returned
+  $options['fl'] = 'score,entity_id,ss_language,ss_path_alias,ss_path_alias_locale,path_alias,bundle,bundle_name,ss_field_content_title,' .
+    'ss_article_short_summary,ts_article_body,ds_created,url,ss_video_type,ss_field_youtube_video,ss_field_demo_url,ss_field_content_url,' . 
+    'is_field_manual_type_tid,tm_manuals_and_supplement,is_sort,is_document_type,im_field_product_category';
+
+  $options['params']['defType'] = 'edismax';
+  
+  // Add bias for specific fields for custom CJK fields.
+  if (in_array($language->language, array('cn', 'ko-kr', 'ja-jp'))) {
+    // Add qf params if required by language and add bias values
+    $bias = array(
+      'display_title_cjk' => 50,
+      'overview_cjk' =>1,
+      'body_cjk' => 1,
+      'short_description_summary_cjk' => 1,
+//      'h1_title_cjk' => 1,
+//      'compare_key_features_cjk' => 1,
+//      'description_cjk' => 1,
+    );
+  }
+  else {
+      // Boost title fields as they are most important
+      $bias = array(
+          'tm_field_content_title' => 50,
+          'tm_overview' => 1,
+          'ts_article_body' => 1,
+          'tm_short_description_summary' => 1,
+//        'ts_field_content_title' => 50,
+//        'tm_features' => 1,
+//        'ts_description_field' => 1,
+//        'tm_description_field' => 1,
+      );
+
+  }
+
+    $qf = array();
+    
+    foreach ($bias as $field => $bias_value) {
+      $qf[] = $field . '^' . $bias_value;
+    }
+
+    // Trim ending space
+    $qf = implode(' ', $qf);
+
+    // Use pf here to boost instead of query these fields as it will return 0 results since these fields aren't in all bundles
+    //$options['params']['pf'] = $qf;
+    $options['params']['qf'] = $qf;
+
+  
+  $query = fluke_solr_get_connection();
+  
+  if ($sort_order == 'date') {
+    $options['sort']['ds_created'] = 'desc';
+    $options['params']['group.field'] = 'ds_created';
+  }
+  else {
+    // Sorting be relevance, so group by type and sort
+    // groups by is_sort
+    // Set sort by is_sort as available sort.
+    $query->setAvailableSort('is_sort', array(
+      'title' => t('Sort Field'),
+      'default' => 'asc'
+    ));
+    $options['params']['group.field'] = 'is_sort';
+  //$options['sort']['is_sort'] = 'asc';
+  }
+  // Grouping limit needs to be set for all options
+  $options['params']['group.limit'] = 20;
+
+  // Add grouping filters.
+  $options['params']['group'] = true;
+
+  $filters = fluke_solr_add_filters($query, $options);
+  $response = fluke_solr_query($filters, TRUE);
+
+  // When grouping, docs are under $response->grouped.
+  $docs_grouped = $response->grouped->{$options['params']['group.field']}->groups;
+  // For some reason, sorting isn't working in Solr, so we have to do it here.
+
+  usort($docs_grouped, "sortByIsSort");
+
+  // Put them all in one big $docs array.
+  foreach($docs_grouped as $doclist) {
+    foreach($doclist->doclist->docs as $group_doc) {
+      $docs[] = $group_doc;
+    }
+  }
+  
+  if (empty($docs[0])) {
+      // TT - I moved this to within the if empty
+      //// Popular product category view.
+      $block = module_invoke('igcommerce_utility_solr', 'block_view', 'search_404_popular_product_category');
+      $error_message = t('Sorry, your search did not return any results ');
+      $search_tips = t(variable_get('igcommerce_utility_solr_empty_search_tips_description'));
+      $search_tips_label = t(variable_get('igcommerce_utility_solr_empty_search_tips_label'));
+      // TT - end of moved code
+    $return['content'] = theme('igcommerce_utility_solr_no_results', array(
+      'error_message' => $error_message,
+      'search_tips_label' => $search_tips_label,
+      'search_tips' => $search_tips,
+      'popular_content' => $block['content']
+    ));
+    $cache = $return;
+    return $return;
+  }
+
+  $solr_search_results_stats = igcommerce_utility_solr_search_result_stats($docs);
+  
+  $items = array();
+  $max = 500;
+  $count = 0;  
+  foreach ($docs as $doc) {
+    $vars['doc'] = $doc;
+    
+    // Don't display if there is no title    
+    if (empty($doc->ss_field_content_title)) {
+      // Check tm_field_display_title[0]
+      if (!empty($doc-> tm_field_display_title[0])) {
+        $doc->ss_field_content_title = $doc->tm_field_display_title[0];
+      } else {
+        continue;
+      }
+    }
+
+    $desc = '';
+    if (!empty($doc->ss_article_short_summary)) {
+      $desc = strip_tags($doc->ss_article_short_summary); //Stip tags from summary to prevent inconsistent <p> tags
+    } elseif (!empty($doc->ts_article_body)) {
+      $desc = strip_tags($doc->ts_article_body);
+      if (strlen($desc) > $max) {
+        $first = substr($desc, 0, $max);
+        $last = substr($desc, strlen($first), strlen($desc));
+        $break = strpos($last, ' ');
+        if ($break !== FALSE) {
+          $orig_desc = $desc;
+          $desc = substr($desc, 0, strlen($first) + $break);
+          $desc .= '...';          
+        } else {
+          
+        }
+      }
+    }
+    
+    $vars['title'] = igcommerce_utility_solr_generate_link($doc);
+    if (!$vars['title']) {
+      continue;
+    }
+    
+    $count++; 
+       
+    $vars['desc'] = $desc;    
+
+    $items[] = theme('igcommerce_utility_solr_search_result_item', $vars);
+    // Manuals are distinct from other items because they can contain both a manual
+    // and a supplement, so at this point the manual item has been themed, so we just
+    // need to get the supplement and theme it.
+    if ($doc->bundle == 'manual') {
+      $manual_and_supplement = json_decode($doc->tm_manuals_and_supplement[0]);
+      $manual_and_supplement = reset($manual_and_supplement);
+      if (isset($manual_and_supplement->supplement_file)) {
+        // Get translated manual_type term to use as suffix.
+        if ($term = _taxonomy_term_load_solr($doc->is_field_manual_type_tid, $doc->ss_language, 'dam')) {
+          $type = str_replace('&#039;', '', $term->ss_supplement_title_translate);
+        }
+        $supp_title = !is_null($manual_and_supplement->supplement_title) ? $manual_and_supplement->supplement_title : $doc->ss_field_content_title;
+        $vars['title'] = '<a href="' . $manual_and_supplement->supplement_file . '" target="_blank">' . $supp_title . ' | ' . $type . '</a>';
+        $items[] = theme('igcommerce_utility_solr_search_result_item', $vars);
+      }
+    }
+  }
+
+  $vars = array();
+  $vars['items'] = $items;
+  $vars['keyword'] = $keyword;
+  $vars['num_results'] = $count;
+  
+  $sort = 'relevance';
+  if (!empty($_GET['sort'])) {
+    $sort = $_GET['sort'];
+  }
+  
+  $sort_options = array('relevance' => t('Relevance'), 'date' => t('Date'));
+  $sort_form = '<select class="search-sort">';
+  foreach ($sort_options as $key => $value) {
+    $sort_form .= '<option value="' . $key . '"';
+    if ($sort == $key) {
+      $sort_form .= ' selected="selected"';
+    }
+    $sort_form .= '>' . $value . '</option>';
+  }
+  $sort_form .= '</select>';
+  $vars['sort_form'] = $sort_form;
+  
+  $return['content'] = theme('igcommerce_utility_solr_search_result_items', $vars);
+  $return['count'] = $count;
+  $cache = $return;
+  
+  return $return;
+}
+
+/**
+ * @param $a
+ * @param $b
+ * @return int
+ */
+function sortByIsSort($a, $b) {
+    return $a->groupValue <=> $b->groupValue;
+}
+
+
+
+/**
+ * Implements template_process_hook.  Process the result type.
+ *
+ * @param $vars
+ */
+function template_process_igcommerce_utility_solr_search_result_item(&$vars){
+
+  // If an article is a software download label it as so, otherwise continue to base the type on the bundle name
+  if(!empty($vars['doc']->ss_path_alias) && strpos($vars['doc']->ss_path_alias, 'support/software-downloads') !== FALSE){
+    $type = 'Software Download'; // To be passed to t() in the template;
+  }
+
+  if(!isset($type)){
+    $type = $vars['doc']->bundle_name;
+  }
+
+  $vars['type'] = $type;
+}
+
+/**
+ * Returns search result stats for the resulting items
+ */ 
+function igcommerce_utility_solr_search_result_stats($docs) {
+  $options = igcommerce_utility_solr_get_filter_options();
+  
+  $return = array();
+  
+  foreach ($docs as $doc) {
+    if (empty($doc->ss_field_content_title)) {
+      // This was commented out because it was skipping manuals
+      // Don't display if there is no title      
+      //continue;
+    }
+    
+    foreach ($options as $parent => $children) {
+      foreach ($children as $key => $child) {        
+        if (is_numeric($key)) {
+          switch ($parent) {
+            case t('Manuals'):     
+              if (empty($doc->is_field_manual_type_tid)) {
+                break;
+              }       
+              if ($doc->is_field_manual_type_tid == $key) {
+                $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+              }
+              break;
+            case t('Documents'):
+              if (empty($doc->is_document_type)) {
+                break;
+              }
+              
+              if ($doc->is_document_type == $key) {
+                $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;                
+              }
+              break;
+            case t('Software Downloads'):
+              if (empty($doc->im_field_product_category)) {
+                break;
+              }
+              if (is_array($doc->im_field_product_category)) {
+                if (in_array($key, $doc->im_field_product_category)) {
+                  $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+                }
+              } else {
+                if ($doc->im_field_product_category == $key) {
+                  $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+                }
+              }
+              break;
+              
+            case t('Demos'):
+              if (empty($doc->im_field_product_category)) {
+                break;
+              }
+              if (empty($doc->ss_video_type)) {
+                break;
+              }
+              if ($doc->ss_video_type != 'demos') {
+                break;
+              }
+              if (is_array($doc->im_field_product_category)) {
+                if (in_array($key, $doc->im_field_product_category)) {
+                  $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+                }
+              } else {
+                if ($doc->im_field_product_category == $key) {
+                  $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+                }
+              }
+              break;
+              
+            case t('Videos'):
+              if (empty($doc->im_field_product_category)) {
+                break;
+              }
+              if (empty($doc->ss_video_type)) {
+                break;
+              }
+              if ($doc->ss_video_type != 'videos') {
+                break;
+              }
+              if (is_array($doc->im_field_product_category)) {
+                if (in_array($key, $doc->im_field_product_category)) {
+                  $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+                }
+              } else {
+                if ($doc->im_field_product_category == $key) {
+                  $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+                }
+              }
+            break;          
+          }     
+        } else {
+          if (empty($doc->ss_path_alias)) {
+            continue;
+          }
+          if ($key && substr($doc->ss_path_alias, 0, strlen($key)) == $key) {
+            $return[$parent][$key] = empty($return[$parent][$key]) ? 1 : $return[$parent][$key]  + 1;
+          } 
+        }
+      }
+    }
+  }
+  
+  return $return;
+}
+
+function igcommerce_utility_solr_generate_link($doc, $url_only = FALSE) {
+  $url = NULL;
+  $attributes = array();
+  
+  if (empty($doc->ss_field_content_title)) {
+    $title = $doc->label;
+  } else {
+    $title = $doc->ss_field_content_title;
+  }
+  
+  switch ($doc->bundle) {
+    case 'video':
+      if (!empty($doc->ss_field_content_url)) {
+        $url = $doc->ss_field_content_url;
+        
+        // special case for brightcove
+        if (!empty($doc->ss_field_brightcove_id)) {
+
+        }
+      } elseif (!empty($doc->ss_field_youtube_video)) {
+        if (strpos($doc->ss_field_youtube_video, 'youtube.com/watch') !== FALSE) {
+          $doc->ss_field_youtube_video = str_replace('youtube.com/watch', 'youtube.com/embed', $doc->ss_field_youtube_video);
+        }
+        $url = $doc->ss_field_youtube_video;
+      } elseif (!empty($doc->ss_field_demo_url)) {
+        $url = $doc->ss_field_demo_url;
+      } else {
+        // No video so skip this
+        return;
+      }
+      
+      $url = str_replace('http:', '', $url);
+      $url = str_replace('https:', '', $url);
+      
+      $url .= strpos($url, '?') !== FALSE ? '&iframe=true' : '?iframe=true';
+      $attributes['class'] = 'colorbox-load';
+      break;
+    case 'document':
+      if (!empty($doc->ss_field_content_url)) {
+        $url = $doc->ss_field_content_url;
+      }
+      break;
+    case 'manual':
+      if ($term = _taxonomy_term_load_solr($doc->is_field_manual_type_tid, $doc->ss_language, 'dam')) {
+        $type = str_replace('&#039;', '', $term->sm_field_display_title[0]);
+        $title = $title . ' | ' . $type;
+      }      
+      $url = !empty($doc->ss_field_content_url) ? $url = $doc->ss_field_content_url : NULL;
+      break;
+    default:
+      if (!empty($doc->ss_field_content_url)) {
+        $url = $doc->ss_field_content_url;
+      } else {        
+        if (empty($doc->path_alias)) {
+          $doc->path_alias = '';
+        }
+        $url = '/' . $doc->path_alias;
+      }
+  }
+  
+  if (!$url) {
+    return;
+  }
+  
+  if ($url_only) {
+    return $url;
+  } else {
+    return l($title, $url, array('html' => TRUE, 'attributes' => $attributes));    
+  }
+}
+
+/**
+ * Submit handler for search form
+ * This submit callback shouldn't be called as keyword search handled through filter form
+ */
+function igcommerce_utility_solr_search_form_submit($form, &$form_state) {
+  $keyword = $form_state['values']['keyword'];
+
+  if (empty($keyword)) {
+    return;
+  }
+  
+  igcommerce_utility_solr_block_form_submit($form, $form_state);
+  
+  return;
+  $query = array();
+  $query['keyword'] = $keyword;
+  
+  if (!empty($form_state['values']['facets'])) {
+    $query['category'] = implode(',', $form_state['values']['facets']);    
+  }
+  
+  drupal_goto(current_path(), array('query' => $query));
+}
+
+/**
+ * Stores search filters from &_GET into a global variable
+ */
+function igcommerce_utility_solr_search_filters_load_selected() {
+  $cache = &drupal_static(__FUNCTION__);
+  
+  if ($cache) {
+    return $cache;
+  }
+  
+  global $language;
+    
+  $search_filters = array();
+  
+  $options = igcommerce_utility_solr_get_filter_options($language->language);
+  
+  if (!empty($_GET['filters'])) {
+    $filters = json_decode(urldecode($_GET['filters']), TRUE);
+    foreach ($filters as $parent => $children) {
+      foreach ($children as $child) {
+        $child = trim(preg_replace('([0-9])', '', $child));
+        
+        if ($key = array_search($child, $options[$parent])) {  
+          $search_filters[$parent][$key] = $child;
+        }
+      }
+    }
+  }
+  
+  $cache = $search_filters;
+  
+  return $search_filters;
+}
+
+/**
+ * Main site search filter form
+ */
+function igcommerce_utility_solr_form_filters($form, &$form_state) {
+  global $language;
+
+  $form = array();
+  $keyword = NULL;
+
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility_solr') . '/js/form.js');
+  drupal_add_library('system', 'ui.accordion');
+
+  // Load all options
+  $options = igcommerce_utility_solr_get_filter_options($language->language);
+
+  $filters_selected = igcommerce_utility_solr_search_filters_load_selected();
+  
+  // Keyword *hidden*
+  if (!empty($_GET['keyword'])) {
+    $keyword = $_GET['keyword'];
+  } else {
+   
+  }
+  
+  if ($keyword || count($filters_selected)) {
+    // Run the query to see how many results there are
+    $results = igcommerce_utility_solr_search_results();
+    global $solr_search_results_stats;
+  }
+  
+  if (!$keyword && count($filters_selected)) {
+    drupal_goto(current_path());
+  }
+  
+  // Reduce $options if no returned values match
+  foreach ($options as $key => $children) {
+    if (empty($solr_search_results_stats[$key])) {
+      unset($options[$key]);
+      continue;
+    }
+    foreach ($children as $ckey => $child) {
+      if (!empty($solr_search_results_stats)) {
+        if (empty($solr_search_results_stats[$key][$ckey])) {
+          unset($options[$key][$ckey]);
+        } 
+      } else {
+        unset($options[$key]);
+      }
+    }
+  }
+  
+  // If no options available, don't show filters  
+  if ($keyword && !empty($options)) {
+    // Remove filters
+    $form['remove_filters'] = array(
+        '#prefix' => '<div class="remove-filter-container">',
+        '#type' => 'submit',
+        '#value' => t('Remove Filters'),
+        '#submit' => array('igcommerce_utility_solr_form_filters_remove_filters'),
+        '#suffix' => '</div>',
+    );
+  
+    $form['#filters'] = $options;
+    
+    $form['filters']['#tree'] = TRUE;
+    
+    foreach ($options as $key => $children) {
+      $default_value = array();
+      $count = 0;
+      foreach ($children as $ckey => $child) {
+        if (!empty($solr_search_results_stats)) {
+          if (!empty($solr_search_results_stats[$key][$ckey])) {
+            $options[$key][$ckey] .= ' (' . $solr_search_results_stats[$key][$ckey] . ')';
+            $count++;
+          }
+        } 
+        
+        if (!empty($filters_selected[$key][$ckey])) {
+          $default_value[$ckey] = $ckey;
+          $options[$key][$ckey] = '<strong>' . $options[$key][$ckey] . '</strong>';
+        }      
+      }
+      
+      $form['filters'][$key] = array(
+        '#type' => 'checkboxes',
+        //'#title' => t('Applications'),
+        '#options' => $options[$key],
+        '#data_state' => !empty($default_value) ? 'active' : 'inactive',
+        '#default_value' => $default_value,  
+        '#count' => $count,    
+      );    
+    }
+  }
+  
+  if ($keyword && empty($options)) {
+    $form['no_filters'] = array(
+      '#markup' => '<div class="no-filters">' . t('No filters available') . '</div>',  
+    );
+  }
+  
+  $form['keyword'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $keyword,
+  );
+
+  // Sort *hidden*
+  $sort = '';
+  if (!empty($_GET['sort'])) {
+    $sort = $_GET['sort'];
+  }
+  
+  $form['sort'] = array(
+    '#type' => 'hidden', 
+    '#default_value' => $sort, 
+  );
+  
+  // Submit *hidden*
+  $form['filter'] = array(
+    '#type' => 'submit',
+    '#value' => t('Filter'),
+    '#attributes' => array('style' => 'display:none;'),
+  );
+
+  return $form;
+}
+
+function igcommerce_utility_solr_form_filters_validate(&$form, &$form_state) {
+  $values = $form_state['values'];
+  
+  if (empty($values['keyword'])) {
+    form_set_error('keyword', 'Please enter search terms.');
+  }
+}
+
+function igcommerce_utility_solr_form_filters_submit(&$form, &$form_state) {
+  global $training_library_keyword;
+
+  $values = $form_state['values'];
+  $filters = array();
+
+  $query = array();
+  // If there's a keyword, then add to global variable
+  if (!empty($values['keyword'])) {
+    $query['keyword'] = $values['keyword'];
+  }
+  
+  if (!empty($form_state['values']['facets'])) {
+    foreach ($form_state['values']['facets'] as $key => $value) {
+      if ($value) {
+        $facets[] = $key;
+      }
+    }
+    $query['category'] = implode(',', $facets);
+  }  
+  
+  if (!empty($values['sort'])) {
+    if ($values['sort'] == 'date') {
+      $query['sort'] = $values['sort'];
+    }
+  }
+  
+  if (!empty($values['filters'])) {
+    foreach ($values['filters'] as $fkey => $parents) {
+      foreach ($parents as $key => $selected) {
+        if ($selected) {
+          $filters[$fkey][] = $form['#filters'][$fkey][$key];
+        }
+      }
+    }
+  }
+  // Handle tids
+  if (!empty($filters)) {
+    $query['filters'] = urlencode(json_encode($filters));
+  }
+
+  drupal_goto(current_path(), array('query' => $query));
+  
+  $form_state['rebuild'] = TRUE;
+  $form_state['filters'] = $filters;
+}
+
+function igcommerce_utility_solr_get_filter_options($lang = 'en-us') {
+  if ($cache = &drupal_static(__FUNCTION__)) {
+    return $cache;
+  }
+    
+  $options[t('Fluke')] = array(
+    'About us' => 'support/about-us', //Changed to about us to match taxonomy term for translation
+    'Fluke news' => 'solutions/fluke-news',
+    'For educators' => 'training/for-educators',
+    'Press releases' => 'support/press-releases',
+    'Promotions and contests' => 'products/promotions-and-contests',
+    'Safety notices' => 'support/safety-notices',
+    'Technical support' => 'support/technical-support',      
+  );
+  // url needs to be key...doh!
+  $options[t('Fluke')] = array_flip($options[t('Fluke')]);
+  
+  $term = _taxonomy_term_load_by_name_solr('Products', 'url_builder', $lang);
+  
+  $options[$term->sm_field_content_title[0]] = array(
+    'Accessories' => 'product/accessories',
+    'HVAC tools' => 'product/building-infrastructure/hvac-tools',
+    'Indoor air quality testing' => 'product/building-infrastructure/indoor-air-quality-testing',
+    'Laser distance meters' => 'product/building-infrastructure/laser-distance-meters',
+    'Laser levels' => 'product/building-infrastructure/laser-levels',
+    'mA loop calibrators' => 'product/calibration-tools/ma-loop-calibrators',
+    'Multifunction calibrators' => 'product/calibration-tools/multifunction-calibrators',
+    'Pressure calibrators' => 'product/calibration-tools/pressure-calibrators',
+    'Temperature calibrators' => 'product/calibration-tools/temperature-calibrators',
+    'Battery Analyzers' => 'product/electrical-testing/battery-analyzers',
+    'Clamp meters' => 'product/electrical-testing/clamp-meters',
+    'Digital multimeters' => 'product/electrical-testing/digital-multimeters',
+    'Earth ground' => 'product/electrical-testing/earth-ground',
+    'Electrical testers' => 'product/electrical-testing/electrical-testers',
+    'Installation testers' => 'product/electrical-testing/installation-testers',
+    'Insulation testers' => 'product/electrical-testing/insulation-testers',
+    'Portable appliance testers' => '',
+    'Portable oscilloscopes' => 'product/electrical-testing/portable-oscilloscopes',
+    'Power and energy loggers' => 'product/electrical-testing/power-and-energy-loggers',
+    'Power quality analyzers' => 'product/electrical-testing/power-quality-analyzers',
+    'Wireless testers' => '',
+    'Bench instruments' => 'product/electronics-testing/bench-instruments',
+    'Data acquisition' => 'product/electronics-testing/data-acquisition',
+    'eMaint CMMS' => 'product/fluke-software/emaint-cmms',
+    'Laser alignment' => 'product/mechanical-maintenance/laser-alignment',
+    'Vibration analysis' => 'product/mechanical-maintenance/vibration-analysis',
+    'Contact thermometers' => 'product/temperature-measurement/contact-thermometers',
+    'IR thermometers' => 'product/temperature-measurement/ir-thermometers',
+    'Infrared cameras' => 'product/thermal-imaging/infrared-cameras',
+    'IR windows' => 'product/thermal-imaging/ir-windows',
+    'Visual IR thermometers' => 'product/thermal-imaging/visual-ir-thermometers',      
+  );
+  
+  // url needs to be key...doh!
+  $options[$term->sm_field_content_title[0]] = array_flip($options[$term->sm_field_content_title[0]]);
+  
+  $term = _taxonomy_term_load_by_name_solr('Learn', 'url_builder', $lang);
+  
+  $options[$term->sm_field_content_title[0]] = array(
+    'Safety' => 'learn/best/practices/safety',
+    'Measurement basics' => 'learn/best-practices/measurement-basics',
+    'Test tools basics' => 'learn/best-practices/test-tools-basics',
+    'Online courses' => 'learn/online-courses',
+    'Tradeshows and seminars' => 'learn/tradeshows-and-seminars',
+    'Webinars' => 'learn/webinars',
+  );
+  
+  // url needs to be key...doh!
+  $options[$term->sm_field_content_title[0]] = array_flip($options[$term->sm_field_content_title[0]]);
+  
+  // Manuals
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('manual_type', $lang, 'dam');
+  $manuals = array();
+  
+  foreach ($terms as $term) {
+    // don't continue if this isn't FIG
+    if (!in_array('Fluke Industrial Group', $term->sm_term_parent_names)) {
+      continue;
+    }
+  
+    // Top level category
+    if (count($term->sm_term_parent_names) == 2) {
+      $manuals[$term->entity_id] = $term->tm_field_display_title[0];
+    }  
+  }  
+  asort($manuals);
+  
+  $term = _taxonomy_term_load_by_name_solr('Manuals', 'url_builder', $lang);
+  
+  $options[$term->sm_field_content_title[0]] = $manuals;
+  
+  // Documents
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('document_type', $lang, 'dam');
+  $docs = array();
+  
+  foreach ($terms as $term) {
+    // don't continue if this isn't FIG
+    if (!in_array('Fluke Industrial Group', $term->sm_term_parent_names)) {
+      continue;
+    }
+  
+    $docs[$term->entity_id] = $term->tm_field_display_title[0];
+  }
+  asort($docs);
+  
+  $options[t('Documents')] = $docs;  
+  
+  // Software
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('software', $lang, 'ecm');
+  $docs = array();
+  
+  foreach ($terms as $term) {    
+    $docs[$term->entity_id] = $term->sm_field_content_title[0];    
+  }
+  asort($docs);
+  
+  $term = _taxonomy_term_load_by_name_solr('Software downloads', 'url_builder', $lang);
+  
+  $options[$term->sm_field_content_title[0]] = $docs;
+  
+  // Videos
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('product_category', $lang, 'dam');
+  $products = array();
+  
+  foreach ($terms as $term) {  
+    $products[$term->entity_id] = $term->tm_field_display_title[0];
+  }
+  //$sorted = $products;
+  //asort($sorted);
+  asort($products);
+  
+  $options[t('Videos')] = $products;
+  
+  // Demos are redundant
+  $options[t('Demos')] = $products;
+
+  // Translate the options
+  // have to do it this way because the filters are not 100% using url_builder
+  // TODO build a better solution  
+  $options = igcommerce_utility_solr_translate_keys($options);
+  
+  $cache = $options;
+  
+  return $options;
+}
+
+/**
+ * Translates array keys from english to $language for url_builder array
+ * @param unknown $array
+ * @return unknown
+ */
+function igcommerce_utility_solr_translate_keys($array) {
+  global $language;
+  
+  $url_builder = _taxonomy_terms_load_by_vocabulary_solr('url_builder', $language->language);
+  $terms = array();
+  $return = array();
+  
+  foreach ($url_builder as $term) {
+    $terms[$term->label] = $term->sm_field_content_title[0];
+  }
+  
+  foreach ($array as $parent => $children) {
+    foreach ($children as $name => $value) {
+      if (!empty($terms[$value]) && !is_numeric($value)) {
+        $array[$parent][$name] = $terms[$value];
+      }
+    }
+  }  
+  
+  return $array;
+}
+/**
+ * Submit callback to remove all filters on training library form
+ */
+function igcommerce_utility_solr_form_filters_remove_filters(&$form, &$form_state) {
+  drupal_goto(current_path(), array('query' => array('keyword' => $_GET['keyword'])));
+}
+
+/**
+ * Queries videos and documents with selected filters and returns available terms to use in filter form.
+ * @param array $filters an array of tids to use to query video and document content
+ */
+function igcommerce_utility_solr_get_terms_available($tids) {
+  global $language;
+
+  $filter = '[* TO *]';
+
+  if (!empty($tids)) {
+    $filter = '(' . implode(' AND ', $tids) . ')';
+  }
+
+  $filters = array(
+      'entity_type' => 'node',
+      'bundle' => '(video OR document OR manual)',
+      'ss_language' => $language->language,
+      'bs_status' => TRUE, // only interested in published articles
+      'im_training_filter' => $filter,
+      '-is_field_restricted_to_internal_use' => 1,
+      '-is_field_restricted_to_author_of_as' => 1,
+      '-is_field_pp_confidential' => 1,
+      '-is_field_pp_do_not_show_item_on_t' => 1,
+  );
+
+  $fields = 'im_training_filter';
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('rows' => 1000, 'fl' => $fields, 'filters' => $filters, 'sort' => array('ds_created' => 'desc')));
+  $response = fluke_solr_query($filters);
+
+  if (empty($response->response->docs[0])) {
+    return;
+  }
+
+  $docs = $response->response->docs;
+  $return = array();
+
+  foreach ($docs as $doc) {
+    if (empty($doc->im_training_filter)) {
+      continue;
+    }
+
+    foreach ($doc->im_training_filter as $tid) {
+      $return[$tid] = $tid;
+    }
+  }
+
+  return $return;
+}
+
+/*
+ * Determines the depth or level of term in taxonomy
+ */
+
+function igcommerce_utility_solr_term_depth($tid) {
+  static $depths = array();
+
+  if (!isset($depths[$tid])) {
+    $parent = db_select('taxonomy_term_hierarchy', 'th')
+            ->fields('th', array('parent'))
+            ->condition('tid', $tid)
+            ->execute()->fetchField();
+
+    if ($parent == 0) {
+      $depths = 1;
+    }
+    else {
+      $depths = 1 + igcommerce_utility_solr_term_depth($parent);
+    }
+  }
+  return $depths;
+}
+
+/**
+ * Implements hook_form_views_exposed_form_alter().
+ */
+function igcommerce_utility_solr_form_views_exposed_form_alter(&$form, &$form_state, $form_id) {
+  if (arg(0) == 'search') {
+    if (isset($form['sort_order']['#options']) && is_array($form['sort_order']['#options'])) {
+      $form['sort_order']['#options'] = array_merge(array('relevance' => t('Relevance')), $form['sort_order']['#options']);
+    }
+    if (isset($form['sort_order'])) {
+      $form['sort_order']['#default_value'] = 'relevance';
+    }
+
+
+    if ($form['#id'] == 'views-exposed-form-custom-faceted-search-default') {
+      if (!empty($form['keyword']) && isset($_GET['f'])) {
+        $values = $_GET['f'];
+        $i = 0;
+        foreach ($values as $value) {
+          $form['f[' . $i . ']'] = array(
+            '#value' => $value,
+            '#type' => 'hidden',
+            '#weight' => '50',
+          );
+          $i++;
+        }
+      }
+    }
+
+   if (isset($form['sort_by'])) {
+    $form['sort_by']['#prefix'] = '<div style="display:none;">';
+    $form['sort_by']['#suffix'] = '</div>';
+   }
+  }
+}
+
+/**
+ * implementation of hook_facet_items_alter
+ */
+function igcommerce_utility_solr_facet_items_alter(&$build, &$settings) {
+  $selected_facets = variable_get('facets_selection');
+  $facets = array_filter($selected_facets);
+  if ($settings->facet == "bundle") {
+    foreach ($build as $key => $item) {
+      if (!key_exists($key, $facets)) {
+        unset($build[$key]);
+      }
+      else {
+        if ($key == 'product_display') {
+          $build[$key]['#markup'] = t("Products");
+        }
+        if ($build[$key]['#active']) {
+          $build[$key]['#markup'] = t('@facet_name', array('@facet_name' => str_replace('_', ' ', t(ucfirst($build[$key]['#markup']))))) . ' (' . $build[$key]['#count'] . ')';
+        }
+        else {
+          $build[$key]['#markup'] = t('@facet_name', array('@facet_name' => str_replace('_', ' ', t(ucfirst($build[$key]['#markup'])))));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * implementation of hook_menu()
+ */
+function igcommerce_utility_solr_menu() {
+  $items['admin/config/search/apachesolr/igcommerce'] = array(
+    'title' => 'IG Commerce search facet settings',
+    'description' => 'Search facets can be enable/disable using this interface.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('igcommerce_utility_solr_search_facets_admin'),
+    'access arguments' => array('administer igcommerce parameters'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/404-page'] = array(
+    'title' => '404 Page Setting',
+    'description' => 'Configuration setting 404 Page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('igcommerce_utility_solr_404_setting_form'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'includes/igcommerce_utility_solr.admin.inc',
+    'file path' => drupal_get_path('module', 'igcommerce_utility_solr'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function igcommerce_utility_solr_search_facets_admin() {
+  $form = array();
+  //$query_exclusion_options = apachesolr_multisitesearch_query_bundles();
+  $keyword = "bundle:*";
+  $parameter[]['fl'] = 'bundle_name, bundle';
+  $parameter[]['group'] = 'true';
+  $parameter[]['group.field'] = 'bundle';
+  $parameter[]['rows'] = '1000';
+  $filter = array();
+
+  $data = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+  $contentTypes = array();
+  foreach ($data->grouped->bundle->groups as $groupDetails) {
+    $contentTypes[$groupDetails->doclist->docs[0]->bundle] = $groupDetails->doclist->docs[0]->bundle_name;
+  }
+  $form['facets_selection'] = array(
+    '#type' => 'checkboxes',
+    //'#title' => 'The default banner image URL',
+    '#description' => t('Select facets wants to display in search page.'),
+    '#default_value' => variable_get('facets_selection', ''),
+    '#options' => $contentTypes
+  );
+
+  $form['search_result_sections'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Search Result Items'),
+    '#weight' => 5,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['search_result_sections']['ecm_section'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('ECM Configurations'),
+    '#weight' => 5,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['search_result_sections']['ecm_section']['search_ecm_endpoint'] = array(
+    '#type' => 'textfield',
+    '#title' => 'ECM Endpoint',
+    '#description' => t('Link to ECM site from where content types needs to be listed.'),
+    '#default_value' => variable_get('search_ecm_endpoint', 'http://dev-fluke-ecm.pantheonsite.io'),
+    '#required' => TRUE,
+  );
+
+  $ecm_endpoint = variable_get('search_ecm_endpoint', 'http://dev-fluke-ecm.pantheonsite.io');
+
+  $options = array(
+    'method' => 'GET',
+    'timeout' => 15,
+  );
+
+  $result = drupal_http_request($ecm_endpoint . '/content-types/json', $options);
+  $ecm_json = drupal_json_decode($result->data);
+
+  if (!empty($ecm_json) && isset($ecm_json)) {
+    $form['search_result_sections']['ecm_section']['ecm_ctype_selection'] = array(
+      '#type' => 'checkboxes',
+      '#description' => t('Content types from ECM you wants to keep searchable in search page.'),
+      '#default_value' => variable_get('ecm_ctype_selection', ''),
+      '#options' => $ecm_json
+    );
+  }
+
+
+  $form['search_result_sections']['dam_section'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('DAM Configurations'),
+    '#weight' => 5,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['search_result_sections']['dam_section']['search_dam_endpoint'] = array(
+    '#type' => 'textfield',
+    '#title' => 'DAM Endpoint',
+    '#description' => t('Link to DAM site from where content types needs to be listed.'),
+    '#default_value' => variable_get('search_dam_endpoint', 'http://dev-fluke-dam.pantheonsite.io'),
+    '#required' => TRUE,
+  );
+
+  $dam_endpoint = variable_get('search_dam_endpoint', 'http://dev-fluke-dam.pantheonsite.io');
+  $dam_result = drupal_http_request($dam_endpoint . '/content-types/json', $options);
+  $dam_json = drupal_json_decode($dam_result->data);
+
+  if (!empty($dam_json) && isset($dam_json)) {
+    $form['search_result_sections']['dam_section']['dam_ctype_selection'] = array(
+      '#type' => 'checkboxes',
+      '#description' => t('Content types from DAM you wants to keep searchable in search page.'),
+      '#default_value' => variable_get('dam_ctype_selection', ''),
+      '#options' => $dam_json
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+/**
+ * custom search form handler
+ */
+function igcommerce_utility_solr_block_form_submit($form, &$form_state) {
+  $keyword = array();
+  
+  // Where the keyword comes from depends on which form is being submitted.
+  if (!empty($form_state['values']['search_block_form'])) {
+    $keyword = array('query' => array('keyword' => $form_state['values']['search_block_form']));
+  }
+  else if (!empty($form_state['values']['keyword'])) {
+    $keyword = array('query' => array('keyword' => $form_state['values']['keyword']));
+  }
+  
+  $facet_list = array();
+  
+  // Build string of selected filter values.    
+  foreach ($form_state['values']['facets'] as $key => $value) {
+    if ($value) {
+      $facet_list[] = $key;
+    }
+  }
+  
+  if (!empty($facet_list)) {
+    // Add selected filter values to URL.
+    $keyword['query']['category'] = implode(',', $facet_list);
+  }
+  
+  if (!empty($keyword)) {
+    drupal_goto("search/page", $keyword);
+  }
+  else {
+    drupal_goto("search/page/");
+  }  
+}
+
+/**
+ * hook_form_FORM_ID_alter
+ */
+/*
+function igcommerce_utility_solr_form_search_block_form_alter(&$form, &$form_state) {
+  $form['submit']['#weight'] = 10;
+//$form['#submit'] = array();
+  $form['#submit'][] = 'igcommerce_utility_solr_block_form_submit';
+} */
+
+/**
+ * Implements hook_form_alter().
+ */
+function igcommerce_utility_solr_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'search_block_form') {
+    $form['submit']['#weight'] = 10;
+    $form['#submit'][] = 'igcommerce_utility_solr_block_form_submit';
+  }
+  
+  $search_forms = array(
+      'search_block_form',
+      'igcommerce_utility_solr_search_form',
+      'igcommerce_utility_solr_form_filters',
+  );
+  
+  if (in_array($form_id, $search_forms)) {
+    $facet_defaults = array();
+    if (!empty($_GET['category'])) {
+      $facet_defaults = explode(',', $_GET['category']);
+    }
+    $form['search_block_form']['#attributes']['placeholder'] = t( 'Search' );
+    $form['search_block_form']['#weight'] = 10;
+    $form['facets'] = array(
+        '#type' => 'checkboxes',
+        '#weight' => '1000', //For moving checkboxes under search. In theme tpl for now
+        '#options' => array(
+          'products' => t('Products'),
+          'learn' => t('Learn'),
+          'manuals' => t('Manuals'),
+          'documents' => t('Documents'),
+        ),
+        '#default_value' => $facet_defaults,
+        '#title' => t('Only search for:')
+    );
+    
+    // Hide the checkboxes from the filters form, they are only used to for querying
+    if ($form_id == 'igcommerce_utility_solr_form_filters') {
+      $form['facets']['#prefix'] = '<div style="display:none;">';
+      $form['facets']['#suffix'] = '</div>';
+    }
+    
+  }
+  
+  if ($form_id == 'search_block_form' ||
+      $form['#id'] == 'views-exposed-form-custom-faceted-search-default' ||
+      $form_id == 'igcommerce_utility_solr_search_form') {
+  
+        $form['search_block_form']['#attributes']['placeholder'] = t( 'Enter keywords' );
+  
+        // Only show if there is no keyword
+        if ($form_id == 'igcommerce_utility_solr_search_form' && !empty($_GET['keyword'])) {
+          return;
+        }
+  
+        if ($form_id == 'igcommerce_utility_solr_search_form') {
+          $form['search']['#weight'] = 100;
+        }
+        //Adds 404 block to empty search result pages
+        $block = module_invoke('igcommerce_utility_solr', 'block_view', 'search_404_popular_product_category');
+        $no_results = '';
+        if (!empty($_GET['keyword'])) {
+          $no_results = ' <strong>' . t('No results found.') . '</strong>';
+        }
+        $prefix =  $return['content'] = '<p class="no-results">' . $no_results .
+        '<div class = "404_tips_label"><h2>' . t(variable_get('igcommerce_utility_solr_empty_search_tips_label')) . '</h2></div>' .
+        '<div class = "404_tips_decription">' . t(variable_get('igcommerce_utility_solr_empty_search_tips_description')) . '</div><br/>' .
+        $block['content'];
+      }
+}
+
+/*
+ * A Callback function for sorting data based on date.
+ */
+function igcommerce_utility_solr_array_sort_by_column(&$array, $column, $direction = SORT_ASC) {
+  $reference_array = array();
+  foreach ($array as $key => $row) {
+    $reference_array[$key] = $row->$column;
+  }
+  array_multisort($reference_array, $direction, $array);
+}
+
+/**
+ * Implementation of hook_views_pre_render()
+ */
+function igcommerce_utility_solr_views_pre_render(&$view) {
+  if ($view->name == 'custom_faceted_search' && $view->current_display == 'default') {
+    $keyword = $view->exposed_data['keyword'];
+    
+    $direction = !empty($_GET['sort_order']) ? $_GET['sort_order'] : NULL;
+    $direction_sort = ($direction == 'DESC') ? SORT_DESC : SORT_ASC;
+
+    if (!empty(($_GET['keyword']))) {
+      
+      // Sorting array based on ds_created.Because it conflict the search result
+      // based on scoring solr.
+      if (!empty($_GET['sort_order'])) {
+        $product_array = array();
+        $article_array = array();
+        $document_array = array();
+        $video_array = array();
+        foreach ($view->result as $key => $val) {
+          if ($val->bundle == "product_display") {
+            $product_array[] = $val;
+            igcommerce_utility_solr_array_sort_by_column($product_array, 'ds_created', $direction_sort);
+          }
+          elseif ($val->bundle == "article") {
+            $article_array[] = $val;
+            igcommerce_utility_solr_array_sort_by_column($article_array, 'ds_created', $direction_sort);
+          }
+          elseif ($val->bundle == "document") {
+            $document_array[] = $val;
+            igcommerce_utility_solr_array_sort_by_column($document_array, 'ds_created', $direction_sort);
+          }
+          elseif ($val->bundle == "video") {
+            $video_array[] = $val;
+            igcommerce_utility_solr_array_sort_by_column($video_array, 'ds_created', $direction_sort);
+          }
+        }
+        $result = array_merge($product_array, $article_array, $document_array, $video_array);
+        $view->result = $result;
+      }
+
+      foreach ($view->result as $key => $details) {
+        $details->ss_field_content_title = str_replace($keyword, '<bold>' . $keyword . '</bold>', $details->ss_field_content_title);
+        
+        if ($details->bundle == "article") {
+          $categoryList = '';
+          if (!empty($details->sm_url_product_category) && is_array($details->sm_url_product_category)) {
+            $categoryList .= igcommerce_utility_solr_searchpage_category_list($details->sm_url_product_category) . ',';
+          }
+          if (!empty($details->sm_article_type) &&  is_array($details->sm_article_type)) {
+            $categoryList .= igcommerce_utility_solr_searchpage_category_list($details->sm_article_type);
+            if ($categoryList != '') {
+              $categoryList .= ' | ';
+            }
+          }
+          if (!empty($details->sm_application_search) && is_array($details->sm_application_search)) {
+            $application_decode = json_decode($details->sm_application_search[0]);
+            if (!array_key_exists('_empty_', $application_decode)) {
+              $categoryList .= igcommerce_utility_solr_searchpage_category_list($details->sm_application_search) . ', ';
+            }
+          }
+          if (!empty($details->sm_industry_search) && is_array($details->sm_industry_search)) {
+            $industry_decode = json_decode($details->sm_industry_search[0]);
+            if (!array_key_exists('_empty_', $industry_decode)) {
+              $categoryList .= igcommerce_utility_solr_searchpage_category_list($details->sm_industry_search) . ', ';
+            }
+          }
+          if (!empty($details->sm_topic_search) && is_array($details->sm_topic_search)) {
+            $topic_decode = json_decode($details->sm_topic_search[0]);
+            if (!array_key_exists('_empty_', $topic_decode)) {
+              $categoryList .= igcommerce_utility_solr_searchpage_category_list($details->sm_topic_search) . ', ';
+            }
+          }
+          $details->bundle_name = ' | ' . t('@article_bundle', array('@article_bundle' => t($details->bundle_name)));
+          if ($categoryList != '') {
+            $categoryList = rtrim($categoryList);
+            $details->bundle_name .= ' | ' . trim($categoryList, ',');
+          }
+        }
+
+        if ($details->bundle == "product_display") {
+          $categoryList = '';
+          if (!empty($details->sm_url_product_category) && is_array($details->sm_url_product_category)) {
+            $categoryList .= igcommerce_utility_solr_searchpage_category_list($details->sm_url_product_category);
+          }
+          if (!empty($details->sm_accessory_type) && is_array($details->sm_accessory_type)) {
+            $accessoryTypes = igcommerce_utility_solr_searchpage_category_list($details->sm_accessory_type);
+            if ($accessoryTypes != '') {
+              if ($categoryList != '') {
+                $categoryList .= ', ';
+              }
+              $categoryList .= $accessoryTypes;
+            }
+          }
+          if (isset($details->bundle_name)) {
+            $details->bundle_name = ' | ' . t('Products');
+          }
+          if ($categoryList != '') {
+            $categoryList = trim(rtrim($categoryList), ',');
+            $details->bundle_name .= ' | ' . t('@product_category', array('@product_category' => t($categoryList)));
+          }
+        }
+
+        if ($details->bundle == "document" || $details->bundle == "video") {
+          $categoryList = '';
+          $details->ts_short_description_summary = NULL;
+          if (isset($details->ss_asset_categories) && $details->ss_asset_categories != '') {
+            $categoryList = $details->ss_asset_categories;
+          }
+          if (isset($details->bundle_name)) {
+            $details->bundle_name = ' | ' . t('@asset_name', array('@asset_name' => t($details->bundle_name)));
+          }
+          if ($categoryList != '') {
+            $details->bundle_name .= ' | ' . t('@asset_category', array('@asset_category' => t($categoryList)));
+          }
+          if (isset($details->ss_field_content_url)) {
+            $details->path_alias = urldecode($details->ss_field_content_url);
+          }
+        }
+      }
+    }
+
+    // Empty result for search page.
+    $empty_text = '';
+    $empty_text .= '<div class ="404_empty_result">' . t(variable_get('igcommerce_utility_solr_empty_result_text')) . '</div><br/>';
+    $empty_text .= '<div class = "404_tips_label"><h2>' . t(variable_get('igcommerce_utility_solr_empty_search_tips_label')) . '</h2></div>';
+    $empty_text .= '<div class = "404_tips_decription">' . t(variable_get('igcommerce_utility_solr_empty_search_tips_description')) . '</div><br/>';
+    // Popular product category view.
+    $block = block_load('igcommerce_utility_solr', 'search_404_popular_product_category');
+    $render_array = _block_get_renderable_array(_block_render_blocks(array($block)));
+    $empty_text .= render($render_array);
+    $view->empty['area']->options['content'] = t($empty_text);
+  }
+}
+
+/*
+ * Handle the popular product category listing.
+ */
+
+function igcommerce_utility_solr_popular_product_category() {
+  global $language;
+  $output = '';
+  $product_category = variable_get('igcommerce_utility_solr_popular_product_term');
+
+  if (!empty($product_category)) {
+    $output .= "<h3 class='pane-title'>" . t('Popular product categories') . "</h3>";
+    $output .= "<div class='toc-listing-image-wrapper'>";
+
+    foreach ($product_category as $key => $value) {
+      $term = taxonomy_term_load($value);
+      if (!$term_solr = _taxonomy_term_load_by_name_solr($term->name, 'url_builder')) {
+        continue;
+      }
+      $toc_item_url = $term_solr->ss_path_alias_locale; //$_GET['q'] . "/" . $industry_url_builder_term->field_url[$language->language][0]['url'];
+      // build the responsive images using the HTML picture functionality
+      $desktop_alt = NULL;
+      $tablet_alt = NULL;
+      $mobile_alt = NULL;
+      $image_url_desktop = NULL;
+      $image_url_tablet = NULL;
+      $image_url_mobile = NULL;
+      $alt = NULL;
+
+      if (!empty($term->field_category_image_toc_uri['und'][0]['url'])) {
+        $image_url_desktop = $term->field_category_image_toc_uri['und'][0]['url'];
+      }
+
+      if (!empty($term->field_category_image_toc_tb_uri['und'][0]['url'])) {
+        $image_url_tablet = $term->field_category_image_toc_tb_uri['und'][0]['url'];
+      }
+
+      if (!empty($term->field_category_image_toc_mbl_uri['und'][0]['url'])) {
+        $image_url_mobile = $term->field_category_image_toc_mbl_uri['und'][0]['url'];
+      }
+      if (!empty($term->field_content_title[LANGUAGE_NONE][0]['value'])) {
+        $alt = $term->field_content_title[LANGUAGE_NONE][0]['value'];
+      }
+      // generate the output using the igcommerce_utility_fomrat_image
+      $pic = igcommerce_utility_determine_toc_image($image_url_desktop, $image_url_tablet, $image_url_mobile, $alt);
+
+      // Output the TOC item
+      $output .= "<div class='toc-listing-item-wrapper'>";
+
+      $output .= "<div class='toc-listing-image'>";      
+      $output .= l($pic, $toc_item_url, array('html' => TRUE, 'language' => $language));
+      $output .= "</div>"; // end of image
+
+      if (!empty($term->field_content_title[$language->language][0]['value'])) {
+        $output .= "<div class='toc-listing-title'>";
+        $link_copy = "<h3 class='toc-listing-title-h3'>";
+        $link_copy .= $term->field_content_title[$language->language][0]['value'];
+        $link_copy .= "</h3>";
+        $output .= l($link_copy, $toc_item_url, array('html' => TRUE, 'language' => $language));
+        $output .= "</div>"; // end of title wrapper
+      }
+      $output .= "</div>"; // end of item wrapper
+    }
+    $output .= "</div>"; // end of image wrapper
+  }
+  return $output;
+}
+
+/**
+ * set category links and list for search page
+ */
+function igcommerce_utility_solr_searchpage_category_list($catArray) {
+  $catLinks = '';
+  foreach ($catArray as $categories) {
+    $links = json_decode($categories);
+    $totalCat = count((array) $links);
+    $counter = 0;
+    foreach ($links as $cat => $url) {
+      if ($cat != '_empty_') {
+        if ($url) {
+          $catLinks .= l(t('@cat', array('@cat' => t($cat))), $url);
+        }
+        else {
+          $catLinks .= $cat;
+        }
+        if ($counter != ($totalCat - 1)) {
+          $catLinks .= ', ';
+        }
+      }
+      $counter++;
+    }
+  }
+  return $catLinks;
+}
+
+/**
+ * Returns url builder array. Copied from fluke_solr_get_url_builder() in ECM.
+ */
+function igcommerce_utility_solr_get_url_builder($entityLanguage, $entity) {
+  if (!empty($entity->field_url_builder)) {
+    $url = array();
+
+    $url_array = array();
+    $tid = '';
+
+    if (isset($entity->field_url_builder[$entityLanguage][0]['tid']) && !empty($entity->field_url_builder[$entityLanguage][0]['tid'])) {
+      $tid = $entity->field_url_builder[$entityLanguage][0]['tid'];
+    }
+    elseif (isset($entity->field_url_builder['und'][0]['tid']) && !empty($entity->field_url_builder['und'][0]['tid'])) {
+      $tid = $entity->field_url_builder['und'][0]['tid'];
+
+    }
+    if (isset($tid) && !empty($tid)) {
+      $term = taxonomy_term_load($tid);
+      $url[] = fluke_solr_fallback($entityLanguage, $term, 'field_url_title', "value", TRUE);
+    }
+    //building path alias solr field array same as sm_vid_url_builder for filtering the output
+    while (!empty($tid)) {
+      $parent_terms = taxonomy_get_parents($tid);
+      if (!empty($parent_terms)) {
+        foreach ($parent_terms as $parent)
+          $url[] =fluke_solr_fallback($entityLanguage, $parent, 'field_url_title', "value", TRUE);
+        $tid = $parent->tid;
+      }
+      else {
+        $tid = '';
+        continue;
+      }
+    }
+  }
+
+  foreach ($url as $item) {
+    array_push($url_array, $item);
+  }
+  return json_encode($url_array);
+}
+
+function igcommerce_utility_solr_get_taxonomy_term_value($entitylanguage, $entity, $field_machine_name) {
+
+  if (isset($entity->{$field_machine_name}[LANGUAGE_NONE][0]['tid'])) {
+    $term = taxonomy_term_load($entity->{$field_machine_name}[LANGUAGE_NONE][0]['tid']);
+    if ($term) {
+      return $term->field_content_title[$entitylanguage][0]['value'];
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_theme()
+ */
+function igcommerce_utility_solr_theme() {
+  $module_path = drupal_get_path('module', 'igcommerce_utility_solr');
+  $base = array(
+      'path' => $module_path . "/templates",
+  );
+  return array(
+      'igcommerce_utility_solr_form_filters' => $base + array(
+          'template' => 'search-form-filters',
+          'render element' => 'form',
+      ),
+      'igcommerce_utility_solr_search_result_item' => $base + array(
+          'template' => 'igc-search-result-item',
+          'variables' => array(),
+      ),
+      'igcommerce_utility_solr_search_result_items' => $base + array(
+          'template' => 'igc-search-result-items',
+          'variables' => array('items' => array()),
+      ),
+    'igcommerce_utility_solr_no_results' => $base + array(
+        'template' => 'igc-search-no-results',
+        'variables' => array(
+          'error_message' => NULL,
+          'search_tips_label' => NULL,
+          'search_tips' => NULL,
+          'popular_content' => NULL
+        )
+      ),
+  );
+}

@@ -1,0 +1,554 @@
+/**
+ * @file 00-unique-pages.less
+ * Styles for unique pages.
+ *
+ * Use this files for pages with uniqie styles like "About Us".
+ *
+ * TOC
+ * - User
+ * - Administration
+ * - About Us
+ * - Home Page
+ * - Timeline Module
+ */ 
+
+/**
+* - User
+* ----------------------------------------------------------------------------
+*/
+
+/* Prevents user login from being hidden from navbar */  
+#user_login_form, #edit-account, #main-content{
+  padding: 150px 10% 50px 10%;
+}
+.create-account {
+  padding: 15px 10%;
+}
+
+/* General styling for user profile when logged in*/ 
+.profile{
+  padding: 15px 10%;
+}
+
+/* Profile tabs padding + Extra on mobile */ 
+.page-user .tabs--primary {
+  padding: 100px 10% 0 10%;
+    @media (min-width: @screen-md-min) {
+      padding: 0 10% 0 10%;
+    }
+}
+
+/**
+* - Administration
+* ----------------------------------------------------------------------------
+*/
+
+  /* Prevents the admin modals from being hidden by the nav bar */  
+  .panels-ipe-placeholder,
+  .ctools-modal-dialog {
+    @media (min-width: @screen-md-min) {
+      margin-top: 150px;
+    }
+  }
+  
+  /* Adds padding to admin pages using template pascal-flipped */
+  .pascal-flipped .container {
+    padding-bottom: @flukestrap-footer;
+  }
+
+/**
+ * - About Us
+ * ----------------------------------------------------------------------------
+ */
+  
+  .robert .container-fluid {
+    padding-bottom: @flukestrap-footer;
+  }
+
+  .robert{
+  //TODO: THis styling was for Beha maps on the about us page. kill it if ig doesn't get a similar feature
+    .row{
+      padding: 41px 0;
+    }
+    
+    .robert-foot-panel{
+      background-color: #efefef;
+      padding: 40px 0;
+    }
+    
+    #tl25_panel_pane_1 .item .con_borderImage, #content #tl25_panel_pane_1 .item .con_borderImage {
+      border: 0px;
+      border-bottom: 3px solid @fluke-yellow;
+    }
+    
+    #tl25_panel_pane_1 .item h2, #content #tl25_panel_pane_1 .item h2 {
+      font-family: 'RockwellStd';
+      font-size: 24px;
+      color: #2D2D2D;
+      padding:16px 0 8px 0;
+    }
+    
+    #tl25_panel_pane_1 .item span, #content #tl25_panel_pane_1 .item span {
+      line-height: 1.5;
+    }
+    
+    .timeline.flatNav .t_left, .timeline.flatNav .t_left:hover:active, #content .timeline.flatNav .t_left, #content .timeline.flatNav .t_left:hover:active {
+      left: 0;
+      background: rgba(34,34,34, 0.8) url('../../../../../sites/default/files/white-arrow-left.png') no-repeat center center;
+    }
+    
+    .timeline.flatNav .t_right:hover, #content .timeline.flatNav .t_right:hover {
+      background: rgba(34,34,34, 0.8) url('../../../../../sites/default/files/white-arrow-right.png') no-repeat center center;
+    }
+    
+    .timeline.flatNav .t_right, .timeline.flatNav .t_right:hover:active, #content .timeline.flatNav .t_right, #content .timeline.flatNav .t_right:hover:active {
+      right: 0;
+      background: rgba(34,34,34, 0.8) url('../../../../../sites/default/files/white-arrow-right.png') no-repeat center center;
+    }
+    
+    .timeline.flatLine a.t_line_node:after, #content .timeline.flatLine a.t_line_node:after {
+      background: @fluke-blue-link;
+    }
+    
+    .timeline.flatLine a.t_line_node.active, #content .timeline.flatLine a.t_line_node.active {
+      color: @fluke-blue-link;
+    }
+    
+    .timeline.flatLine a.t_line_node:after, #content .timeline.flatLine a.t_line_node:after {
+      background: @fluke-blue-link;
+    }
+    
+    .timeline.flatLine a.t_line_node, #content .timeline.flatLine a.t_line_node {
+      font-family: @headings-font-family;
+      color: @fluke-blue-link;
+    }
+    
+    .timeline h4.t_line_month, #content .timeline h4.t_line_month {
+      display: none;
+    }
+    
+    .timeline.flatLine .t_node_desc span, #content .timeline.flatLine .t_node_desc span {
+      background: @fluke-blue-link;
+    }
+    
+    .timeline.flatLine .t_node_desc span:after, #content .timeline.flatLine .t_node_desc span:after {
+      border-top: 5px solid @fluke-blue-link;
+    }
+    
+    .timeline.flatLine .item.item_node_hover:before, #content .timeline.flatLine .item.item_node_hover:before {
+      background: @fluke-blue-link;
+    }
+    
+    .timeline.flatLine .item.item_node_hover:after, #content .timeline.flatLine .item.item_node_hover:after {
+      border-top: 6px solid @fluke-blue-link;
+    }
+    
+    .timeline.flatLine #t_line_left, #content .timeline.flatLine #t_line_left {
+      display: none;
+    }
+    
+    .timeline.flatLine #t_line_right, #content .timeline.flatLine #t_line_right {
+      display: none;
+    }
+  } 
+
+/**
+* - Home Page
+*
+* The home page uses a template named "celia" so all page content 
+* has a wrapper class of celia.
+* ----------------------------------------------------------------------------
+*/
+
+/**
+* - Flex Slider General Styles
+* ----------------------------------------------------------------------------
+*/ 
+  
+  /*Wrapping slideshow elements in Celia-slideshow */
+  .celia-slideshow{
+  
+    /*Removing margin and border from flexslider */
+    #flexslider-1 {
+      background: @fluke-white;
+      border: 0px solid transparent;
+      margin: 0;
+    }
+    
+    /*Relative positioning for the slides  */
+    .flexslider .slides li {
+      position:relative;
+    }
+    
+    /*Absolute Postioning for the caption wrapper */
+    .slide-wrapper{
+      position: absolute;
+      width:100%;
+      top:0;
+    }
+    
+    /*Class to be added if a caption needs grey text */
+    .flex-caption-grey {
+      color: @fluke-body-text;
+      -moz-text-shadow: none;
+      -webkit-text-shadow: none;
+      text-shadow: none;  /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
+    }
+      
+    /*Class to be added if a caption needs white text */
+    .flex-caption-white{
+      color: @fluke-white;
+      -moz-text-shadow: 2px 0px 4px rgba(0, 0, 0, 0.35);
+      -webkit-text-shadow: 2px 0px 4px rgba(0, 0, 0, 0.35);
+      text-shadow: 2px 0px 4px rgba(0, 0, 0, 0.35);
+    }
+    
+    /*Caption container styles */
+    .flexslider .slides li .slide-caption{
+      font-size: @font-size-h3;
+      line-height: @font-size-h2;
+      max-width: 450px;
+      padding: 0;
+      position:relative;
+    }
+      
+    /*Caption Heading */
+    h2{
+      display: block;
+      margin:0 0 10px
+    }
+     
+    /*Caption Subheading */
+    p{
+      margin:0;
+    }
+    
+    /*Setting max viewport height to match spec for slideshow */
+    .flex-viewport{
+      margin-bottom:-60px;
+      max-height: 685px;
+    }
+  
+    /**
+    * - Flex Slider CTA Styles
+    * ----------------------------------------------------------------------------
+    */ 
+  
+    /*Styling the primary CTA on flex slider */
+    .btn-primary{
+      -moz-text-shadow: none;
+      -webkit-text-shadow: none;
+      background-color: @fluke-blue-link;
+      font-size: floor((@font-size-base * 1.5));
+      padding: 10px 35px;
+      text-shadow: none;
+    }
+    
+    /*Hover state for Flex Slider CTA */
+    .btn-primary:hover{
+      background-color: @fluke-blue-hover;
+    }
+  }
+
+ /*
+ ** - Flex Slider Quick Links
+ * ----------------------------------------------------------------------------
+ */ 
+
+  /*Article Thumbnail for Quick Links */
+    .homepage-articles img{
+      width: 100%;
+  }
+  
+  /** 
+  * This adds to every 2nd column in homepage-article quick links. It keeps 
+  the columns from stacking badly when the subtitles are different lengths.  
+  */
+  
+  @media (max-width: @screen-sm-min){
+  
+    .homepage-articles {
+      div .view-content> div:nth-of-type(2n)  {
+      .clearfix;
+      }
+    }
+  }
+
+/*==================================================
+=            Homepage Media Queries             =
+==================================================*/
+
+  .celia-slideshow{
+  /* Custom, iPhone Retina */ 
+  @media only screen and (min-width : 320px) {
+  
+  /*Less space above the caption for small devices */
+    .slide-wrapper{
+     margin-top:13%;
+  }
+  
+  /*Caption Heading, based on viewport height on mobile to prevent overflow */
+    h2{
+      font-size: floor((@font-size-base * 4.60)); // ~60px
+      font-size: 14vw;
+      line-height: floor((@font-size-base * 4.60)); // ~60px
+      line-height: 14vw;
+    }
+  
+  /*Remove caption subheading on small */
+    p{
+      display:none;
+    }
+  
+    /*Shrink slideshow thumbnails to be small circle on mobile */
+    .flex-control-thumbs img{
+      border: @fluke-white 4px solid ;
+      height: 8px;
+      opacity: 1;
+      width: 8px;
+      border-radius: 4px 4px 4px 4px;
+      moz-border-radius: 4px 4px 4px 4px;
+      webkit-border-radius: 4px 4px 4px 4px;
+      -moz-box-shadow: 2px 0px 4px rgba(0, 0, 0, 0.35);
+      -webkit-box-shadow: 2px 0px 4px rgba(0, 0, 0, 0.35);
+      box-shadow: 2px 0px 4px rgba(0, 0, 0, 0.35);
+    }
+    
+    /*Slide thumbnail list item modified for mobile */
+    .flex-control-thumbs li {
+      float: left;
+      margin: 0 4px 0 4px;
+      width: 8px;
+    }
+    
+    /*Active Slide Thumbnail modified for mobile*/
+    .flex-control-thumbs .flex-active {
+      border: #ed3223 4px solid;
+      cursor: default;
+      opacity: 1;
+    }
+    
+    /*Slide Thumbnail Container width modified for mobile*/
+    .flex-control-nav {
+      bottom: 0px;
+      height: 50px;
+      margin: 0 auto;
+      max-width:100px;
+      position: relative;
+      text-align: center;
+      width: 100%;
+    }
+  
+    /*CTA Margin Top is smaller on mobile due to no  subheading */
+    .btn {
+      margin-top: 0px;
+    }
+  }
+  
+  /* Extra Small Devices, Phones */ 
+  @media only screen and (min-width : 480px) {
+    
+    /*Caption Heading */
+    h2{
+      font-size: floor((@font-size-base * 4.84)); // ~63px
+      line-height: floor((@font-size-base * 5)); // ~65px
+    }
+    
+    /*Force Captions to align left on small devices */
+    .flex-caption-left {
+      .pull-left;
+    }
+    
+    /*Force Captions to align left on small devices */
+    .flex-caption-right {
+      .pull-left;
+    }
+  }
+  
+  /* Small Devices, Tablets */
+  @media (min-width: @screen-sm-min)  {
+    
+    /*Less space above the caption for small devices */
+    .slide-wrapper{
+      margin-top:13%;
+    }
+    
+    /*Align Captions left */
+    .flex-caption-left {
+      .pull-left;
+    }
+    
+    /*Align Captions right */
+    .flex-caption-right {
+      .pull-right;
+    }
+    
+    /*Display caption subheading on medium devices */
+    p{
+      display:block;
+    }
+    /*CTA Margin Top is larger medium and above for subheading */
+    .btn {
+      margin-top: 20px;
+    }
+  }
+  
+  /* Medium Devices, Desktops */
+  @media (min-width: @screen-md-min)  {
+    
+    /*Spec'd space above the caption */
+    .slide-wrapper{
+      margin-top:13%;
+    }
+    
+    /*Slide thumbnail image styles */
+    .flex-control-thumbs img{
+      border: @fluke-white 1px solid ;
+      height: 50px;
+      opacity: 1;
+      width: 75px;
+      border-radius: 0;
+      moz-border-radius: 0;
+      webkit-border-radius: 0;
+      -moz-box-shadow: none;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+    
+    /*Slide thumbnail list item */
+    .flex-control-thumbs li {
+      float: left;
+      margin: 0 4px 0 4px;
+      width: 75px;
+    }
+    
+    /*Active Slide Thumbnail */
+    .flex-control-thumbs .flex-active {
+      border: @fluke-white 1px solid ;
+      border-top: #ed3223 solid;
+      cursor: default;
+      opacity: 1;
+    }
+    
+    /*Slide Thumbnail Container */
+    .flex-control-nav {
+      bottom: 30px;
+      height: 50px;
+      margin: 0 auto;
+      max-width:1230px;
+      position: relative;
+      text-align: center;
+      width: 100%;
+    }
+  }
+}
+  
+  /* Styles homepage secondary Nav */
+  .celia-secondary-nav {
+    background-color: #333; //TODO: WHat is the corresponding fluke color?
+    color: @fluke-white;
+    padding: 30px 0 20px 0;
+  }
+  
+  .icon-products::before{
+    content: url("../../../../../sites/default/files/products_icon_0.png");
+    display: block;
+  }
+  
+  .icon-products:hover::before{
+    content: url("../../../../../sites/default/files/products_icon_hover_0.png");
+    display: block;
+  }
+  
+  .icon-catalog::before{
+    content: url("../../../../../sites/default/files/catalog_icon_0.png");
+    display: block;
+  }
+  
+  .icon-catalog:hover::before{
+    content: url("../../../../../sites/default/files/catalog_icon_hover_0.png");
+    display: block;
+  }
+  
+  .icon-promotions::before{
+    content: url("../../../../../sites/default/files/promotions_icon_0.png");
+    display: block;
+  }
+  
+  .icon-promotions:hover::before{
+    content: url("../../../../../sites/default/files/promotions_icon_hover_0.png");
+    display: block;
+  }
+  
+  .icon-buy::before{
+    content: url("../../../../../sites/default/files/where_to_buy_icon_0.png");
+    display: block;
+  }
+  
+  .icon-buy:hover::before{
+    content: url("../../../../../sites/default/files/where_to_buy_icon_hover_0.png");
+    display: block;
+  }
+  
+  .celia-secondary-nav a {
+    font-family: @headings-font-family;
+    color: #666;
+    font-size: 21px;
+    text-shadow: 0 1px #000;
+    transition: color .25s ease-in-out;
+    -moz-transition: color .25s ease-in-out;
+    -webkit-transition: color .25s ease-in-out;
+  }
+  
+  .celia-secondary-nav a:hover {
+    color: #fff;
+  }
+  
+  .celia-secondary-nav .nav > li > a:hover, .celia-secondary-nav .nav > li > a:focus, .celia-secondary-nav .nav > li > a:visited{
+    background-color: transparent;
+  }
+  
+  .nav .open > a, .nav .open > a:hover,
+  .nav .open > a, .nav .open > a:focus,
+  {
+    background-color: #333;
+  }
+  
+  .recall{
+    margin-top: 25px;
+    margin-bottom: 72px;
+    border-top: 1px solid #ccc;
+    padding-top: 40px;
+  }
+  
+  .recall_home_title{
+    font-family: 'RockwellStd-Bold';
+    color: #333;
+    font-size: 15px;
+  }
+  
+  .recall_home_title:before{
+    font-family: FontAwesome;
+    content: "\f071";
+    color: #ed3223;
+    margin-right:8px;
+  }
+  
+  .fa-exclamation-triangle {
+    color: @fluke-body-text;
+  }
+  
+  .homepage-articles{
+    padding-top: 40px;
+    background-color: @fluke-sidebar-background;
+  }
+
+ /**
+* - Timeline Module
+* ----------------------------------------------------------------------------
+*/
+
+  /* Moves red underline below card image, overrides inline style */
+  .con_borderImage {
+    height: auto !important;
+  }

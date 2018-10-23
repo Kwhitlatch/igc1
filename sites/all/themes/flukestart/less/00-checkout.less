@@ -1,0 +1,235 @@
+/** 
+ * @file 00-checkout.less
+ **
+ * Styles applied to the series of pages in the checkout flow.
+ *
+ * TOC
+ * - Product Page Checkout Popup
+ * - Checkout Process Flow Pages
+*/
+
+
+/** ===== Poduct Page Checkout Popup ==== *************/
+/**
+/** Styles for the popup found on the product pages **/
+
+//== Pop up container
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation {
+  background-color: @fluke-white;
+  border-color: transparent;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  -moz-box-shadow: 0 2px 2px @fluke-box-shadows;
+  -webkit-box-shadow: 0 2px 2px @fluke-box-shadows;
+  box-shadow: 0 2px 2pxx #57595a;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='@fluke-box-shadows', direction='180', strength='5');
+  color: @fluke-body-text;
+  left: 80%;
+  margin-left: -20% !important; /* width/2 */
+  width: 400px;
+  z-index: 201;
+  margin-top:-19.2%;
+  min-height: 425px;
+}
+
+//== Product total label
+div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display .view-content .views-field-commerce-total .views-label-commerce-total {
+    color: @fluke-body-text;
+    float: left;
+    font-size: @font-size-base;
+    font-weight: 700; 
+    padding-top: 0;
+    padding-bottom: 0;    
+    padding-right: 5px;
+}
+
+//== Product value
+div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display .view-content .views-field-commerce-total .field-content {
+    color: @fluke-body-text;
+    display: inline;
+    float: right;
+    font-size: @font-size-base;
+    font-weight: 700;    
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+//== Product location in popup
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display .view-content {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Title */
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation .message-inner .added-product-title {
+  color: @fluke-body-text;
+  float: center; /* LTR */
+  padding: 15px 20px 15px 20px;
+  text-align: center;
+  text-transform: none;
+  width: 100%;
+  border-bottom: 1px solid @fluke-sidebar; 
+}
+
+/* Button Wrapper */
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper {
+  background-color: @fluke-white;
+  max-height: 100px;
+  padding: 30px 15px 15px 15px;
+  position: relative;
+  left: 0; /* LTR */
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid @fluke-sidebar;
+}
+
+
+/* Button General Styles */
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button {
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  color: @fluke-body-text;
+  font-weight: @subheadings-font-weight;
+  font-size: @font-size-h3;
+  margin-bottom: 10px;
+  padding: 10px;
+  text-align: center;
+  width: 87%;
+
+}
+.node-type-product-display h6{
+    font-size: 15px;
+    float: right;
+    display: block;
+    width: 200px;
+    position: absolute;
+    margin-left: 125px;
+}
+
+
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.checkout {
+  background-color: @fluke-yellow;
+  font-family: @font-family-sans-serif;
+}
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.continue {
+  background-color: @fluke-sidebar;
+  font-family: @font-family-sans-serif;
+  color: @fluke-body-text;  
+}
+
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.checkout:hover {
+  background: lighten(@fluke-yellow, 10%);
+}
+.node-type-product-display div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.continue:hover {
+  background: darken(@fluke-sidebar, 10%);
+}
+
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.continue .commerce-add-to-cart-confirmation-close {
+  background: none;
+  height: auto;
+  position: static;
+  width: auto;
+}
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.checkout:hover,
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.continue:hover {
+  cursor: pointer;
+}
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button a {
+  color: @fluke-body-text;
+  display: block;
+  font-weight: @subheadings-font-weight;
+  word-wrap: break-word;
+}
+
+/* Hiding Close button due to not matching design */
+div.messages.commerce-add-to-cart-confirmation .message-inner .commerce-add-to-cart-confirmation-close {
+  background: url('none') no-repeat 0 0;
+}
+
+/** ===== Checkout Flow Pages ==== *****************************/
+/**
+/** Series of pages in the checkout flow to confirm purchase **/
+
+
+//== Continue to next step of checkout flow.
+.page-checkout .checkout-buttons input#edit-continue, 
+.page-checkout .checkout-buttons input.checkout-continue {
+  -khtml-border-radius: 0px;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  background-color: @fluke-yellow;
+  color: @fluke-black;
+  font-family: @font-family-sans-serif;
+  font-weight: 700;
+}
+
+//== Previous breadcrumb checkout flow text color
+ul.inline.commerce-checkout-progress li.previous, 
+ul.inline.commerce-checkout-progress li.visited, 
+ol.inline.commerce-checkout-progress li.previous, 
+ol.inline.commerce-checkout-progress li.visited {
+  color: @fluke-blue-link;
+}
+
+//== Checkout Button - Links 
+div.messages.commerce-add-to-cart-confirmation .message-inner 
+.button-wrapper .button a {
+  color: @fluke-black;
+}
+
+//== Return to cart button 
+div.messages.commerce-add-to-cart-confirmation .message-inner 
+.button-wrapper .button.continue {
+  -khtml-border-radius: 0px;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  background-color: @fluke-blue-link;
+  color: @fluke-white;
+  font-family: @font-family-sans-serif;
+}
+
+//==  Edit this order button 
+.page-user-orders ul.action-links li a {
+  -khtml-border-radius: 0;
+  -moz-border-radius: 0;
+  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#dddddd')";
+  -webkit-border-radius: 0;
+  background: @fluke-yellow;
+  border-color: none;
+  border-radius: 0;
+  border-style: none;
+  border-width: 0px;
+  color: @fluke-black;
+  filter: progid:DXImageTransform.Microsoft.Gradient(GradientType=0, startColorstr='white', endColorstr='#dddddd');
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+//== Shopping Cart page - Head to checkout
+.page-cart #views-form-commerce-cart-form-default .commerce-line-item-actions 
+input#edit-checkout {
+  -khtml-border-radius: 0px;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  background-color: @fluke-yellow;
+  color: @fluke-black;
+  font-family: @font-family-sans-serif;
+  font-size: @font-size-h3;
+  height: 40px;
+  margin: 0;
+  max-width: 310px;
+  padding: 0;
+  width: 100%;
+}
+
+//==  Shopping Cart page - Head to checkout
+ul.inline.commerce-checkout-progress li.active, 
+ul.inline.commerce-checkout-progress li.last.active, 
+ol.inline.commerce-checkout-progress li.active, 
+ol.inline.commerce-checkout-progress li.last.active {
+  background-color: @fluke-yellow;
+  color: @fluke-black;
+}

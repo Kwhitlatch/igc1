@@ -1,0 +1,5 @@
+name = Looyu Chat
+description = China only chat, slated to be discontinued in favor of Udesk June 2018.  Looyu has no english documentation, so we can't do much to customize this module. It basically drops javascript on the page that creates it's own window and ties into the Looyu chat service. 
+package = Fluke
+core = 7.x
+

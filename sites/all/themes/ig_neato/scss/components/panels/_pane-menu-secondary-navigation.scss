@@ -1,0 +1,80 @@
+.pane-igcommerce-utility-ig-secondary-nav {
+  margin-bottom: 2em;
+  @include outer-container(100%);
+  @extend %inverse;
+  border-top: 3px solid $gray-lighter;
+  @include media($tablet) {
+    border-top: none;
+  }
+  .pane-content {
+    @include outer-container;
+    ul.menu {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      @include media($tablet) {
+        //line-height: 100px;
+      }
+      li {
+        display: inline-block;
+        line-height: 100px;
+        width: 100%;
+        padding: 0 3em;  // Adds non-clickable space on the side of the icons for easier scrolling on mobile. Per Severin's recommendations 10-22-17 -RRN
+        @include media($phone) {
+          width: 50%;
+          padding: 0; // Removes non-clickable padding for tablet and above.
+        }
+        @include media($desk) {
+          width: 25%;
+        }
+        a {
+          color: $gray-6;
+          text-shadow: 0 1px $black;
+          transition: color 0.25s ease-in-out;
+          display: block;
+          font-family: $heading-font-family;
+          font-size: 1.7rem;
+          font-weight:bold;
+          padding: 70px 0 25px;
+          line-height: 1.2;
+          position: relative;
+          text-align: center;
+          &:hover {
+            color: $white;
+          }
+          &.icon-products,
+          &.icon-manuals,
+          &.icon-registration,
+          &.icon-accessories,
+          &.icon-where-to-buy{
+            &:before {     
+              top: 20px;
+              font-size: 2em;
+              left: 0;
+              position: absolute;
+              right: 0;
+              text-align: center;
+            }
+          }
+        }
+        .icon-products{
+          @include icon(before, shopping-cart);
+        }
+        .icon-manuals{
+          @include icon(before, manual);
+        }
+        .icon-registration{
+          @include icon(before, registration);
+        }
+        .icon-accessories{
+          @include icon(before, shopping-cart);
+        }
+        .icon-where-to-buy{
+          @include icon(before, where-to-buy);
+        }
+      }
+    }
+  }
+}

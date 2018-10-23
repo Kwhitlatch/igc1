@@ -1,0 +1,4 @@
+name = Behat Tool
+description = Behat Utility to setup on server and schedule.
+core = "7.x"
+package = Fluke

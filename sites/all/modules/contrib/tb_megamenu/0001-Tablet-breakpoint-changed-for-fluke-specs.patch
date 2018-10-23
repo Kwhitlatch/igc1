@@ -1,0 +1,213 @@
+From 7b675522551e3f6b4860e53672ee31e3d22c85a4 Mon Sep 17 00:00:00 2001
+From: Ryan Ray Neff <ryan.ray.neff@fluke.com>
+Date: Mon, 22 Feb 2016 16:50:37 -0800
+Subject: [PATCH] Tablet breakpoint changed for fluke specs
+
+---
+ sites/all/modules/tb_megamenu/css/base.css               |  2 +-
+ sites/all/modules/tb_megamenu/css/bootstrap.css          |  8 ++++----
+ sites/all/modules/tb_megamenu/css/compatibility.css      |  2 +-
+ sites/all/modules/tb_megamenu/css/default.css            | 14 +++++++-------
+ sites/all/modules/tb_megamenu/css/styles/black.css       |  2 +-
+ sites/all/modules/tb_megamenu/css/styles/blue.css        |  2 +-
+ sites/all/modules/tb_megamenu/css/styles/green.css       |  2 +-
+ sites/all/modules/tb_megamenu/js/tb-megamenu-frontend.js |  4 ++--
+ 8 files changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/sites/all/modules/tb_megamenu/css/base.css b/sites/all/modules/tb_megamenu/css/base.css
+index cf2f4cf..ac83020 100644
+--- a/sites/all/modules/tb_megamenu/css/base.css
++++ b/sites/all/modules/tb_megamenu/css/base.css
+@@ -848,7 +848,7 @@
+ 	outline-offset: -2px;
+ }
+ 
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+ .tb-megamenu .navbar .brand {
+ 		font-size: 13px;
+ 	}
+diff --git a/sites/all/modules/tb_megamenu/css/bootstrap.css b/sites/all/modules/tb_megamenu/css/bootstrap.css
+index 3c03292..c1448d9 100644
+--- a/sites/all/modules/tb_megamenu/css/bootstrap.css
++++ b/sites/all/modules/tb_megamenu/css/bootstrap.css
+@@ -1931,7 +1931,7 @@
+ .tb-megamenu .visible-desktop {
+   display: inherit !important;
+ }
+-@media (min-width: 768px) and (max-width: 979px) {
++@media (min-width: 768px) and (max-width: 1032px) {
+ .tb-megamenu .hidden-desktop {
+     display: inherit !important;
+   }
+@@ -2118,7 +2118,7 @@
+     position: static;
+   }
+ }
+-@media (min-width: 768px) and (max-width: 979px) {
++@media (min-width: 768px) and (max-width: 1032px) {
+ .tb-megamenu .row {
+     margin-left: -20px;
+     *zoom: 1;
+@@ -2531,7 +2531,7 @@
+     margin-left: 0;
+   }
+ }
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+ .tb-megamenu body {
+     padding-top: 0;
+   }
+@@ -2682,7 +2682,7 @@
+     padding-right: 10px;
+   }
+ }
+-@media (min-width: 980px) {
++@media (min-width: 1033px) {
+ .tb-megamenu .nav-collapse.collapse {
+     height: auto !important;
+     overflow: visible !important;
+diff --git a/sites/all/modules/tb_megamenu/css/compatibility.css b/sites/all/modules/tb_megamenu/css/compatibility.css
+index cc4848c..8824a89 100644
+--- a/sites/all/modules/tb_megamenu/css/compatibility.css
++++ b/sites/all/modules/tb_megamenu/css/compatibility.css
+@@ -16,7 +16,7 @@
+ .tb-megamenu .dropdown-submenu:hover .dropdown-menu{
+   display:none;
+ }
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+   .tb-megamenu .nav-collapse .dropdown-menu .views-field-field-image a{
+     border-top:0 none;
+   }
+diff --git a/sites/all/modules/tb_megamenu/css/default.css b/sites/all/modules/tb_megamenu/css/default.css
+index 7dadb61..48e66d5 100644
+--- a/sites/all/modules/tb_megamenu/css/default.css
++++ b/sites/all/modules/tb_megamenu/css/default.css
+@@ -379,7 +379,7 @@
+   padding-right: 20px;
+ }
+ 
+-@media (min-width: 980px) and (max-width: 1199px) {
++@media (min-width: 1033px) and (max-width: 1199px) {
+ .tb-megamenu .row {
+     margin-left: -40px;
+     *zoom: 1;
+@@ -695,7 +695,7 @@
+     width: 27px;
+   }
+ }
+-@media (min-width: 768px) and (max-width: 979px) {
++@media (min-width: 768px) and (max-width: 1032px) {
+ .tb-megamenu .offset-12 {
+     margin-left: -736px;
+   }
+@@ -733,7 +733,7 @@
+     margin-left: -43px;
+   }
+ }
+-@media (min-width: 980px) and (max-width: 1199px) {
++@media (min-width: 1033px) and (max-width: 1199px) {
+ .tb-megamenu .offset-12 {
+     margin-left: -932px;
+   }
+@@ -1339,7 +1339,7 @@
+   visibility: hidden;
+ }
+ 
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+ .tb-megamenu .always-show .mega > .mega-dropdown-menu,
+ .tb-megamenu .always-show .dropdown-menu {
+     display: block !important;
+@@ -1373,7 +1373,7 @@
+     bottom: 40px;
+   }
+ }
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+ .tb-megamenu {
+     background-color: inherit;
+     height: auto;
+@@ -1466,7 +1466,7 @@
+ }
+ }
+ 
+-@media (min-width: 980px) {
++@media (min-width: 1033px) {
+ .tb-megamenu.animate .mega > .mega-dropdown-menu {
+     transition: all 400ms;
+     -webkit-transition: all 400ms;
+@@ -1553,7 +1553,7 @@
+   }
+ }
+ 
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+   .tb-megamenu .mega-inner {
+     padding: 10px 20px;
+   }
+diff --git a/sites/all/modules/tb_megamenu/css/styles/black.css b/sites/all/modules/tb_megamenu/css/styles/black.css
+index e46a1f3..422315c 100644
+--- a/sites/all/modules/tb_megamenu/css/styles/black.css
++++ b/sites/all/modules/tb_megamenu/css/styles/black.css
+@@ -149,7 +149,7 @@
+   border-top: 0;
+ }
+ 
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+ .tb-megamenu.style-black {
+   background-image: none;
+   background-color: inherit;
+diff --git a/sites/all/modules/tb_megamenu/css/styles/blue.css b/sites/all/modules/tb_megamenu/css/styles/blue.css
+index f668913..954cac9 100644
+--- a/sites/all/modules/tb_megamenu/css/styles/blue.css
++++ b/sites/all/modules/tb_megamenu/css/styles/blue.css
+@@ -65,7 +65,7 @@
+   border-bottom: 1px solid #eee;
+ }
+ 
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+   .tb-megamenu.style-blue  {
+   background-color: inherit;
+ }
+diff --git a/sites/all/modules/tb_megamenu/css/styles/green.css b/sites/all/modules/tb_megamenu/css/styles/green.css
+index be6b0b5..86012a4 100644
+--- a/sites/all/modules/tb_megamenu/css/styles/green.css
++++ b/sites/all/modules/tb_megamenu/css/styles/green.css
+@@ -54,7 +54,7 @@
+   border-bottom: 1px solid #eee;
+ }
+ 
+-@media (max-width: 979px) {
++@media (max-width: 1032px) {
+ .tb-megamenu.style-green .nav-collapse .nav > li > a:hover,
+ .tb-megamenu.style-green .nav-collapse .nav > li > a:focus {
+ 	color: #abba64;
+diff --git a/sites/all/modules/tb_megamenu/js/tb-megamenu-frontend.js b/sites/all/modules/tb_megamenu/js/tb-megamenu-frontend.js
+index 910914e..19f9b20 100644
+--- a/sites/all/modules/tb_megamenu/js/tb-megamenu-frontend.js
++++ b/sites/all/modules/tb_megamenu/js/tb-megamenu-frontend.js
+@@ -3,7 +3,7 @@ Drupal.TBMegaMenu = Drupal.TBMegaMenu || {};
+ (function ($) {
+   Drupal.TBMegaMenu.oldWindowWidth = 0;
+   Drupal.TBMegaMenu.displayedMenuMobile = false;
+-  Drupal.TBMegaMenu.supportedScreens = [980];
++  Drupal.TBMegaMenu.supportedScreens = [1033];
+   Drupal.TBMegaMenu.menuResponsive = function () {
+     var windowWidth = window.innerWidth ? window.innerWidth : $(window).width();
+     var navCollapse = $('.tb-megamenu').children('.nav-collapse');
+@@ -15,7 +15,7 @@ Drupal.TBMegaMenu = Drupal.TBMegaMenu || {};
+         navCollapse.css({height: 0, overflow: 'hidden'});
+       }
+     } else {
+-      // If width of window is greater than 980 (supported screen).
++      // If width of window is greater than 1033 (supported screen).
+       navCollapse.removeClass('collapse');
+       if (navCollapse.height() <= 0) {
+         navCollapse.css({height: 'auto', overflow: 'visible'});
+-- 
+2.7.0.windows.1
+

@@ -1,0 +1,29 @@
+// This was breaking pricespider buttons in the models section on en-us. May need
+// to be re-added to fix styling in the products cta section under features
+// rrn 5-22-17
+
+// Price Spider Buy Now, both in features and models
+// .buy-now-cta {
+//   clear:both;
+//   line-height: 1.5;
+//   font-size: 1.3rem;
+//   font-weight: 400;
+//   margin-bottom: $spacing-1;
+//   @include span-columns(12);
+//   &:hover, &:focus{
+//     color: $black;
+//   }
+//   @include media($screen-sm){
+//     @include span-columns(6);
+//   }
+// }
+// Price Spider button in models, different width and margin bottom
+// #Product-models .buy-now-cta{
+//   @include button($action-color, 1em);
+//   width: 100%;
+//   @include span-columns(12);
+//   @include media($desk){
+//     @include span-columns(4);
+//   }
+
+// }

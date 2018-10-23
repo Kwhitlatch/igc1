@@ -1,0 +1,38 @@
+From 49f34c0b619ed4ec71a1d69cdca6cd6d3ccc52c8 Mon Sep 17 00:00:00 2001
+From: Dane Powell <git@danepowell.com>
+Date: Thu, 5 Nov 2015 13:49:18 -0600
+Subject: [PATCH] Issue #2482491 by Sagar Ramgade, Ki, Dane Powell: Fixed
+ undefined offset.
+
+---
+ tb_megamenu.functions.inc | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/tb_megamenu.functions.inc b/tb_megamenu.functions.inc
+index e1c5553..fa27f90 100644
+--- a/tb_megamenu.functions.inc
++++ b/tb_megamenu.functions.inc
+@@ -340,11 +340,15 @@ function tb_megamenu_sync_config($items, &$item_config, $_mlid, $section) {
+ function tb_megamenu_insert_tb_item(&$item_config, $row, $col, $item) {
+   $i = 0;
+   $col_content = isset($item_config['rows_content'][$row][$col]['col_content']) ? $item_config['rows_content'][$row][$col]['col_content'] : array();
+-  while ($i < count($col_content) && $col_content[$i]['weight'] < $item['link']['weight']) {
+-    $i++;
+-  }
+-  for ($j = count($col_content); $j > $i; $j--) {
+-    $item_config['rows_content'][$row][$col]['col_content'][$j] = $item_config['rows_content'][$row][$col]['col_content'][$j - 1];
++  if (!empty($col_content)) {
++    while ($i < count($col_content) && isset($col_content[$i]['weight']) && $col_content[$i]['weight'] < $item['link']['weight']) {
++      $i++;
++    }
++    for ($j = count($col_content); $j > $i; $j--) {
++      if (isset($item_config['rows_content'][$row][$col]['col_content'][$j]) && isset($item_config['rows_content'][$row][$col]['col_content'][$j - 1])) {
++        $item_config['rows_content'][$row][$col]['col_content'][$j] = $item_config['rows_content'][$row][$col]['col_content'][$j - 1];
++      }
++    }
+   }
+   $item_config['rows_content'][$row][$col]['col_content'][$i] = array(
+     'mlid' => $item['link']['mlid'],
+-- 
+2.5.0
+

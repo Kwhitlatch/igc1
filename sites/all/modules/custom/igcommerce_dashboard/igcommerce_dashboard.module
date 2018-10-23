@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * Implements hook_permission().
+ */
+
+function igcommerce_dashboard_permission() {
+  return array(
+    'administer igcommerce_dashboard' => array(
+      'title' => t('Dashboard'),
+      'description' => t('Perform administration tasks for Dashboard.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function igcommerce_dashboard_menu() {
+
+  $items['admin/dashboard'] = array(
+    'type' => MENU_NORMAL_ITEM,
+    'title' => t('Dashboard'),
+    'description' => 'Dashboard page.',
+    'page callback' => 'igcommerce_dashboard_page',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer igcommerce_dashboard'),
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback.
+ */
+function igcommerce_dashboard_page() {
+  $content = '<ul>
+  				<li><a href="content/dashboard/show-aliases">Url Alias Dashboard</a></li>
+  				Access to Url Alias Dashboard.<br/>
+  				<li><a href="content/product-dashboard">Product Promotions</a></li>
+  				Access to Product Promotions Dashboard.
+  			</ul>';
+  
+  return $content;
+}

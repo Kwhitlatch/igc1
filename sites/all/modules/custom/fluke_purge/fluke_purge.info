@@ -1,0 +1,7 @@
+name = Fluke Purge Utility
+description = A utility that is used to add content to and clear content from the Pantheon cache.
+core = "7.x"
+package = Fluke
+
+;dependencies[] = d8cache
+;dependencies[] = pantheon_advanced_page_cache

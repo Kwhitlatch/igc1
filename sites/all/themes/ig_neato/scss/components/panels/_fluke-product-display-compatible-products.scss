@@ -1,0 +1,24 @@
+// When the product is an accessory, it will display a list of products that are
+// related to that accessory, instead of accessories related to that product.
+// The data is put out in a table, and it uses the readmore button.  After the 
+// Spec tables are cleanded up, you can likely consolidate this table styling. #TODO
+// The table usage guide can be found here: https://codepen.io/RyanRayNeff/pen/oqjYKz?editors=1100#0
+// ex: /en-us/product/accessories/test-leads/fluke-tlk220-us
+
+#fluke-product-display-compatible-products {
+  table {
+    th,
+    tr td {
+      padding: 0.2rem 0.4rem;
+      border: 1px solid #cccccc;
+      line-height: 1.5;
+      vertical-align: middle;
+    }
+    th {
+      font-weight: 700;
+    }
+    thead th {
+      background-color: #ccc;
+    }
+  }
+}

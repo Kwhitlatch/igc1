@@ -1,0 +1,64 @@
+// Styles product overviews.
+// The readmore button styling is in _fluke-product-display-readmore.scss 
+
+#fluke-product-display-overview-section {
+  // This compensates for some crappy content that has text in tables when it 
+  // shouldn't be. This problem also exsists in the key features section.
+  // example: /nl-nl/product/digitale-multimeters/fluke-113-digital-multimeter
+  // TODO: Eventually this will interfere with proper tables, and will need to be removed. -RRN
+  // As of 3-29-18 these table styles are cribbed from the spec section, they may 
+  // workout long-term. Please keep an eye out.  Maybe roll the table styling from spec/features/overview
+  // into a single mixin?  The living style guide that ultimately feeds this flow is found here:
+  // https://codepen.io/RyanRayNeff/pen/oqjYKz
+  table {
+    border-collapse: collapse;
+        caption-side: bottom;
+        width: 100%;
+        margin-bottom: 30px;
+        th,
+        tr td {
+          padding: 0.2rem 0.4rem;
+          border: 1px solid #cccccc;
+          line-height: 1.5;
+          vertical-align: middle;
+        }
+        th {
+          text-align: left;
+          font-weight: 700;
+        }
+        thead th {
+          background-color: #ccc;
+        }
+        [aria-label] {
+          text-align: center;
+        }
+        caption {
+          text-align: left;
+          font-size: 1.4rem; /* =14px */
+        }
+      th {
+        background-color: #ccc;
+      }
+      th,
+      tr td {
+        padding: .2rem .4rem;
+        border: 1px solid #cccccc;
+      }
+    tbody {
+      background-color: transparent;
+    }
+  }
+  @extend %ul-left-aligned;
+  ul, ol {
+    margin-bottom: 1rem;
+  }
+  // Prevents the default ul styling from interfering with slides
+  ul.slides {
+    padding-left: 0;
+  }
+  #overview_content {
+    h2 {
+      margin-top: 1rem;
+    }
+  }
+}

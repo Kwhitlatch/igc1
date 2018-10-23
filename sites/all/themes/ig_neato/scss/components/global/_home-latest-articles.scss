@@ -1,0 +1,31 @@
+// Homepage related articles
+.pane-igcommerce-utility-articles-homepage-featured-articles {
+  @include outer-container;
+  h2 {
+    padding-left: $spacing-1;
+      @include media($screen-lg) {
+    padding-left: 0;
+    }
+  }
+  .featured_product {
+    img {
+    	margin-bottom: $spacing-1;
+      max-width: auto;
+      width: 100%;
+    }
+    // Feature Items - 1 column mobile, 2 column tablet, 4 column desk
+    @include span-columns(12);
+    padding: 2rem $spacing-1;
+    @include media($tablet) {
+      @include span-columns(6);
+      margin-right: 0;
+    }
+    @include media($desk){
+      @include span-columns(3);
+      margin-right: 2.43902%;
+    }
+    @include media($desk-xl){
+      padding: 2rem 0; 
+    }
+  }
+}

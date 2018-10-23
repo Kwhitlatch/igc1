@@ -1,0 +1,37 @@
+<?php 
+
+/**
+ * Enable igcommerce_redirect
+ */
+function igcommerce_utility_update_7001() {
+  module_enable(array('igcommerce_redirect'));
+}
+
+/**
+ * Enable ad_tracker
+ */
+function igcommerce_utility_update_7002() {
+  module_enable(array('ad_tracker'));
+}
+
+/**
+ * Delete last imported 301 imports
+ */
+function igcommerce_utility_update_7011() {
+  $query = db_select('redirect', 'r');
+  $query->fields('r', array('rid'));
+  $query->range(0, 1276);
+  $query->orderBy('r.rid', 'DESC');
+  $ids = $query->execute()->fetchCol();
+  
+  db_delete('redirect')
+    ->condition('rid', $ids, 'IN')
+    ->execute();
+  //db_query("DELETE FROM {redirect} WHERE language = 'cn' ORDER BY rid DESC limit 1276");
+}
+
+// Create custom caching table for storing cached data.
+function igcommerce_utility_schema() {
+  $schema['cache_igcommerce'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}

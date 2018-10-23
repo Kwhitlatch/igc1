@@ -1,0 +1,9 @@
+name = Social Share Block Solr Feature
+description = Rebuilt share block to reference solr rather than igcommerce
+core = 7.x
+package = Features
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = share_block_solr
+features_exclude[dependencies][ctools] = ctools

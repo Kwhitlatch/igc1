@@ -1,0 +1,15 @@
+body.front {
+  // Homepage is the only page without yellow navbar
+  .topbar {
+    display: none;
+  }
+  // Keeps the navbar above the content
+  .main-container {
+  // Adjusting main container for lack of .topbar
+  margin-top: 85px;
+  }
+  //Front page was lacking an h1 tag - on the frontpage, the footer tagline is the h1.
+  .h1-no-style{
+	  font-size:1.6rem;
+  }
+}

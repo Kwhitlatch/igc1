@@ -1,0 +1,52 @@
+diff --git a/xmlsitemap.admin.inc b/xmlsitemap.admin.inc
+index 2b34c02..eb3e2c4 100644
+--- a/xmlsitemap.admin.inc
++++ b/xmlsitemap.admin.inc
+@@ -343,6 +343,11 @@ function xmlsitemap_settings_form($form, &$form_state) {
+   foreach ($form['advanced']['xmlsitemap_lastmod_format']['#options'] as $key => &$label) {
+     $label .= ' (' . gmdate($key, REQUEST_TIME) . ')';
+   }
++  $form['advanced']['xmlsitemap_xhtml'] = array(
++    '#type' => 'checkbox',
++    '#title' => t('Include the <a href="http://www.w3.org/1999/xhtml" target="_blank">XHTML namespace</a>.'),
++    '#default_value' => variable_get('xmlsitemap_xhtml', 0),
++  );
+   $form['advanced']['xmlsitemap_developer_mode'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Enable developer mode to expose additional settings.'),
+diff --git a/xmlsitemap.module b/xmlsitemap.module
+index 93e935f..6a431dd 100644
+--- a/xmlsitemap.module
++++ b/xmlsitemap.module
+@@ -289,6 +289,7 @@ function xmlsitemap_variables() {
+     'xmlsitemap_frontpage_priority' => 1.0,
+     'xmlsitemap_frontpage_changefreq' => XMLSITEMAP_FREQUENCY_DAILY,
+     'xmlsitemap_lastmod_format' => XMLSITEMAP_LASTMOD_MEDIUM,
++    'xmlsitemap_xhtml' => 0,
+     'xmlsitemap_gz' => FALSE,
+     // Removed variables are set to NULL so they can still be deleted.
+     'xmlsitemap_regenerate_last' => NULL,
+diff --git a/xmlsitemap.xmlsitemap.inc b/xmlsitemap.xmlsitemap.inc
+index 9ce895d..8b01f15 100644
+--- a/xmlsitemap.xmlsitemap.inc
++++ b/xmlsitemap.xmlsitemap.inc
+@@ -66,6 +66,9 @@ class XMLSitemapWriter extends XMLWriter {
+    */
+   public function getRootAttributes() {
+     $attributes['xmlns'] = 'http://www.sitemaps.org/schemas/sitemap/0.9';
++    if (variable_get('xmlsitemap_xhtml', 0)) {
++      $attributes['xmlns:xhtml'] = 'http://www.w3.org/1999/xhtml';
++    }
+     if (variable_get('xmlsitemap_developer_mode', 0)) {
+       $attributes['xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance';
+       $attributes['xsi:schemaLocation'] = 'http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd';
+@@ -175,6 +178,9 @@ class XMLSitemapIndexWriter extends XMLSitemapWriter {
+ 
+   public function getRootAttributes() {
+     $attributes['xmlns'] = 'http://www.sitemaps.org/schemas/sitemap/0.9';
++    if (variable_get('xmlsitemap_xhtml', 0)) {
++      $attributes['xmlns:xhtml'] = 'http://www.w3.org/1999/xhtml';
++    }
+     if (variable_get('xmlsitemap_developer_mode', 0)) {
+       $attributes['xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance';
+       $attributes['xsi:schemaLocation'] = 'http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/siteindex.xsd';

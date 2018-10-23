@@ -1,0 +1,25 @@
+// Example page: /en-us/products/electrical-testing/digital-multimeters
+.pane-igcommerce-utility-product-tocs-top-sellers {
+  h3 {
+    font-weight: 700;
+  }
+  display: none;
+  @include media($screen-sm) {
+    display: block;
+    margin-top: 6rem;
+  }
+  .toc-listing-item-wrapper {
+    @include span-columns(4);
+    @include omega(3n);
+    // Keeps the text from underlining when hovering over it's image. (Mig909)
+    a:hover {
+      text-decoration: none;
+      h3:hover {
+        text-decoration: underline;
+      }
+    }
+    img{
+      background: $white;
+    }
+  }
+}

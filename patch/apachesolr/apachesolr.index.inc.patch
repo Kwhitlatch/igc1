@@ -1,0 +1,102 @@
+Index: sites/all/modules/apachesolr/apachesolr.index.inc
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sites/all/modules/apachesolr/apachesolr.index.inc	(revision dab5d8f2285d15f38603558a9b115a4b4c40da6b)
++++ sites/all/modules/apachesolr/apachesolr.index.inc	(revision )
+@@ -277,7 +277,14 @@
+  *   for indexing.
+  */
+ function apachesolr_convert_entity_to_documents($entity, $entity_type, $env_id) {
++    // Cip: Trying to set memory limit to avoid 503 errors. However that's also caused by mysql as well...
++    ini_set("memory_limit", "5280M");
++
++
++    $start = microtime();
++
++
+-  list($entity_id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
++    list($entity_id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+ 
+   // Create a new document, and do the bare minimum on it.
+   $document = _apachesolr_index_process_entity_get_document($entity, $entity_type);
+@@ -314,10 +321,44 @@
+     // All records must have a "teaser" field, which is used for abbreviated
+     // displays when no highlighted text is available.
+     if (empty($document->teaser)) {
+-      $document->teaser = truncate_utf8($document->content, 300, TRUE);
++        // Cip: Made max_length 200 instead of 300. Saves some space
++        $document->teaser = truncate_utf8($document->content, 200, TRUE);
+     }
++
++      // Cip: Remove fields that add a large overhead
++
++      unset($document->tm_parent_tree);
++      unset($document->tm_taxonomy_tree);
++      unset($document->tm_new_models);
++      unset($document->tm_new_skus);
++
++
++      // Cip: Remove empty fields from being sent to solr to avoid xml bloatware
++      foreach($document as $field_name=>$field_value){
++          if(is_array($field_value)){
++              foreach($field_value as $k=>$val){
++
++                  $val = str_replace("[]", "", $val);
++                  $val = str_replace('{"null":""}', "", $val);
++                  if(is_array($val) && count($val) == 0){
++                      unset($document->$field_name);
+-  }
++                  }
++                  if(@strlen($val) == 0 || $val == NULL || $val == "null"){
++                      unset($document->$field_name);
++                  }
++              }
++          }else{
++              if(strlen($field_value) == 0 || $field_value == NULL || $field_value == "null"){
++                  unset($document->$field_name);
++              }
++          }
+ 
++          if(strchr($field_name, "_tree")){
++              unset($document->$field_name);
++          }
++      }
++  }
++
+   // Now allow modules to alter each other's additions for maximum flexibility.
+ 
+   // Hook to allow modifications of the retrieved results
+@@ -353,16 +394,26 @@
+     watchdog('Apache Solr', 'Adding @count documents.', array('@count' => count($documents)));
+   }
+   try {
+-    $docs_chunk = array_chunk($documents, 1);  // was 20
++      $docs_chunk = array_chunk($documents, 500);  // was 20 - Cip: Made it 500 now :)
+-    foreach ($docs_chunk as $docs) {
++      foreach ($docs_chunk as $docs) {
++          $start = microtime(TRUE);
++          echo "Inserting ".count($docs)." docs to solr... ";
+-      $solr->addDocuments($docs);
++          $solr->addDocuments($docs);
++          $end = microtime(TRUE);
++          $took = ($end - $start);
++          $took = sprintf('%.6f', $took);
++          echo "Done in " . number_format($took) . " seconds\n";
++          echo "Memory usage: " . number_format(memory_get_usage() / 1024 / 1024,2) . " Mb\n\n";
++          unset($docs);
+-    }
++      }
+     if ($log_success) {
+       watchdog('Apache Solr', 'Indexing succeeded on @count documents', array(
+         '@count' => count($documents),
+       ), WATCHDOG_INFO);
+     }
+-    return count($documents);
++      $count = count($documents);
++      unset($documents); unset($docs_chunk);
++      return $count;
+   }
+   catch (Exception $e) {
+     if (!empty($docs)) {

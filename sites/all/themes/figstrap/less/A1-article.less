@@ -1,0 +1,128 @@
+/**
+ * @file A1-article.less
+ * Styles pages of the UI pattern A1
+ *
+ * UI Templates can be found here: https://wiki.danahertm.com/display/flukewebdev/Templates
+ * Most articles will use the template "pascal" or "pascal-flipped" and will be
+ * wrapped in the class of ".pascal".
+ */
+
+
+
+.pascal {
+  .pane-content h3 {
+    margin: 15px 0;
+  }
+  figcaption
+  {
+    margin: 10px 0 0 0;
+  }
+
+  /* Styles article sidbar */
+  .list-group-item {
+    padding: 10px 0;
+  }
+}
+
+/* Adds lines between the central article lists */
+.flukestrap_3_5_to_3_9 {
+  .left_wrapper,
+  .right_wrapper {
+    padding-top: 30px;
+    padding-bottom: 30px;
+    border-top: 1px solid @fluke-lines-and-pipes;
+  }
+}
+
+// Styles pubdate sets on blog categories and article pages
+.pubdate-topic-set {
+  margin: 15px 0;
+}
+
+.pascal {
+  @media (min-width: @screen-md-min) {
+    .flukestrap-split-bg;
+  }
+  .container {
+    padding-bottom: @flukestrap-footer;
+    @media (min-width: @screen-md-min) {
+      padding-top: 50px;
+      .flukestrap-split-bg;
+    }
+  }
+}
+
+.pascal .flukestrap-layouts-content {
+  @media (min-width: @screen-md-min) {
+    padding-left: 30px; // We need a 30px gutter, this accounts for the -15 padding on rows
+  }
+}
+.pascal .flukestrap-layouts-sidebar {
+  @media (min-width: @screen-md-min) {
+    padding-right: 30px;
+  }
+}
+
+/* This makes all the images in the body of articles half width -
+* this is a shitty hack we used during content migration. The images should be
+* resized and unique classes added to the image - WHEN TIME PERMITS 
+*/
+.article-body-content div img {
+  width: 50%;
+  height: auto;
+  display: inline;
+  float: right;
+  padding-left: 10px;
+}
+
+/* Adds padding above the footer for all articles */
+.aron .container {
+  padding-bottom: @flukestrap-footer;
+}
+
+/* Border at the bottom of the article accordion. */
+.panel-group .panel{
+      border-bottom: @fluke-lines-and-pipes 1px solid;
+}
+
+/* Removing default panel styles */
+.panel-default {
+    border-color: none;
+    border: none;
+    box-shadow: none;
+}
+
+/* Removed panel-heading background and border */
+.panel-default > .panel-heading {
+    background-color: @fluke-white;
+    border-color: transparent;
+    border: none;
+}
+
+/* Removed top border on expanded accordion*/
+.panel-group .panel-heading + .panel-collapse > .panel-body, .panel-group .panel-heading + .panel-collapse > .list-group {
+    border-top: none;
+}
+
+/* Collapse anchor spans full witdth to allow + and - icon */
+.panel-title a {
+  display:block;
+  text-decoration: none;
+  width: 100%;
+}
+
+/* Accordion + icon */
+.panel-title a.collapsed:after {
+  content: '\f067';
+  float: right;
+  font-family: "fluke-icon-font";
+  font-size: 10px;
+}
+
+
+
+/* Article TOC page
+* similar styling as the product (sub) category page
+* need to see if we can merge the duplicate styling
+*/
+

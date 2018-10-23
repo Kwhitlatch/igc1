@@ -1,0 +1,75 @@
+<?php
+function dam_paging($result_page, $result_size, &$form) {
+  // if not on first page show first and previous page buttons
+  if ($result_page > 1) {
+    $form['first1'] = array(
+        '#type' => 'button',
+        '#value' => t('First'),
+        '#ajax' => array(
+          'path' => '/dam_uri_search/ajax')
+    );
+    $form['prev' . ($result_page - 1)] = array(
+      '#type' => 'button',
+      '#value' => '<<',
+      '#ajax' => array(
+        'path' => '/dam_uri_search/ajax')
+    );
+  }
+
+  // set up start_page and end_page variables
+  $temp_page = $result_page;
+
+  // set up temp middle page
+  if ($result_page < 8) {
+    $temp_page = 8;
+  }
+  elseif ($result_page > $result_size - 7) {
+    $temp_page = $result_size - 7;
+  }
+
+  // set up 2 before and 2 after middle page
+  $start_page = $temp_page - 7;
+  $end_page = $temp_page + 7;
+
+  // if less than 5 pages end pages as needed
+  if ($result_size < 15) {
+    $end_page = $result_size;
+  }
+
+  // show the different page buttons and disables current page button
+  for ($i = $start_page; $i <= $end_page;$i++) {
+    if ($i == $result_page) {
+      $disabled = TRUE;
+    }
+    else {
+      $disabled = FALSE;
+    }
+    $form['page' . $i] = array(
+      '#type' => 'button',
+      '#value' => $i,
+      '#disabled' => $disabled,
+      '#ajax' => array(
+        'path' => '/dam_uri_search/ajax')
+    );
+  }
+
+  // if not on last page show last and next buttons
+  if ($result_page < $result_size) {
+    $form['next' . ($result_page + 1)] = array(
+      '#type' => 'button',
+      '#value' => '>>',
+      '#ajax' => array(
+        'path' => '/dam_uri_search/ajax')
+    );
+    $form['last' . $result_size] = array(
+      '#type' => 'button',
+      '#value' => t('Last'),
+      '#ajax' => array(
+        'path' => '/dam_uri_search/ajax')
+    );
+  }
+  // insert spacer div
+  $form['spacing'] = array(
+    '#markup' => "<div></div>",
+  );
+}

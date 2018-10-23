@@ -1,0 +1,102 @@
+/***************************************************
+*
+* Here is how the colors are working...
+* All of the color values are given a name.
+* The names are then associated with human-rememberable names
+*
+* Then the colors are associated with semantic, smacksy names
+*
+* SET THE COLORS FOR EACH BRAND IN THE BRAND-SETTINGS-BRAND.SCSS FILE
+*
+****************************************************/
+
+
+//BASE COLORS
+//Color Assignments
+//Shades of grey
+
+$black                : #000;
+$gray-21              : #212121;     // aka   $gray-almost-black  @fluke-body-text
+$gray-28              : #282828;     // aka   $gray-darkest       @fluke-body-text
+$gray-3               : #333;        // aka   $gray-very-dark     @fluke-button-hover
+$gray-4               : #444;        // aka   $gray-dark
+$gray                 : #6f6f6f;    //  aka   $gray-medium        @fluke-menu-item
+$gray-6               : #6f6f6f;    //  aka   $gray-medium        @fluke-menu-item
+$gray-66			  			: #666666;    //  aka   $gray-medium-slider
+$gray-9               : #999;        // aka   $
+$gray-a               : #a7a7a7;    //  aka   $gray-light         @fluke-gray-links
+$gray-c               : #ccc;       //  aka   $gray-lighter       @fluke-lines-and-pipes
+$gray-d               : #ddd;       //  aka   $gray-lightest      @fluke-sidebar-background
+$gray-e               : #eaeaea;    //  aka   $gray-lightest      @fluke-background
+$gray-f               : #f7f7f7;    //  aka   $gray-almost-white  @fluke-box-shadows
+$white                : #fff;
+
+// Reds
+$red                  : #E03D3D; // formerly "red"
+
+// Oranges
+$orange               : orange;
+
+// Yellows
+$yellow               : #ffc20e;                //main palette yellow - primary brand color
+$yellow-dark          : #E4AA00;
+
+// Greens
+$green                : green;
+
+// Blues
+$blue                 : #477dca;
+$blue-medium          : #336699; //blue
+$blue-dark            : #003b78; //darker blue
+
+// Violets
+
+//HUMAN REMEMBERABLE COLOR NAMES for common base colors
+
+//millions of grays
+$black                : $black;
+$text-color           : $gray-21;
+$gray-almost-black    : $gray-21;
+$gray-darkest         : $gray-28;
+$gray-darker          : $gray-3;
+$gray-dark            : $gray-4;
+$gray-medium-slider   : $gray-66;
+$gray-medium          : $gray-6;
+$gray-light           : $gray-a;
+$gray-lighter         : $gray-c;
+$gray-lightest        : $gray-e;
+$gray-almost-white    : $gray-f;
+$white                : $white;
+
+
+$gray-almost-white    : $gray-f;
+$gray-extra-light     : $gray-e;        // stop using this one
+$gray-very-light      : $gray-e;
+$gray-light           : $gray-a;
+$gray-medium          : $gray-6;
+$gray-dark            : $gray-3;
+$gray-very-dark       : $gray-21;
+$box-shadows          : $gray-f;
+$background           : $gray-e;
+$sidebar-background   : $gray-d;
+$lines-and-pipes      : $gray-c;
+$button-hover         : #333;
+$body-text            : #222;
+$inverse-bg           : $gray-very-dark;
+
+// Font Colors
+
+
+//== social media colors
+$facebook             : #3b5998; //facebook blue
+$google-plus          : #dd4c39; //google+ dark red
+$instagram            : radial-gradient(circle at 33% 100%, #FED373 4%, #F15245 30%, #D92E7F 62%, #9B36B7 85%, #515ECF); //instagram rainbow circle
+$linkedin            : #4875b4; //linkedin blue
+$naver                : #3eaf0e; //naver green (Korean search engine)
+$reddit               : #ff5700; //reddit orange red
+$tmall                : #c40000; //tmall red (Chinese ecommerce platform)
+$twitter              : #33ccff; //twitter blue
+$vk                   : #507299; //vk blue (Russian Facebook)
+$weibo                : #f7671d; //weibo orange (Chinese social network)
+$youku                : #2fb3ff; //youku blue (Chinese youtube)
+$youtube              : #ff3333; //youtube red

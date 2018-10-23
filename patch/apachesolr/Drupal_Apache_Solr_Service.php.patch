@@ -1,0 +1,30 @@
+Index: sites/all/modules/apachesolr/Drupal_Apache_Solr_Service.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sites/all/modules/apachesolr/Drupal_Apache_Solr_Service.php	(revision dab5d8f2285d15f38603558a9b115a4b4c40da6b)
++++ sites/all/modules/apachesolr/Drupal_Apache_Solr_Service.php	(revision )
+@@ -742,6 +742,7 @@
+     if (isset($overwrite)) {
+       $attr .= ' overwrite="' . empty($overwrite) ? 'false"' : 'true"';
+     }
++    $commitWithin = NULL;
+     if (isset($commitWithin)) {
+       $attr .= ' commitWithin="' . intval($commitWithin) . '"';
+     }
+@@ -774,10 +775,10 @@
+    * @throws Exception If an error occurs during the service call
+    */
+   public function commit($optimize = TRUE, $waitFlush = TRUE, $waitSearcher = TRUE, $timeout = 3600) {
+-    $optimizeValue = $optimize ? 'true' : 'false';
+-    $flushValue = $waitFlush ? 'true' : 'false';
+-    $searcherValue = $waitSearcher ? 'true' : 'false';
+-    $softCommit = $this->soft_commit ? 'true' : 'false';
++    $optimizeValue = $optimize ? 'false' : 'false';
++    $flushValue = $waitFlush ? 'false' : 'false';
++    $searcherValue = $waitSearcher ? 'false' : 'false';
++    $softCommit = $this->soft_commit ? 'false' : 'false';
+ 
+     $solr_version = $this->getSolrVersion();
+     if ($solr_version <= 3) {

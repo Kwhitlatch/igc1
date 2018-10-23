@@ -1,0 +1,30 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ */
+function fluke_brand_chooser_menu() {
+
+  $items['brand-chooser'] = array(
+    'title' => 'Brand Chooser',
+    'page callback' => 'brand_chooser_pagemaker',
+    'access arguments' => array('access content'),
+  );
+  return $items;
+
+}
+
+/**
+ * Constructs a simple page.
+ *
+ * Bypasses the theme system.
+ */
+function brand_chooser_pagemaker() {
+
+  $module_path = drupal_get_path('module', 'fluke_brand_chooser');
+  $sadhotdog = file_get_contents($module_path . "/brand-chooser/dist/index.html");
+  
+  print $sadhotdog;
+
+}

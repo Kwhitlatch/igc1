@@ -1,0 +1,19 @@
+<?php
+/**
+ * Implements hook_form_node_form_alter().
+ */
+ 
+ 
+ function igcommerce_autopopulate_form_alter(&$form, &$form_state, $form_id){
+		
+		if($form_id = "taxonomy_form_term"){
+			
+			drupal_add_js(drupal_get_path('module', 'igcommerce_autopopulate') . '/js/autopopulate_taxonomy.js');
+		}
+	}
+ function igcommerce_autopopulate_form_node_form_alter(&$form, &$form_state) {
+			
+		
+		drupal_add_js(drupal_get_path('module', 'igcommerce_autopopulate') . '/js/igcommerce_autopopulate.js');
+
+	}

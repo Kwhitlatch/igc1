@@ -1,0 +1,29 @@
+// I think this was used in older iterations of the site when we had banners on 
+// every page. I removed it 10-10-18 -RRN
+
+// div[class*='pane-igcommerce-utility-articles-articles-toc-banner'],
+// div[class*='flukestrap-layouts-header']{
+//   background: $background-color-light;
+//   .views-field-ts-banner-desktop,
+//   .field-name-article-banner-page,
+//   .pane-igcommerce-utility-articles-articles-toc-banner,
+//   .pane-igcommerce-utility-articles-articles-solr-banner{
+
+//     position: relative;
+//     height:150px;
+//     overflow: hidden;
+//     @include media($desk){
+//       height: 200px;
+//     }
+//     @include media($desk-wide){
+//       height:290px;
+//     }
+//     #product-banner,
+//     .pane-content,
+//     .block-igcommerce-utility-articles,
+//     picture{
+//       @extend %center-image;
+//     }
+
+//   }
+// }

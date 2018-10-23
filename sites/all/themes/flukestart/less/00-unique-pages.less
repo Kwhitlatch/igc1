@@ -1,0 +1,100 @@
+/** 
+ * @file 00-unique-pages.less
+ * Styles for unique pages.
+ *
+ * Use this files for pages with uniqie styles like "About Us".
+ *
+ * TOC
+ * - Homepage
+ * - Login page 
+*/
+ 
+
+/** ===== Homepage ==== *************************/
+/**
+/** Homepage styles. TODO: Flexslider install **/
+
+
+
+//== Remove Uppercase 
+h1#page-title{
+  text-transform: none;
+}
+
+.context-fluke-genuine-accessories h1#page-title {
+  padding-top:25px;
+  text-transform: none;
+}
+
+//== 3 Featured Containers
+.featured-home{
+  display: inline-block;
+  float: left;
+  padding: 0 15px 0 0;
+  width: 30%;
+}
+
+//== 3 Featured Headers
+.featured-home h3{
+  margin-bottom: 0;
+}
+
+.featured-home img{
+  max-width:80%;
+}
+
+
+/** ===== Login Page ==== *******************************************/
+/**
+/** Login page for current users, create an account for new users **/
+
+
+//==  Left Column Login Button
+.page-user #user-register-form .form-submit, .page-user #user-profile-form .form-submit, .page-user #user_login_form .form-submit, .page-user #user_pass_form .form-submit, .page-checkout #user-register-form .form-submit, .page-checkout #user-profile-form .form-submit, .page-checkout #user_login_form .form-submit, .page-checkout #user_pass_form .form-submit {
+  -khtml-border-radius: 0px;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  background: @fluke-yellow;
+  color: @fluke-black;
+  font-family: @font-family-sans-serif;
+  font-size: @font-size-h3;
+  height: 40px;
+  max-width:285px;
+  width: 100%;
+}
+
+//== Left Column Login Button:Hover
+.page-user #user-register-form .form-submit:hover, .page-user #user-profile-form .form-submit:hover, .page-user #user_login_form .form-submit:hover, .page-user #user_pass_form .form-submit:hover, .page-checkout #user-register-form .form-submit:hover, .page-checkout #user-profile-form .form-submit:hover, .page-checkout #user_login_form .form-submit:hover, .page-checkout #user_pass_form .form-submit:hover {
+  background: lighten(@fluke-yellow, 10%);
+}
+
+//** Right Column Create an Account */
+.page-user a.login-register, .page-user a.login-account, .page-checkout a.login-register, .page-checkout a.login-account {
+  -khtml-border-radius: 0px;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  background: @fluke-blue-link;
+  color: @fluke-white;
+  font-family: @font-family-sans-serif;
+}
+
+//== Right Column Create an Account
+.page-user .form-submit:hover a.login-register, .page-user a.login-account, .page-checkout a.login-register, .page-checkout a.login-account {
+  background: @fluke-blue-link;
+}
+
+//== Register Account form actions
+.page-user-register  .form-wrapper{
+  padding-top:15px;
+}
+
+//== Password strength box
+.page-user form#user-register-form .form-item-pass .password-parent .password-strength, .page-user form#user-profile-form .form-item-pass .password-parent .password-strength, .page-checkout form#user-register-form .form-item-pass .password-parent .password-strength, .page-checkout form#user-profile-form .form-item-pass .password-parent .password-strength {
+  -khtml-border-radius: 0px;
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  background-color: transparent;
+  border-radius: 0px;
+  margin-top: 0;
+  padding: 0 5px 15px 5px;
+}

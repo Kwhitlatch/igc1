@@ -1,0 +1,21 @@
+
+.pane-igcommerce-utility-articles-article-software-download-listings {
+  //Can't find what you are looking for? to match search and training pages
+  .search-help{
+    padding-top: .75rem; //Adjusted from other search.help default 1.5rem.
+    padding-bottom: $spacing-3; //Padding between search tip and accordian
+  }
+  .software-downloads-search-results ul.article-list {
+    list-style: none;
+    padding-left: 0;
+  }
+  .software-downloads-item-title {
+    padding: 1rem 0;
+    font-weight: 700;
+    width: 100%;
+    display: block;
+  }
+  .software-downloads-item {
+    border-bottom: 1px solid $gray-c;
+  }
+}

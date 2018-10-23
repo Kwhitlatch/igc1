@@ -1,0 +1,202 @@
+<?php
+/**
+ * @file
+ * Implements hook_field_schema().
+ */
+function dam_uri_field_schema($field) {
+  return array(
+    'columns' => array(
+      'id' => array(
+         'type' => 'varchar',
+         'length' => 255,
+         'not null' => FALSE,
+       ),
+      'url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'caption' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'alt' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'thumbnail' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+  );
+}
+
+/**function dam_uri_field_schema_7004($field) {
+
+  return array(
+    'columns' => array(
+      'id' => array(
+         'type' => 'varchar',
+         'length' => 255,
+         'not null' => FALSE,
+       ),
+      'url' => array(
+         'type' => 'varchar',
+         'length' => 255,
+         'not null' => TRUE,
+      ),
+      'caption' => array(
+         'type' => 'varchar',
+         'length' => 255,
+         'not null' => FALSE,
+      ),
+      'alt' => array(
+         'type' => 'varchar',
+         'length' => 255,
+         'not null' => FALSE,
+      ),
+    ),
+  );
+
+}**/
+
+
+/**function dam_uri_update_7016(&$sandbox) {
+
+  drupal_set_installed_schema_version('dam_uri', 7004);
+
+}**/
+
+function dam_uri_update_7019(&$sandbox) {
+
+   $fields = field_info_field_map();
+
+   foreach ($fields as $key => $value) {
+      if ($value['type'] === 'dam_uri') {
+      drupal_set_installed_schema_version('dam_uri', 7004);
+      if (!db_field_exists('field_data_' . $key, $key . '_id')) {
+        $spec = array(
+          'type' => 'varchar',
+          'description' => "ID",
+          'length' => 255,
+          'not null' => FALSE,
+          );
+        db_add_field('field_data_' . $key, $key . '_id', $spec);
+        db_add_field('field_revision_' . $key, $key . '_id', $spec);
+      }
+
+    }
+  }
+
+}
+
+/*function dam_uri_update_7014(&$sandbox) {
+  $fields = field_info_fields();
+  foreach ($fields as $field_name => $field) {
+    if ($field['type'] == 'dam_uri' && $field['storage']['type'] == 'field_sql_storage') {
+      $schema = dam_uri_field_schema_7013($field);
+      foreach ($field['storage']['details']['sql'] as $type => $table_info) {
+        foreach ($table_info as $table_name => $columns) {
+          $column_name = _field_sql_storage_columnname($field_name, 'name');
+          db_add_field($table_name, $column_name, $schema['columns']['name']);
+          db_add_index($table_name, $column_name, array($column_name));
+        }
+      }
+    }
+  }
+  field_cache_clear();
+}*/
+
+
+/**
+  * Returns all fields created on the system of the type defined in mymodule.
+  */
+/*function dam_uri_get_dam_uri_fields() {
+  $types = array_keys(dam_uri_field_info()); // field types defined in mymodule
+  $fields = array();
+  foreach (field_info_fields() as $field) {
+    if (in_array($field['type'], $types)) {
+      $fields[] = $field;
+    }
+  }
+  return $fields;
+}*/
+
+/*
+function dam_uri_update_7200(&$sandbox) {
+  $spec = array(
+    'type' => 'varchar',
+    'description' => "This is the id of the coversheet",
+    'length' => 255,
+    'not null' => FALSE,
+  );
+  $data_table_name = 'field_data_field_dam_uri';
+  $revision_table_name = 'field_revision_field_dam_uri';
+  $field_name = 'dam_uri_id';
+
+  db_add_field($data_table_name, $field_name, $spec);
+  db_add_field($revision_table_name, $field_name, $spec);
+}*/
+
+/*function dam_uri_update_7011() {
+  db_create_table('dam_uri', drupal_get_schema_unprocessed('dam_uri', 'dam_uri_field'));
+  return 'Add the herp_derp table for the herp module.';
+}
+*/
+
+function dam_uri_update_7033(&$sandbox) {
+
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+  );
+  $data_table_name = 'field_data_field_related_digital_assets_uri';
+  $revision_table_name = 'field_revision_field_related_digital_assets_uri';
+  $field_name = 'field_related_digital_assets_uri_id';
+
+  if (db_field_exists('field_data_field_related_digital_assets_uri', 'field_related_digital_assets_uri_id')) {
+    db_drop_field('field_data_field_related_digital_assets_uri', 'field_related_digital_assets_uri_id');
+  }
+
+  if (db_field_exists('field_revision_field_related_digital_assets_uri', 'field_related_digital_assets_uri_id')) {
+    db_drop_field('field_revision_field_related_digital_assets_uri', 'field_related_digital_assets_uri_id');
+  }
+  db_add_field($data_table_name, $field_name, $spec);
+  db_add_field($revision_table_name, $field_name, $spec);
+
+}
+
+function dam_uri_update_7031(&$sandbox) {
+   drupal_set_installed_schema_version('field_sql_storage', '7030');
+   drupal_set_installed_schema_version('dam_uri', '7030');
+}
+
+function dam_uri_update_7034(&$sandbox) {
+   $fields = field_info_field_map();
+
+   foreach ($fields as $key => $value) {
+      if ($value['type'] === 'dam_uri') {
+
+      if (!db_field_exists('field_data_' . $key, $key . '_thumbnail')) {
+        $spec = array(
+          'type' => 'varchar',
+          'description' => "Thumbnail",
+          'length' => 255,
+          'not null' => FALSE,
+          );
+        db_add_field('field_data_' . $key, $key . '_thumbnail', $spec);
+        db_add_field('field_revision_' . $key, $key . '_thumbnail', $spec);
+      }
+    }
+  }
+
+}
+function dam_uri_update_7035(&$sandbox) {
+   drupal_set_installed_schema_version('field_sql_storage', '7034');
+   drupal_set_installed_schema_version('dam_uri', '7034');
+}

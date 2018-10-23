@@ -1,0 +1,10 @@
+name = IG WTB Feature
+core = 7.x
+package = Features
+dependencies[] = ctools
+dependencies[] = ig_commerce_wtb
+dependencies[] = page_manager
+features[ctools][] = page_manager:pages_default:1
+features[features_api][] = api:2
+features[page_manager_pages][] = where_to_buy
+project path = sites/all/modules/features

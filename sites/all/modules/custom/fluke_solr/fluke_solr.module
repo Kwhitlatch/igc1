@@ -1,0 +1,1176 @@
+<?php
+
+/**
+ * @return array of default apache solr environment
+ */
+function fluke_solr_get_environments() {
+    $solr = apachesolr_load_all_environments();
+    $solr_env = array();
+    foreach ($solr as $env) {
+        $solr_env[] = $env;
+    }
+
+    return $solr_env;
+}
+
+function fluke_solr_get_connection() {
+    $apache_solr_url = fluke_solr_get_environments();
+    $solr = new DrupalApacheSolrService($apache_solr_url[0]['url']);
+    $query = apachesolr_drupal_query('apachesolr', [], '', '', $solr);
+    return $query;
+}
+
+/**
+ * @param $query
+ * @param array $options:
+ * fluke_solr_add_filters($query, $options = array(
+ *    'filters': array(key => value),
+ *    'params': array(key => value),
+ *    'sort': array(key => value),
+ *    'rows': 100,
+ *    'fl': 'sm_toc_related_article,label,ss_language'
+ * ))
+ * @return mixed
+ */
+function fluke_solr_add_filters($query, $options = array()) {
+    /* I added new functionality here to narrow the search to only specific fields if the search being executed
+       is from the search form.  I take the keywords that were entered and construct a string of terms to search
+       on - using wildcards around each keyword to catch substrings. (TT - May 2018)  */
+    if (!empty($options['keyword'])) {
+      $keywords = explode(" ", $options['keyword']);
+      $search_param = NULL;
+
+      $language = $options['filters']['ss_language'];
+      $keyword_count = count($keywords);
+
+      for ($i = 0; $i < $keyword_count; $i++) {
+        // First, check to see if keyword is a number. intval() returns 0 if it is not an integer.
+        if (intval($keywords[$i]) > 0) {
+          $search_param .= "(*" . $keywords[$i] . "*)";
+        }
+        else {
+          // We don't want to add wildcards around cjk text.
+          preg_match('/^[a-zA-Z0-9]+$/',$keywords[$i], $matches);
+          if (in_array($keywords[$i], $matches)) {
+            // It's not CJK, so add wildcards.
+            $keyword = rtrim($keywords[$i], "s");
+            $keyword = rtrim($keyword, "S");
+
+            $search_param .= "(*" . $keyword . "*)";
+          }
+          else {
+            $search_param .= $keywords[$i];
+          }
+        }
+        if ($i < ($keyword_count - 1)) {
+          $search_param .=  " AND ";
+        }
+      }
+
+      $query->addFilter('!bundle', '(image slideshow)');
+
+      $query->replaceParam('q', $search_param);
+
+    } else {
+        if (!empty($options['q'])) {
+            $query->replaceParam('q', $options['q']);
+        }
+    }
+
+    if(!empty($options['fl'])) {
+        $fl = explode(',', $options['fl']);
+        foreach ($fl as $item) {
+            $query->addParam('fl', $item);
+        }
+        //$query->replaceParam('fl', $options['fl']);
+    }
+    if(!empty($options['params']) && is_array($options['params'])) {
+        foreach ($options['params'] as $key => $value) {
+            $query->addParam($key, $value);
+        }
+    }
+    if(!empty($options['filters']) && is_array($options['filters'])) {
+        foreach ($options['filters'] as $key => $value) {
+            $query->addFilter($key, $value);
+        }
+    }
+    if(!empty($options['sort'])) {
+        if(is_array($options['sort'])) {
+            foreach ($options['sort'] as $key => $value) {
+                $query->setSolrsort($key, $value);
+            }
+        }
+        else {
+            $query->replaceParam('sort', $options['sort']);
+        }
+    }
+    if(isset($options['rows']) && is_int($options['rows'])) {
+        if($options['rows'] == 0) {
+            $query->removeParam('rows');
+        }
+        elseif ($options['rows'] > 0) {
+            $query->replaceParam('rows', $options['rows']);
+        }
+    }
+    if(isset($options['start']) && is_int($options['start'])) {
+        if($options['start'] == 0) {
+            $query->removeParam('start');
+        }
+        elseif ($options['start'] > 0) {
+            $query->replaceParam('start', $options['start']);
+        }
+    }
+    if(isset($options['cursorMark']) && !empty($options['cursorMark'])) {
+        $query->replaceParam('cursorMark', $options['cursorMark']);
+    }
+
+    return $query;
+}
+
+function fluke_solr_query($query, $skip_alter = FALSE) {
+    global $conf;
+
+    if(!empty($conf['fluke_solr_environment_filters'])){
+      foreach($conf['fluke_solr_environment_filters'] as $key => $value){
+        $query->addFilter($key, $value);
+      }
+    }
+    try{
+        $result = $query->search();
+        
+        if (!$skip_alter) {
+          $result = fluke_solr_alter_docs($result);
+        }
+        
+        return $result;
+    }
+    catch (Exception $e) {
+        watchdog('Fluke Solr Subquery', 'Bad request. Request details: %request', array('%request' => $e->getMessage()),
+            WATCHDOG_ERROR);
+        return $e->getMessage();
+    }
+}
+
+/**
+ * Checks for certain solr fields for value manipulation such as replacing node/[nid] with it's path alias
+ */
+function fluke_solr_alter_docs($response) {
+  if (empty($response)) {
+    return $response;
+  }
+  
+  // Convert drupal system links to path_alias
+  // This used to be done during indexing but due to .cn url differences, best to handle on front end
+  $fields = array(
+      'ts_article_body',
+      'ts_article_summary',
+      'ts_article_short_summary',
+      'tm_overview',
+      'tm_features',
+      'ts_description_field',
+      'ts_page_body',
+      'ss_page_short_summary',
+      'sm_description',
+      'tm_specs',
+  );
+  if(count($response->response->docs) > 0) {
+    foreach ($response->response->docs as &$doc) {
+      foreach ($fields as $field) {
+        if (!empty($doc->{$field})) {
+          if (is_array($doc->{$field})) {
+            foreach ($doc->{$field} as $key => $f) {
+              if (is_string($f)) {
+                $doc->{$field}[$key] = igcommerce_utility_convert_links_to_alias($f);
+              }
+            }
+          } else {
+            $doc->{$field} = igcommerce_utility_convert_links_to_alias($doc->{$field});
+          }
+        }
+      }
+    }
+  }
+  // The main searches Solr group functionality, so we need to look for those
+  // docs in $response->grouped.
+  elseif (isset($response->grouped)) {
+    foreach ($response->grouped as $group_field => $groups) {
+      foreach ($groups->groups as $group) {
+        foreach ($group->doclist->docs as $doc) {
+          foreach ($fields as $field) {
+            if (!empty($doc->{$field})) {
+              if (is_array($doc->{$field})) {
+                foreach ($doc->{$field} as $key => $f) {
+                  if (is_string($f)) {
+                    $doc->{$field}[$key] = igcommerce_utility_convert_links_to_alias($f);
+                  }
+                }
+              }
+              else {
+                $doc->{$field} = igcommerce_utility_convert_links_to_alias($doc->{$field});
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return $response;
+}
+
+function fluke_solr_filter_subquery($filters = array(), $method = 'AND') {
+    $sub_query = new SolrFilterSubQuery($method);
+    try{
+        $filter_query = fluke_solr_add_filters($sub_query, $filters);
+        return $filter_query;
+    }
+    catch (Exception $e) {
+        watchdog('Fluke Solr Subquery', 'Bad request. Request details: %request', array('%request' => $e->getMessage()),
+            WATCHDOG_ERROR);
+        return $e->getMessage();
+    }
+}
+
+/**
+ * Returns the language of the entity being indexed
+ * @param  object $entity The entity being indexed
+ * @return string         A string containing the language-locale pair for this entity
+ */
+function fluke_solr_get_language($entity) {
+
+    $entityLanguage = $entity->language;
+
+    if (!$entityLanguage || strlen($entityLanguage) < 1) {
+        $entityLanguage = entity_language($entity->type, $entity);
+    }
+
+    if (!$entityLanguage || strlen($entityLanguage) < 1) {
+        $entityLanguage = LANGUAGE_NONE;
+    }
+
+    return $entityLanguage;
+
+}
+
+/**
+ * Replaces tokenized values in a field with the value represented by the token
+ * @param  array $ecm_tokens  A list of tokens to be processed
+ * @param  string $field       The field with tokens embedded in content
+ * @return string              The expanded version of the field with tokens replaced
+ */
+function fluke_solr_replace_tokens($ecm_tokens, $field) {
+    return token_replace($field, array('custom' => $ecm_tokens));
+}
+
+/***
+ *
+ *  This function returns the parent language of that child language - for example, if the language is
+ *  de-ch returns de-de. If there isn't a value in the parent language returns en-us.
+ *
+ */
+function fluke_solr_get_local_parentcode($language) {
+    $langcode = explode('-', $language);
+    $parents = array('en' => 'en-us',
+        'es' => 'es-es',
+        'de' => 'de-de',
+        'zh' => 'zh-cn',
+        'nl' => 'nl-nl',
+        'fr' => 'fr-fr'
+    );
+    if (array_key_exists($langcode[0], $parents)) {
+        return $parents[$langcode[0]];
+    }
+    return 'en-us';
+}
+
+/**
+ * Returns a parent language. ie: de-at will return de-de. This function is used to prevent en-us fallbacks.
+ * @param string $language_entity
+ * @return the parent language if found or the original language passed in if not found
+ */
+function fluke_solr_get_top_parent($language_entity) {
+
+  $en_langs = array('en-au', 'fi-fi', 'id-id', 'it-it', 'ja-jp', 'ko-kr', 'no-no',
+      'pl-pl', 'pt-br', 'pt-pt', 'ru-ru', 'sv-se', 'th-th', 'tr-tr', 'vi-vn', 'cs-cz',
+      'da-dk', 'en', 'en-ca', 'en-gb', 'en-id', 'en-ie', 'en-in', 'en-my', 'en-ph',
+      'en-sg', 'en-th', 'en-tt', 'en-vn', 'zh-tw');
+  $es_langs = array('es-ar', 'es-bo', 'es-cl', 'es-co', 'es-cr', 'es-do', 'es-ec', 'es-gt', 'es-pe',
+      'es-sv', 'es-us', 'es-uy', 'es-ve');
+  $de_langs = array('de-at', 'de-ch');
+  $cn_langs = array('cn', 'zh-cn');
+  $nl_langs = array('nl-be');
+  $fr_langs = array('fr', 'fr-be', 'fr-ca', 'fr-ch');
+
+  if (in_array($language_entity, $en_langs)) {
+    $return_value = 'en-us';
+  }
+  elseif (in_array($language_entity, $es_langs)) {
+    $return_value = 'es-mx';
+  }
+  elseif (in_array($language_entity, $de_langs)) {
+    $return_value = 'de-de';
+  }
+  elseif (in_array($language_entity, $cn_langs)) {
+    $return_value = 'cn';
+  }
+  elseif (in_array($language_entity, $nl_langs)) {
+    return 'nl-nl';
+  }
+  elseif (in_array($language_entity, $fr_langs)) {
+    $return_value = 'fr-fr';
+  }
+  else  { // catch all others
+    $return_value = $language_entity;
+  }
+
+  return $return_value;
+
+}
+
+function fluke_solr_get_parent_lang($language_entity) {
+
+    $en_langs = array('en-au', 'es-es', 'fi-fi', 'fr-fr', 'id-id', 'it-it', 'ja-jp', 'ko-kr', 'nl-nl', 'no-no',
+        'pl-pl', 'pt-br', 'pt-pt', 'ru-ru', 'sv-se', 'th-th', 'tr-tr', 'vi-vn', 'zh-cn', 'cs-cz',
+        'da-dk', 'de-de', 'en', 'en-ca', 'en-gb', 'en-id', 'en-ie', 'en-in', 'en-my', 'en-ph',
+        'en-sg', 'en-th', 'en-tt', 'en-vn', 'es-mx', 'zh-tw');
+    $es_langs = array('es-ar', 'es-bo', 'es-cl', 'es-co', 'es-cr', 'es-do', 'es-ec', 'es-gt', 'es-pe',
+        'es-sv','es-us', 'es-uy', 'es-ve');
+    $de_langs = array('de-at', 'de-ch');
+    $cn_langs = array('cn');
+    $nl_langs = array('nl-be');
+    $fr_langs = array('fr', 'fr-be', 'fr-ca', 'fr-ch');
+
+    if  (in_array($language_entity, $en_langs)) {
+        $return_value = 'en-us';
+    }
+    elseif (in_array($language_entity, $es_langs))  {
+        $return_value = 'es-mx';
+    }
+    elseif (in_array($language_entity, $de_langs))  {
+        $return_value = 'de-de';
+    }
+    elseif (in_array($language_entity, $cn_langs)) {
+        $return_value = 'cn';
+    }
+    elseif (in_array($language_entity, $nl_langs)) {
+        return 'nl-nl';
+    }
+    elseif (in_array($language_entity, $fr_langs)) {
+        $return_value = 'fr-fr';
+    }
+    else { // catch all others
+        $return_value = 'en-us';
+    }
+
+    return $return_value;
+}
+
+/**
+ * Loads language fallback for fields with multiple values
+ * @param unknown $language_entity
+ * @param unknown $entity_data
+ * @param unknown $field_machine_name
+ * @param string $default_language
+ */
+function fluke_solr_fallback_field_multiple($language_entity, $entity, $field_machine_name, $default_language = FALSE) {
+  $langs = fluke_solr_get_fallback_languages();
+
+  if ($default_language) {
+    if (isset($entity->{$field_machine_name}[LANGUAGE_NONE])) {
+      return $entity->{$field_machine_name}[LANGUAGE_NONE];
+    }
+  } else {
+    if (!empty($entity->{$field_machine_name}[$language_entity])) {
+      return $entity->{$field_machine_name}[$language_entity];
+    }
+
+    // now check for the value based on which cluster the language passed in belongs to
+    if  (in_array($language_entity, $langs['en-us'])) {
+      if (!empty($entity->{$field_machine_name}['en-us'])) {
+        return $entity->{$field_machine_name}['en-us'];
+      }
+    }
+    elseif (in_array($language_entity, $langs['es-es']))  {
+      if (!empty($entity->{$field_machine_name}['es-es'])) {
+        return $entity->{$field_machine_name}['es-es'];
+      }
+    }
+    elseif (in_array($language_entity, $langs['de-de']))  {
+      if (!empty($entity->{$field_machine_name}['de-de'])) {
+        return $entity->{$field_machine_name}['de-de'];
+      }
+    }
+    elseif (in_array($language_entity, $langs['zh-cn'])) {
+      if (!empty($entity->{$field_machine_name}['zh-cn'])) {
+        return $entity->{$field_machine_name}['zh-cn'];
+      }
+    }
+    elseif (in_array($language_entity, $langs['nl-nl'])) {
+      if (!empty($entity->{$field_machine_name}['nl-nl'])) {
+        return $entity->{$field_machine_name}['nl-nl'];
+      }
+    }
+    elseif (in_array($language_entity, $langs['fr-fr'])) {
+      if (!empty($entity->{$field_machine_name}['fr-fr'])) {
+        return $entity->{$field_machine_name}['fr-fr'];
+      }
+    }
+    else { // catch all others
+      if (!empty($entity->{$field_machine_name}['en-us'])) {
+        return $entity->{$field_machine_name}['en-us'];
+      }
+    }
+  }
+
+  // Check if there's a LANGUAGE_NONE value
+  if (!empty($entity->{$field_machine_name}[LANGUAGE_NONE])) {
+    return $entity->{$field_machine_name}[LANGUAGE_NONE];
+  }
+
+  return;
+}
+
+/**
+ * Provides the fallback language
+ * @param string $langcode ie: 'en-us'
+ * @return string a langcode which defaults to en-us if no fallback is found
+ */
+function fluke_solr_fallback_get_fallback_language($langcode, $default = 'en-us') {
+  $parents = fluke_solr_get_fallback_languages();
+  foreach ($parents as $key => $languages) {
+    if (in_array($langcode, $languages)) {
+      return $key;
+    }
+  }
+  
+  if ($default) {
+    return $default;
+  }
+}
+
+/**
+ * @return array of fallback languages
+ */
+function fluke_solr_get_fallback_languages() {
+  // define the language clusters by parent
+  $return['en-us'] = array('en-au', 'es-es', 'fi-fi', 'fr-fr', 'id-id', 'it-it', 'ja-jp', 'ko-kr', 'nl-nl', 'no-no',
+      'pl-pl', 'pt-br', 'pt-pt', 'ru-ru', 'sv-se', 'th-th', 'tr-tr', 'vi-vn', 'zh-cn', 'cs-cz',
+      'da-dk', 'de-de', 'en', 'en-ca', 'en-gb', 'en-id', 'en-ie', 'en-in', 'en-my', 'en-ph',
+      'en-sg', 'en-th', 'en-tt', 'en-vn', 'es-mx', 'zh-tw');
+  $return['es-es'] = array('es-ar', 'es-bo', 'es-cl', 'es-co', 'es-cr', 'es-do', 'es-ec', 'es-gt', 'es-pe',
+      'es-sv', 'es-uy', 'es-ve');
+  $return['de-de'] = array('de-at', 'de-ch');
+  $return['zh-cn'] = array('cn');
+  $return['nl-nl'] = array('nl-be');
+  $return['fr-fr'] = array('fr', 'fr-be', 'fr-ca', 'fr-ch');
+
+  return $return;
+}
+
+/**
+ *
+ *  This function examines a field and determines whether the value exists for the specified language, if not
+ *  it then looks for content in the parent language of that child language - for example, if the language is
+ *  de-ch it looks in de-de.  If there isn't a value in the parent language it then looks in  en-us and assigns
+ *  that value.  If it doesn't exist in en-us then it returns a null value.
+ *
+ */
+
+function fluke_solr_fallback($language_entity, $entity_data, $field_machine_name, $field_type = 'value', $default_language = FALSE, $key = 0) {
+    $langs = fluke_solr_get_fallback_languages();
+
+    $value_to_return = NULL;
+
+    $return_value = NULL;
+
+// basic conditions that do not require fallback
+    if ($field_type) {
+      if (isset($entity_data->{$field_machine_name}[$language_entity][$key][$field_type])) {
+          return $entity_data->{$field_machine_name}[$language_entity][$key][$field_type];
+      }
+      elseif ($field_type == 'target_id') {
+          if (!isset($entity_data->{$field_machine_name}[$language_entity][$key][$field_type]) &&
+              isset($entity_data->{$field_machine_name}[LANGUAGE_NONE][$key][$field_type])) {
+               return $entity_data->{$field_machine_name}[LANGUAGE_NONE][$key][$field_type];
+          }
+      }
+    } else {
+      if (isset($entity_data->{$field_machine_name}[$language_entity][$key])) {
+        return $entity_data->{$field_machine_name}[$language_entity][$key];
+      }
+      elseif ($field_type == 'target_id') {
+        if (!isset($entity_data->{$field_machine_name}[$language_entity][$key]) &&
+        isset($entity_data->{$field_machine_name}[LANGUAGE_NONE][$key])) {
+          return $entity_data->{$field_machine_name}[LANGUAGE_NONE][$key];
+        }
+      }
+
+    }
+// just use the Language Undefined value
+    if ($default_language) {
+      if ($field_type) {
+        if (isset($entity_data->{$field_machine_name}[LANGUAGE_NONE][$key][$field_type])) {
+            return $entity_data->{$field_machine_name}[LANGUAGE_NONE][$key][$field_type];
+        }
+        elseif (isset($entity_data->{$field_machine_name}['und'][$key][$field_type])) {
+            return $entity_data->{$field_machine_name}['und'][$key][$field_type];
+        }
+        else{
+            $return_value = NULL;
+        }
+      } else {
+        if (isset($entity_data->{$field_machine_name}[LANGUAGE_NONE][$key])) {
+          return $entity_data->{$field_machine_name}[LANGUAGE_NONE][$key];
+        }
+        elseif (isset($entity_data->{$field_machine_name}['und'][$key])) {
+          return $entity_data->{$field_machine_name}['und'][$key];
+        }
+        else{
+          $return_value = NULL;
+        }
+      }
+    }
+
+// now check for the value based on which cluster the language passed in belongs to
+    if  (in_array($language_entity, $langs['en-us'])) {
+        $return_value = fluke_solr_fallback_assign_values('en-us', $entity_data, $field_machine_name, $field_type);
+    }
+    elseif (in_array($language_entity, $langs['es-es']))  {
+        $return_value = fluke_solr_fallback_assign_values('es-es', $entity_data, $field_machine_name, $field_type);
+    }
+    elseif (in_array($language_entity, $langs['de-de']))  {
+        $return_value = fluke_solr_fallback_assign_values('de-de', $entity_data, $field_machine_name, $field_type);
+    }
+    elseif (in_array($language_entity, $langs['zh-cn'])) {
+        $return_value = fluke_solr_fallback_assign_values('zh-cn', $entity_data, $field_machine_name, $field_type);
+    }
+    elseif (in_array($language_entity, $langs['nl-nl'])) {
+        $return_value = fluke_solr_fallback_assign_values('nl-nl', $entity_data, $field_machine_name, $field_type);
+    }
+    elseif (in_array($language_entity, $langs['fr-fr'])) {
+        $return_value = fluke_solr_fallback_assign_values('fr-fr', $entity_data, $field_machine_name, $field_type);
+    }
+    else { // catch all others
+      if ($field_type) {
+        if (isset($entity_data->{$field_machine_name}['en-us'][$key][$field_type]) &&
+            strlen($entity_data->{$field_machine_name}['en-us'][$key][$field_type]) > 0) {
+            $return_value = $entity_data->{$field_machine_name}['en-us'][$key][$field_type];
+        }
+        else {
+            $return_value = NULL;
+        }
+      } else {
+        if (isset($entity_data->{$field_machine_name}['en-us'][$key]) &&
+        strlen($entity_data->{$field_machine_name}['en-us'][$key]) > 0) {
+          $return_value = $entity_data->{$field_machine_name}['en-us'][$key];
+        }
+        else {
+          $return_value = NULL;
+        }
+
+      }
+    }
+
+    if (!$return_value) {
+      // Check if there's a LANGUAGE_NONE value
+      if (!empty($entity_data->{$field_machine_name}[LANGUAGE_NONE][$key][$field_type])) {
+        return $entity_data->{$field_machine_name}[LANGUAGE_NONE][$key][$field_type];
+      }
+    }
+
+    return $return_value;
+}
+
+
+function fluke_solr_fallback_assign_values($entityLanguage, $entity, $field_machine_name, $field_type = 'value') {
+    $return_value = NULL;
+
+    if ($field_type) {
+      if (isset($entity->{$field_machine_name}[$entityLanguage][0][$field_type]) &&
+          strlen($entity->{$field_machine_name}[$entityLanguage][0][$field_type]) > 0) {
+          $return_value = $entity->{$field_machine_name}[$entityLanguage][0][$field_type];
+      }
+      elseif (isset($entity->{$field_machine_name}['en-us'][0][$field_type]) &&
+          strlen($entity->{$field_machine_name}['en-us'][0][$field_type]) > 0) {
+          $return_value = $entity->{$field_machine_name}['en-us'][0][$field_type];
+      }
+    } else {
+      // No field type provided so return all
+      if (!empty($entity->{$field_machine_name}[$entityLanguage][0])) {
+        $return_value = $entity->{$field_machine_name}[$entityLanguage][0];
+      }
+      elseif (!empty($entity->{$field_machine_name}['en-us'][0])) {
+        $return_value = $entity->{$field_machine_name}['en-us'][0];
+      }
+    }
+
+    return $return_value;
+}
+
+
+
+
+/**
+ * A function that packages all of the taxonomy terms for a field into an array
+ * @param  string  $language_entity    The language being processed
+ * @param  object  $entity_data        The entity being evaluated
+ * @param  string  $field_machine_name The machine name of the field
+ * @param  string  $field_type         The type of field (in this case tid)
+ * @param  boolean $default_language   Whether to use LANGUGAGE_NONE or the
+ * @return array/integer   array of TIDs or a single tid
+ */
+function fluke_solr_get_taxonomy_terms($language_entity, $entity_data, $field_machine_name, $field_type = 'tid', $default_language = FALSE, $multiple = FALSE) {
+
+    // This function may return a single term or multiple terms as an array
+    if (!$multiple) {
+        // just use the Language Undefined value
+        if ($default_language) {
+            if (isset($entity_data->{$field_machine_name}[LANGUAGE_NONE][0][$field_type])) {
+                return $entity_data->{$field_machine_name}[LANGUAGE_NONE][0][$field_type];
+            } else {
+                return NULL;
+            }
+        }
+        else {
+            if (isset($entity_data->{$field_machine_name}[$language_entity][0][$field_type])) {
+                return $entity_data->{$field_machine_name}[$language_entity][0][$field_type];
+            } else {
+                return NULL;
+            }
+        }
+    }
+    // process multiple terms
+    else {
+
+        // process multiple default languages
+        if ($default_language)  {
+            $tids = array();
+            if (isset($entity_data->{$field_machine_name}[LANGUAGE_NONE])) {
+                foreach ($entity_data->{$field_machine_name}[LANGUAGE_NONE] as $key => $tid) {
+                    $tids[] = $tid['tid'];
+                } // end of for each
+                return json_encode($tids);
+            }
+            else {
+                // there's nothing to return, send back a empty array
+                return array();
+            } // end of if language none was found
+        }
+        // its not the default language, a specific language was specified
+        else {
+            $tids = array();
+            if (isset($entity_data->{$field_machine_name}[$language_entity])) {
+                foreach ($entity_data->{$field_machine_name}[$language_entity] as $key => $tid) {
+                    $tids[] = $tid['tid'];
+                }
+                return json_encode($tids);
+            }
+            // if the language specified wasn't found then check for en-us
+            elseif (isset($entity_data->{$field_machine_name}['en-us'])) {
+                foreach ($entity_data->{$field_machine_name}['en-us'] as $key => $tid) {
+                    $tids[] = $tid['tid'];
+                }
+                return json_encode($tids);
+            } // there wasn't an en-us so just send an empty array back
+            else {
+                return array();
+            }
+        } // end of else condition where specific language was specified
+
+        // a catch-all just in case the function was called incorrectly and
+        // was missing the default language parameter, even though its defaulted
+        // to false.  This in theory should never be able to happen but just in
+        // case
+        return array();
+
+    } // end of checking for multiple terms conditional statement
+
+}
+
+
+function fluke_solr_get_taxonomy_fallback($language_entity, $term_id) {
+
+    $term_details = array();
+    $entity_data = taxonomy_term_load($term_id);
+
+    if (is_object($entity_data)) {
+        if (isset($entity_data->description_field)) {
+            $term_details[$language_entity]['description'] = fluke_solr_fallback($language_entity, $entity_data, 'description_field', $field_type = 'value', $default_language = FALSE);
+        }
+        if (isset($entity_data->field_content_title)) {
+            $term_details[$language_entity]['content_title'] = fluke_solr_fallback($language_entity, $entity_data, 'field_content_title', $field_type = 'value', $default_language = FALSE);
+        }
+        if (isset($entity_data->field_url_title)) {
+            $term_details[$language_entity]['url_title'] = fluke_solr_fallback($language_entity, $entity_data, 'field_url_title', $field_type = 'value', $default_language = FALSE);
+        }
+    }
+
+    return json_encode($term_details);
+
+}
+
+
+function fluke_solr_get_cta_web_card($entityLanguage, $entity, $field_machine_name, $field_type = 'value') {
+    $field_collection = entity_load('field_collection_item', array(
+        $entity->{$field_machine_name}[$entityLanguage][0][$field_type]
+    ));
+    if(!empty($field_collection)) {
+        foreach ($field_collection as $field_collection_key => $field_collection_value) {
+            $taxonomy_cta = taxonomy_term_load($field_collection_value->field_cta_button_text[$entityLanguage][0]['tid']);
+            if (isset($taxonomy_cta->field_content_title) && !empty($taxonomy_cta->field_content_title)) {
+                $term_name = fluke_solr_fallback($entityLanguage, $entity, 'field_content_title', "value", FALSE);
+            }
+            else {
+                $term_name = $taxonomy_cta->name;
+            }
+
+            $button['label'] = $term_name;
+            $button['url'] = $field_collection_value->field_link[$entityLanguage][0]['url'];
+            return json_encode($button);
+        }
+    }
+    return NULL;
+}
+
+function fluke_solr_term_depth($tid) {
+    static $depths = array();
+
+    if (!isset($depths[$tid])) {
+        $parent = db_select('taxonomy_term_hierarchy', 'th')->fields('th', array(
+            'parent'
+        ))->condition('tid', $tid)->execute()->fetchField();
+
+        if ($parent == 0) {
+            $depths[$tid] = 1;
+        }
+        else {
+            $depths[$tid] = 1 + fluke_solr_term_depth($parent);
+        }
+    }
+
+    return $depths[$tid];
+}
+
+
+
+function fluke_solr_get_term_name($entityLanguage, $tid, $field_machine_name) {
+
+    $options = array(
+            "entity_id" => $tid,
+            "ss_language" => $entityLanguage,
+            "entity_type" => 'taxonomy_term',
+    );
+
+    $fields = 'ss_field_content_title';
+
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, array('filters' => $options, 'fl' => $fields, 'rows' => 5));
+    $response = fluke_solr_query($filters);
+
+    if ($response) {
+       return $response->response->docs[0]->{$field_machine_name}[0];
+    }
+    else {
+      return NULL;
+    }
+
+}
+
+/**
+ * Returns a fully indexed entity
+ * @param integer $entity_id
+ * @param string $entity_type
+ * @param string $bundle
+ * @param string $entity_language
+ */
+function fluke_solr_get_entity($entity_id, $entity_type, $bundle = NULL, $entity_language = 'en-us', $env = NULL, $reset = FALSE, $skip_alter = FALSE) {
+
+  $cache = &drupal_static(__FUNCTION__, array());
+
+  if (!empty($cache[$entity_id][$entity_type][$bundle][$entity_language]) && !$reset) {
+    return $cache[$entity_id][$entity_type][$bundle][$entity_language];
+  }
+
+  $options = array(
+      "entity_id" => $entity_id,
+      "ss_language" => $entity_language,
+      "entity_type" => $entity_type,
+  );
+
+  if ($bundle) {
+    $options['bundle'] = $bundle;
+  }
+  
+  if ($env) {
+    $options['ss_env_id'] = $env;
+  }
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $options, 'rows' => 1));
+  $response = fluke_solr_query($filters, $skip_alter);
+
+  if (!empty($response->response->docs[0])) {
+    $cache[$entity_id][$entity_type][$bundle][$entity_language] = $response->response->docs[0];
+    return $response->response->docs[0];
+  } else {
+    return FALSE;
+  }
+}
+
+function fluke_solr_get_cta_text($entityLanguage, $tid) {
+  
+  $options = array(
+    "entity_id" => $tid,
+    "ss_language" => $entityLanguage, //TODO: Why not pulling translated title?
+    "bundle" => "cta_buttons",
+  );
+  
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $options, 'rows' => 5));
+  $response = fluke_solr_query($filters);
+  if (!empty($response->response->docs[0]->sm_field_content_title[0])) {
+    return $response->response->docs[0]->sm_field_content_title[0];
+  }
+  else {
+    return NULL;
+  }
+  
+}
+
+
+/**
+ * Get CTA that has this content or term tagged on it by the entity id of the toc content
+ * @param $entityLanguage
+ * @param $entity_id
+ * @param $entity_type
+ * @return null
+ */
+function fluke_solr_get_toc_cta($entityLanguage, $entity_id, $entity_type) {
+  
+  $options = array(
+    "ss_language" => $entityLanguage,
+    "bundle" => "cta_web_card_lead_gen",
+  );
+  
+  if(!empty($entity_id)) {
+    if($entity_type == 'taxonomy_term') {
+      $options['is_toc_taxonomy'] = $entity_id;
+    }
+    
+    if($entity_type == 'node') {
+      $options['is_toc_content'] = $entity_id;
+    }
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, array('filters' => $options, 'rows' => 5));
+    $response = fluke_solr_query($filters);
+  }
+  
+  if(isset($response) && !empty($response->response->docs[0])) {
+    return $response->response->docs[0];
+  } else {
+    return NULL;
+  }
+  
+}
+
+/**
+ * Implements hook_apachesolr_query_alter().
+ */
+function fluke_solr_apachesolr_query_alter(DrupalSolrQueryInterface $query) {
+  // No longer using this for main search
+  return;
+  
+  $filters = array();
+  
+  // For reasons I can't figure out, checkboxes that come from the views exposed filter form
+  // at search/page is an array in $_GET['facets'], so we have to check two places.
+  // Get filters from 'filters' URL parameter, which is a comma separated string.
+   if (isset($_GET['filters'])) {
+     $filters = explode(',', $_GET['filters']);
+   }
+   elseif (isset($_GET['facets'])) {
+     $filters = $_GET['facets'];
+   }
+  $config = array(
+    'fluke' => array(
+      'term' => 'Fluke'
+    ),
+    'learn' =>array(
+      'term' => 'Learn'
+    ),
+    'training' => array(
+      'term' => 'Training'
+    ),
+    'manuals' => array(
+      'bundle' => 'manual'
+    ),
+    'documents' =>array(
+      'bundle' => 'document'
+    ),
+    'software_downloads' =>array(
+      'bundle' => 'executable'
+    ),
+    'videos' => array(
+      'bundle' => 'video'
+    )
+  );
+  if (is_array($filters)) {
+    // Define array to hold filter keys and values.
+    $params = array();
+    // We always want nodes.
+    $params['entity_type'] = 'node';
+    // Loop through each filter and apply fiters as needed.
+    foreach ($filters as $filter_value) {
+      switch ($filter_value) {
+        case 'fluke':
+        case 'solutions':
+        case 'training':
+          // This uses the 'Fluke' term in URL Builder vocab, so we'll search both on
+          // the tid in im_field_url_builder.
+          $term_name = $config[$filter_value]['term'];
+          $term = taxonomy_get_term_by_name($term_name, 'url_builder');
+          $tid = array_keys($term)[0];
+          // Apply filters.
+          $params['im_vid_url_builder'][] = $tid;
+          break;
+        case 'products':
+        $params['bundle'][] = 'product_display';
+          break;
+        case 'manuals':
+        case 'documents':
+        case 'software_downloads':
+        case 'videos':
+          $bundle = $config[$filter_value]['bundle'];
+          $params['bundle'][] = $bundle;
+          break;
+        case 'demos':
+          // TODO: only add demos if video not already selected.
+          $params['bundle'][] = 'video';
+         $params['sm_vid_Video_Type'] = 'Demos';
+          break;
+      }
+    }
+
+    //TODO: Now put everything together in one call to addFilter().
+  /*$a = new SolrFilterSubQuery('AND');
+    $a->addFilter('bundle', '(article OR product_display)');
+    $a->addFilter("ss_language", $language->language);
+    $filter->addFilterSubQuery($a); */
+
+
+  }
+}
+
+/**
+ * Return the toc for a given path. If no path specified, the current url is used.
+ */
+function fluke_solr_404_check_from_path($original_path = NULL, $lang = NULL, $reset = FALSE) {
+
+    if(drupal_is_front_page()) {
+       return TRUE;
+    }
+    if (path_is_admin(current_path())) {
+        return TRUE;
+    }
+
+    $admin_page_ops = array(
+        'node',
+        'taxonomy',
+        'panels',
+        'admin'
+    );
+    if(empty($original_path)) {
+        $original_path = drupal_get_path_alias(current_path());
+    }
+    $paths = explode('/', $original_path);
+
+    $x = FALSE;
+    foreach($paths as $v){
+        if(in_array($v,$admin_page_ops)) {
+            $x = TRUE;
+            break;
+        }
+    }
+    if($x == TRUE) {
+        return TRUE;
+    }
+
+    if (!$lang) {
+        global $language;
+        $lang = $language->language;
+    }
+    if (!$original_path) {
+        $original_path = drupal_get_path_alias(NULL, $lang);
+    }
+    // Cache the links for later use
+    if($cached = cache_get('good-url-'.$original_path, 'cache'))  {
+        return TRUE;
+    }
+
+    if($cached = cache_set('bad-url-'.$original_path, 'cache')) {
+        return FALSE;
+    }
+
+    $parts = explode('/', 'fluke-ig/' . $original_path);
+
+    $parts = array_reverse($parts);
+    $path = json_encode($parts);
+    $path = str_replace('"', '\"', $path);
+
+    $filters['filters'] = array(
+        'ss_language' => $lang,
+    );
+    $filters['q'] = 'ss_path_alias_locale:"' . $original_path . '" OR sm_url_path_builder:"'. $path .'"';
+    $filters['rows'] = 1;
+
+    $query = fluke_solr_get_connection();
+    $query = fluke_solr_add_filters($query, $filters);
+    $response = fluke_solr_query($query);
+    if ($response->response->numFound > 0) {
+        cache_set('good-url-'.$original_path, $original_path);
+        return TRUE;
+    }
+    cache_set('bad-url-'.$original_path, $original_path);
+    return FALSE;
+}
+
+// This is a fallback function for individual download page
+/**
+Return a single index from path alias
+ **/
+function fluke_solr_get_item_by_path_alias($path_alias, $bundle = '', $entity_type = '') {
+    global $language;
+    $fields = '';
+    $options['ss_language'] = $language->language;
+    if(!empty($bundle)) {
+        $options['bundle'] = $bundle;
+    }
+    if(!empty($entity_type)) {
+        $options['entity_type'] = $entity_type;
+    }
+
+    // We will need to use ss_path_alias for cn local since solr does not query the path properly
+    if($language->language == 'cn') {
+        $solr_q = '(ss_path_alias:'.$path_alias.')';
+    } else {
+        $solr_q = '(ss_path_alias_locale:'.$path_alias.')';
+    }
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query,
+        array('q' => $solr_q,
+            'filters' => $options,
+            'fl' => $fields));
+
+    $response = fluke_solr_query($filters);
+    if ($response->response->numFound > 0) {
+        return $response->response->docs[0];
+    }
+}
+
+/**
+ * Returns the taxonomy term object given a name
+ * @param string $name
+ * @param string $bundle
+ * @param string $lang
+ * @return object term or false if no result found
+ */
+function fluke_solr_get_term_by_name($name, $bundle, $lang = FALSE) {
+    if (!$lang) {
+        global $language;
+        $lang = $language->language;
+    }
+
+    if ($cache = &drupal_static(__FUNCTION__)) {
+        if (!empty($cache[$name][$bundle][$lang])) {
+            return $cache[$name][$bundle][$lang];
+        }
+    }
+
+    $filters = array(
+        "label" => '"' . $name . '"',
+        "entity_type" => 'taxonomy_term',
+        "ss_language" => $lang,
+        "bundle" => $bundle,
+    );
+
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+    $response = fluke_solr_query($filters);
+
+    if (empty($response->response->docs[0])) {
+        return FALSE;
+    }
+
+    foreach ($response->response->docs as $doc) {
+        if (strtolower($doc->label) == strtolower($name)) {
+            $cache[$name][$bundle][$lang] = $doc;
+            return $doc;
+        }
+    }
+
+    return FALSE;
+}
+
+/**
+ * Returns the taxonomy terms for a given vocabulary
+ * @param string $name
+ * @param string $bundle
+ * @param string $lang
+ * @return object term or false if no result found
+ */
+
+function fluke_solr_load_taxonomy_terms_by_vocabulary($bundle, $params) {
+    global $language;
+
+    if ($cache = &drupal_static(__FUNCTION__)) {
+        if (!empty($cache[$bundle][$language->language])) {
+            return $cache[$bundle][$language->language];
+        }
+    }
+
+    $filters['filters'] = array();
+    if(is_array($params)) {
+        foreach ($params as $param => $value) {
+            if($param == 'sort') {
+                $filters['sort'] = $value;
+            } else {
+                $filters['filters'][$param] = $value;
+            }
+        }
+    }
+
+    $filters['rows'] = 1000;
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, $filters);
+    $response = fluke_solr_query($filters);
+    if (count($response->response->docs) < 1) {
+        return FALSE;
+    }
+
+    // Sort by content title
+    //stable_uasort($docs, '_igc_sort_content_title');
+
+    $docs = $response->response->docs;
+    $cache[$bundle][$language->language] = $docs;
+
+    return $docs;
+}
+
+function fluke_solr_validate_node_exists($content_path) {
+    global $language;
+    $filters['filters'] = array(
+        'ss_path_alias_locale' => $content_path,
+        'ss_language' => $language->language,
+        'entity_type' => 'node',
+    );
+
+    $filters['rows'] = 1;
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, $filters);
+    $response = fluke_solr_query($filters);
+
+    if (count($response->response->docs) > 0) {
+        return TRUE;
+    }
+    return FALSE;
+}

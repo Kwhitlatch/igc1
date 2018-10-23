@@ -1,0 +1,94 @@
+<?php
+
+function igcommerce_utility_primary_nav_alias_menu() {
+
+  $items['admin/urlbuilder/create-alias'] = array(
+    'title' => 'URL Builder Create Alias',
+    'page callback' => 'igcommerce_utility_primary_nav_alias_create',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/urlbuilder/fix-url-title'] = array(
+    'title' => 'Fix URL title',
+    'page callback' => 'igcommerce_utility_primary_nav_alias_fix',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+
+}
+
+
+function igcommerce_utility_primary_nav_alias_fix() {
+
+    $url_builder_vocav = taxonomy_vocabulary_machine_name_load('url_builder');
+    $url_builder_tree = taxonomy_get_tree($url_builder_vocav->vid, 0, NULL, TRUE);
+
+    $output = NULL;
+    $updated = 0;
+
+    foreach ($url_builder_tree as $url_builder) {
+
+
+     foreach ($url_builder->field_content_title as $lang => $title) {
+       $url_title_prepare = strtolower(str_replace(" ", "-", $title[0]['value']));
+       if (!isset($url_builder->field_url_title[$lang])) {
+          $url_builder->field_url_title[$lang][0]['value'] = $url_title_prepare;
+          $output .= "Set URL title for: " . $url_title_prepare;
+          taxonomy_term_save($url_builder);
+          watchdog("IGUtility", "Fixing URL title for : $lang -> $url_title_prepare");
+          $updated++;
+        }
+      }
+    }
+
+    watchdog("IGUtility", "Fixed $updated URL builder URL titles");
+
+    $output = "Repaired $updated URL builder URL titles";
+
+    return $output;
+
+}
+
+
+function igcommerce_utility_primary_nav_alias_create() {
+
+  $url_builder_vocav = taxonomy_vocabulary_machine_name_load('url_builder');
+  $url_builder_tree = taxonomy_get_tree($url_builder_vocav->vid, 0, NULL, TRUE);
+
+  //dpm($url_builder_tree, "Tree is");
+  $count = 0;
+
+  foreach ($url_builder_tree as $url_builder_item) {
+      $count++;
+     foreach ($url_builder_item->field_url_title as $lang => $title) {
+       $source = $url_builder_item->field_url_title['en-us'][0]['value'];
+       $alias  = $title[0]['value'];
+       //dpm("Source is: $source  Alias: $alias Language: $lang");
+//       igcommerce_utility_primary_nav_alias_create_path($source, $alias, $lang);
+   }
+   if ($count > 10) {
+      break;
+   }
+  }
+
+  return 'Done!';
+
+}
+
+
+function igcommerce_utility_primary_nav_alias_create_path($source, $alias, $lang) {
+
+  $path = array(
+    'source' => $source,
+    'alias'  => $alias,
+    'language' => $lang,
+  );
+
+  //dpm($path, "Creating path");
+
+   path_save($path);
+
+}

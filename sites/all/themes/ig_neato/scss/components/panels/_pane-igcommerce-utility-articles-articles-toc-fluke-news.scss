@@ -1,0 +1,140 @@
+// DP 2/28/18 - Pretty sure this is legacy content. Commenting out for now, probably delete this file later.
+//
+// New from Fluke TOC page. This page is created built with custom module igcommerce_utility_articles.fluke_news.inc
+// TODO: Remove the 2 page-node-# classes once offshore adds the new fluke-news-toc class.
+//
+//
+//body.page-node-12459, body.page-node-12458, .fluke-news-toc{
+//  // Featured article title margin below featured image
+//  h2.toc-article-related-resource-title{
+//    margin-top: $spacing-2;
+//  }
+//  // Top story title margin below top story image - half the size of featured title
+//  h3.toc-article-related-resource-title{
+//    margin-top: $spacing-1;
+//  }
+//  // Date and category for topic wrapper.
+//  .toc-feature-article-date-topic-wrapper{
+//    margin-top: $spacing-2;
+//    @include span-columns(12);
+//  }
+//  //Featured article at top of page 
+//  .pane-igcommerce-utility-articles-article-toc-featured-articles{
+//    @include outer-container;
+//      margin-bottom: $spacing-3;
+//    // Right - Feature Image 
+//    .toc-feature-article-image-wrapper{
+//      @include span-columns(12);
+//      @include media($desk){
+//        @include span-columns(5);
+//      }
+//    }
+//    // Left - Featured details
+//    .toc-feature-article-detail-wrapper{
+//      @include span-columns(12);
+//      @include media($desk){
+//        @include span-columns(7);
+//      }
+//    }
+//    // Featured article CTA
+//    .flukenews_learnmore{
+//      @include span-columns(12);
+//      @include button($color-primary, 1em);
+//      color: $black;
+//      @include media($desk){
+//        @include span-columns(4);
+//      }
+//    }   
+//  }
+//  // Right column - Top Stories
+//  .pane-igcommerce-utility-articles-article-toc-top-stories, 
+//  .pane-igcommerce-utility-articles-fluke-news-toc-top-stories{
+//    @include span-columns(12);
+//    @include media($desk){
+//      @include span-columns(8);
+//    }
+//    // TODO: Replace h2 with h3 in the pane.
+//    h2.pane-title {
+//      @extend h3;
+//    }
+//    // Right Column - Top story wrapper
+//    .toc-feature-article-wrapper{
+//      @include outer-container;
+//      border-bottom: 1px solid $gray-c;
+//      padding: $spacing-1 0;
+//      margin-right: $spacing-2;
+//      &:last-of-type{
+//        border-bottom: none;
+//      }
+//      &:first-of-type{
+//        padding: 0 0 $spacing-1 ;
+//      }    
+//      .toc-feature-article-image-wrapper{
+//        @include span-columns(3);
+//        @include media($desk){
+//          @include span-columns(5);
+//        }
+//        }
+//      .toc-feature-article-detail-wrapper{
+//        @include span-columns(9);
+//        @include media($desk){
+//          @include span-columns(7);
+//        }
+//      }
+//    }
+//  }
+//  // Left Column - Survey CTA
+//  .btn-survey{
+//    @include span-columns(12);
+//    @include button($action-color, 1em);
+//    margin: 0.75rem 0 5.5rem;
+//  }
+//  //Cool links - Left column position 1
+//  .pane-igcommerce-utility-articles-article-flukenews-cool-links{
+//    @include span-columns(12);
+//    display:none; // Section should be 
+//    @include media($desk){
+//      @include span-columns(4);
+//      margin-right: 0;
+//      margin-bottom: $spacing-2;
+//    }
+//  }
+//  //We want to hear from you - left column position 2
+//  .pane-igcommerce-utility-articles-article-flukenews-surveylink{
+//    @include span-columns(12);
+//    display:none;
+//    @include media($desk){
+//      @include span-columns(4);
+//      margin-right: 0;
+//    }
+//  }
+//  //Congrats - Left Column Position 3
+//  //Recent Stories - Footer area position 1
+//  .pane-igcommerce-utility-articles-article-toc-recent-stories{
+//    margin-top: $spacing-2;
+//    @include span-columns(12);
+//    .toc-feature-article-wrapper{
+//    @include span-columns(6);
+//    min-height: initial;
+//    &:nth-of-type(2){
+//      margin-right: 0;
+//    }
+//    @include media($desk){
+//      @include span-columns(3);
+//    }
+//    }  
+//    // Date and category for topic wrapper. - Less margin in recent stories than above.
+//    .toc-feature-article-date-topic-wrapper{
+//      margin-top: $spacing-1;
+//      @include span-columns(12);
+//    }
+//  }
+//  //Recommended products - Footer area position 2
+//  .pane-igcommerce-utility-articles-articles-toc-url-products-solr{
+//    margin-top: $spacing-2;
+//    @include span-columns(12);
+//  }
+//  .pane-igcommerce-utility-articles-articles-toc-url-resources-solr{
+//    @include span-columns(12);
+//  }
+//}

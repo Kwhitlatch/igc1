@@ -1,0 +1,2713 @@
+<?php
+
+/**
+ * @file This is a module for handling all the stuffs related to articles.
+ *
+ */
+/**
+ *
+ *  Utility functions for Articles
+ *
+ * */
+function igcommerce_utility_articles_permission() {
+  return array(
+    'administer igcommerce parameters' => array(
+      'title' => t('Administer igcommerce parameters'),
+      'description' => t('Update various custom settings for igcommerce.'),
+    ),
+  );
+}
+
+/*
+ * hook_menu()
+ */
+
+function igcommerce_utility_articles_menu() {
+
+  $items = array();
+
+  $items['admin/settings/igcommerce'] = array(
+    'title' => 'IG Config',
+    'description' => 'Various configuration options that are stored in the database',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('igcommerce_utility_articles_admin'),
+    'access arguments' => array('administer igcommerce parameters'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function igcommerce_utility_articles_admin() {
+
+  $form = array();
+
+  $form['default_banner_image'] = array(
+    '#type' => 'textfield',
+    '#title' => 'The default banner image URL',
+    '#description' => t('The URL to the default banner image in the DAM'),
+    '#default_value' => variable_get('default_banner_image', '//data.fluke.com/sites/default/files/solution-oil-gas-banner_placeholder-1920x290.jpg'),
+    '#required' => TRUE,
+  );
+
+  $form['s3_bucket_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'The S3 bucket url',
+    '#description' => t('The S3 bucket URL for assets: "http://dam-assets.fluke.com.s3.amazonaws.com/s3fs-public".'),
+    '#default_value' => variable_get('s3_bucket_url', 'http://dam-assets.fluke.com.s3.amazonaws.com/s3fs-public'),
+    '#required' => TRUE,
+  );
+
+  $form['dam_default_files_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Dam files url',
+    '#description' => t('DAM files assets url "http://data.fluke.com/sites/default/files".'),
+    '#default_value' => variable_get('dam_default_files_url', 'http://data.fluke.com/sites/default/files'),
+    '#required' => TRUE,
+  );
+
+  $form['no_image_found_desktop'] = array(
+    '#type' => 'textfield',
+    '#title' => 'No image found for desktop resolution file name',
+    '#description' => t('The name of the no image found image for desktops that is stored in the theme images directory'),
+    '#default_value' => variable_get('no_image_found_desktop', 'no_image_available.jpg'),
+    '#required' => TRUE,
+  );
+
+  $form['no_image_found_tablet'] = array(
+    '#type' => 'textfield',
+    '#title' => 'No image found for tablet resolution file name',
+    '#description' => t('The name of the no image found image for tablets that is stored in the theme images directory'),
+    '#default_value' => variable_get('no_image_found_tablet', 'no_image_available.jpg'),
+    '#required' => TRUE,
+  );
+
+  $form['no_image_found_mobile'] = array(
+    '#type' => 'textfield',
+    '#title' => 'No image found for mobile resolution file name',
+    '#description' => t('The name of the no image found image for mobile that is stored in the theme images directory'),
+    '#default_value' => variable_get('no_image_found_mobile', 'no_image_available.jpg'),
+    '#required' => TRUE,
+  );
+
+  $form['large_desktop_min_width'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Large desktop minimum pixel width (without the px)',
+    '#description' => t('Min width for large desktops, in pixels, without the px'),
+    '#default_value' => variable_get('large_desktop_min_width', 1280),
+    '#required' => TRUE,
+  );
+
+  $form['medium_desktop_max_width'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Medium desktop maximum pixel width (without the px)',
+    '#description' => t('Max width for medium desktops, in pixels, without the px'),
+    '#default_value' => variable_get('medium_desktop_max_width', 1279),
+    '#required' => TRUE,
+  );
+
+  $form['medium_desktop_min_width'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Medium desktop minimum pixel width (without the px)',
+    '#description' => t('Min width for medium desktops, in pixels, without the px'),
+    '#default_value' => variable_get('medium_desktop_min_width', 1033),
+    '#required' => TRUE,
+  );
+
+  $form['tablet_max_width'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Tablet maximum pixel width (without the px)',
+    '#description' => t('Max width for tablets, in pixels, without the px'),
+    '#default_value' => variable_get('tablet_max_width', 1032),
+    '#required' => TRUE,
+  );
+
+  $form['tablet_min_width'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Tablet minimum pixel width (without the px)',
+    '#description' => t('Min width for tablets, in pixels, without the px'),
+    '#default_value' => variable_get('tablet_min_width', 768),
+    '#required' => TRUE,
+  );
+
+  $form['mobile_max_width'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Mobile maximum pixel width (without the px)',
+    '#description' => t('Max width for mobile, in pixels, witout the px)'),
+    '#default_value' => variable_get('mobile_max_width', 767),
+    '#required' => TRUE,
+  );
+
+  $form['site_opco'] = array(
+    '#type' => 'select',
+    '#title' => t('Select Opco for this Site'),
+    '#multiple' => FALSE,
+    '#options' => igcommerce_utility_articles_get_site_opco(),
+    '#required' => TRUE,
+    '#default_value' => variable_get('site_opco'),
+  );
+
+  $form['fluke_dam_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Fluke DAM Settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['fluke_dam_settings']['fluke_dam_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Service API URL for connecting with DAM',
+    '#description' => t('DAM Widget uses this service url to connect to DAM for searching assets.'),
+    '#default_value' => variable_get('fluke_dam_url', '//data.fluke.com'),
+    '#required' => TRUE,
+  );
+
+  $form['fluke_dam_settings']['fluke_dam_endpoint'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Service endpoint on DAM',
+    '#description' => t('Service endpoint on DAM used to connect with web service.'),
+    '#default_value' => variable_get('fluke_dam_endpoint', 'api'),
+    '#required' => TRUE,
+  );
+
+  $form['fluke_dam_settings']['fluke_dam_apache_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Apache Solr URL to connect DAM to retrieve Manuals.',
+    '#description' => t('Just put apache solr url to connct to retrieve DAM asset to get manuals for language.)'),
+    '#default_value' => variable_get('fluke_dam_apache_url', 'https://fluke-master1.opensolr.com/solr/Fluke_DAM_Production'),
+    '#required' => TRUE,
+  );
+
+  $form['instrument_security_pages'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Instrument Security Page Settings'),
+    '#weight' => 5,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['instrument_security_pages']['instrument_sec_email'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Instrument Security Admin Email',
+    '#description' => t('Email address for instrument security admin to receive missing models info.'),
+    '#default_value' => variable_get('instrument_sec_email', 'tpubs@fluke.com'),
+    '#required' => TRUE,
+  );
+
+  $form['instrument_security_pages']['instrument_sec_categories'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Instrument Security Categories',
+    '#description' => t('Comma separated manual categories to list in dropdown.'),
+    '#default_value' => variable_get('instrument_sec_categories', 'Statement of Memory Volatility'),
+    '#required' => TRUE,
+  );
+  $form['igonore_term_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Ignore categories under Footer term while creating url aliases'),
+    '#weight' => 6,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['igonore_term_settings']['igonore_term_names'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Term Name',
+    '#description' => t('Comma separated Term name not to create aliases .Applicable to only Footer and it category terms.'),
+    '#default_value' => variable_get('igonore_term_names', ''),
+    '#required' => TRUE,
+  );
+
+  $form['training_page_terms'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Training Listing Page Facets'),
+    '#weight' => 5,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $asset_categories_options = igcommerce_utility_articles_asset_categories_options();
+
+  $form['training_page_terms']['asset_categories_items'] = array(
+    '#title' => t(''),
+    '#type' => 'checkboxes',
+    '#description' => t(''),
+    '#options' => $asset_categories_options,
+    '#default_value' => variable_get('asset_categories_items', array())
+  );
+
+  return system_settings_form($form);
+}
+
+// Get opco terms list for setting site opco
+function igcommerce_utility_articles_get_site_opco() {
+  $machine_name = 'opco';
+  $vid = taxonomy_vocabulary_machine_name_load($machine_name)->vid;
+  $options_source = taxonomy_get_tree($vid);
+  $options = array('0' => '--All--');
+
+  foreach ($options_source as $item) {
+    $key = $item->tid;
+    $value = $item->name;
+    $options[$key] = $value;
+  }
+  return $options;
+}
+
+/**
+ * Helper function to populate the settings page with Asset Category taxonomy terms
+ * so that we can select what asset category we need to display in Training Library
+ * Pages.
+ *
+ * @return array The asset categories options.
+ */
+function igcommerce_utility_articles_asset_categories_options() {
+
+  global $language;
+  $keyword =  NUll;
+  $parameter = array();
+  $filter = array();
+  $map = array();
+
+  $lang = $language->language;
+  $all_languages = array();
+  $language_to_get = explode('-', $lang);
+  $all_languages = array_unique($language_to_get);
+  $all_languages[] = 'en';
+  $lang_filter = implode(' OR ', $all_languages);
+
+  $keyword = "bundle:asset_category";
+  $parameter[]['fl'] = 'ss_field_content_title ';
+  $parameter[]['fl'] = 'label';
+  $parameter[]['fl'] = 'entity_id';
+  $parameter[]['rows'] = 1000;
+  $parameter[]['fq'] = 'ss_language:(' . $lang_filter . ')';
+
+  $data = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+
+  if (!empty($data->response->docs[0])) {
+    foreach ($data->response->docs as $key => $value) {
+      if (isset($value->ss_field_content_title) && !empty($value->ss_field_content_title)) {
+        $map[$value->entity_id] = $value->ss_field_content_title;
+      }
+      else {
+        $map[$value->entity_id] = $value->label;
+      }
+    }
+    asort($map);
+    return $map;
+  }
+  return $map;
+}
+
+/* * *
+ * IGCommerce Article custom blocks
+ * * */
+
+function igcommerce_utility_articles_block_info() {
+
+  $blocks['articles_toc_banner'] = array(
+    'info' => t('Article TOC - Banner Image'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_h1'] = array(
+    'info' => t('Article TOC - Display Title / H1'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_desc'] = array(
+    'info' => t('Article TOC -  Description / Summary'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_category_listing'] = array(
+    'info' => t('Article TOC - Category - Listing'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_sub_rel_products'] = array(
+    'info' => t('Article TOC - Subc Rel Products'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_sub_rel_articles'] = array(
+    'info' => t('Article TOC - Sub Rel Articles'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_subcategory_header'] = array(
+    'info' => t('Article TOC - Subcategory - Header'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_nav'] = array(
+    'info' => t('Article TOC - Nav'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_articles'] = array(
+    'info' => t('Article TOC - Articles'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_url_resources'] = array(
+    'info' => t('Article TOC - URL - Resources'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_url_products'] = array(
+    'info' => t('Article TOC - URL - Products'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  // Taxonomy "url_builder" recommanded resources.
+  $blocks['articles_taxo_url_builder_resources'] = array(
+    'info' => t('Article Taxo-URL Builder-Resources'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  // Taxonomy "url_builder" recommanded product.
+  $blocks['articles_taxo_url_builder_product'] = array(
+    'info' => t('Article Taxo-URL Builder-Products'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_solr_featured'] = array(
+    'info' => t('Article Solr - Featured'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  // Block build using solr data
+  $blocks['articles_toc_banner_solr'] = array(
+    'info' => t('Article TOC SOLR - Banner Image'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['articles_toc_nav_solr'] = array(
+    'info' => t('Article TOC SOLR  - Nav'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['articles_toc_h1_solr'] = array(
+    'info' => t('Article TOC SOLR - Display Title / H1'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_desc_solr'] = array(
+    'info' => t('Article TOC Solr -  Description / Summary'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['articles_toc_category_listing_solr'] = array(
+    'info' => t('Article TOC SOLR - Category - Listing'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_url_resources_solr'] = array(
+    'info' => t('Article TOC SOLR - URL - Resources'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_toc_url_products_solr'] = array(
+    'info' => t('Article TOC SOLR - URL - Products'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['articles_toc_sub_rel_articles_solr'] = array(
+    'info' => t('Article TOC SOLR - Sub Rel Articles'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['promotions'] = array(
+    'info' => t('promotions'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['articles_solr_desc'] = array(
+    'info' => t('Article SOLR - Description / Summary'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['articles_solr_title'] = array(
+    'info' => t('Article SOLR - Display Title / H1'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['articles_solr_banner'] = array(
+    'info' => t('Article SOLR - Banner'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_solr_web_card_popup_article'] = array(
+    'info' => t('Article SOLR - Webcard Popup For Article'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['homepage_featured_articles'] = array(
+    'info' => t('Hompage - Featured Articles'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_solr_subtitle'] = array(
+    'info' => t('Article SOLR - SubTitle'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_solr_topic'] = array(
+    'info' => t('Article SOLR - Topic'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_solr_recent_article'] = array(
+    'info' => t('Article SOLR - Recent Article'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['articles_solr_recommended_product'] = array(
+    'info' => t('Article SOLR - Recommend Product'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['article_toc_featured_articles'] = array(
+    'info' => t('Article TOC - Featured Articles'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['article_toc_top_stories'] = array(
+    'info' => t('Article TOC - Top Stories'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['article_toc_recent_stories'] = array(
+    'info' => t('Article TOC - Recent Stories'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['article_flukenews_cool_links'] = array(
+    'info' => t('Article Flukenews - Cool Links'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['fluke_news_toc_top_stories'] = array(
+    'info' => t('Fluke News - TOC Top Stories'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['article_header_image'] = array(
+    'info' => t('Article SOLR - Header Image'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['article_flukenews_surveylink'] = array(
+    'info' => t('Article Flukenews - Survey Links'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['article_product_details'] = array(
+    'info' => t('Article Products - Details'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+
+  $blocks['article_flukenews_specialevent'] = array(
+    'info' => t('Flukenews TOC - Special Event'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  return $blocks;
+}
+
+function igcommerce_utility_articles_block_view($delta = NULL) {
+
+  switch ($delta) {
+
+    case 'articles_toc_banner':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_toc_banner();
+      break;
+
+    case 'articles_toc_h1':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_toc_h1();
+      break;
+
+    case 'articles_toc_desc':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_toc_description();
+      break;
+
+    case 'articles_toc_sub_rel_products':
+      $block['subject'] = "Related Products";
+      $block['content'] = igcommerce_utility_articles_toc_sub_rel_products();
+      break;
+
+    case 'articles_toc_sub_rel_articles':
+      $block['subject'] = "Related Articles";
+      $block['content'] = igcommerce_utility_articles_toc_sub_rel_articles();
+      break;
+
+    case 'articles_toc_nav':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_toc_left_nav');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_build_category_toc_nav();
+      break;
+
+    case 'articles_toc_articles':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_build_category_toc_articles();
+      break;
+
+    case 'articles_toc_url_resources':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_build_toc_url_resources();
+      break;
+
+    case 'articles_toc_url_products':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_build_toc_url_products();
+      break;
+
+    case 'articles_toc_category_listing':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_category_toc_listing();
+      break;
+
+    case 'articles_solr_featured':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_featured_listing();
+      break;
+
+    //Call to solr functions
+    case 'articles_solr_title':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_title();
+      break;
+    case 'articles_toc_banner_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_toc_banner();
+      break;
+
+    case 'articles_toc_h1_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_toc_h1();
+      break;
+
+    case 'articles_toc_desc_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_toc_description();
+      break;
+
+    case 'articles_toc_nav_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_build_category_toc_nav();
+      break;
+
+    case 'articles_toc_category_listing_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_category_toc_listing();
+      break;
+
+    case 'articles_toc_url_products_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_build_toc_url_products();
+      break;
+
+    case 'articles_toc_url_resources_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_build_toc_url_resources();
+      break;
+
+    case 'articles_toc_sub_rel_articles_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "Related Articles";
+      $block['content'] = igcommerce_utility_articles_solr_toc_sub_rel_articles();
+      break;
+
+    case 'articles_toc_articles_solr':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_build_category_toc_articles();
+      break;
+
+    case 'articles_solr_banner':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_banner();
+      break;
+
+    case 'articles_solr_desc':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_desc();
+      break;
+    case 'articles_solr_subtitle':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_subtitle();
+      break;
+
+    case 'articles_solr_topic':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_topic();
+      break;
+
+    case 'articles_solr_recent_article':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_recent_article();
+      break;
+
+    case 'articles_solr_recommended_product':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_fluke_news_recommended_product();
+      break;
+
+    case 'article_header_image':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_solr_header_image();
+      break;
+
+    case 'articles_solr_web_card_popup_article':
+      $arg = request_uri();
+      $request_url = $_SERVER['HTTP_REFERER'];
+      // If webcard url directly hit then we need to created request url from
+      // current url.
+      $request_url_search = empty($request_url) ? '' : explode('/', $request_url);
+      if (empty($request_url) || in_array('search', $request_url_search)) {
+        $request_url = ltrim(request_uri(), '/');
+        $previous_path = explode('/', $request_url);
+        array_shift($previous_path);
+        array_pop($previous_path);
+        $path = implode('/', $previous_path);
+        $request_url = url($path, array('absolute' => TRUE, 'alias' => TRUE ));
+      }
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.webcard_article');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_webcard_article_detail_popup_details($arg, $request_url);
+
+      break;
+
+    // Taxonomy "url_builder" recommanded resource.
+    case 'articles_taxo_url_builder_resources':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.url_builder_taxonomy');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_url_builder_recommanded_resources();
+      break;
+
+    // Taxonomy "url_builder" recommanded product.
+    case 'articles_taxo_url_builder_product':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.url_builder_taxonomy');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_url_builder_recommanded_product();
+      break;
+
+    case 'promotions':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_promotions();
+      break;
+
+    case 'homepage_featured_articles':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_hompage_featured_articles();
+      break;
+
+    case 'article_toc_featured_articles':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_toc_featured_articles();
+      break;
+
+    case 'article_toc_top_stories':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_toc_top_stories();
+      break;
+
+    case 'article_toc_recent_stories':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_toc_recent_stories();
+      break;
+
+
+    case 'article_flukenews_cool_links':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_fluke_news_cool_links();
+      break;
+
+    case 'fluke_news_toc_top_stories':
+      $arg = drupal_get_path_alias();
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_fluke_news_toc_top_stories($arg);
+      break;
+
+    case 'article_flukenews_surveylink':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_fluke_news_surveylink();
+      break;
+
+    case 'article_product_details':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles_solr');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_product_details();
+      break;
+
+    case 'article_flukenews_specialevent':
+      module_load_include('inc', 'igcommerce_utility_articles', 'includes/igcommerce_utility_articles.fluke_news');
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_articles_fluke_news_specialevent();
+      break;
+
+    default:
+      $block = array();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ *
+ *  This section generates the header information for all TOCs
+ *  whether they are created through the URL builder taxonomy
+ *  or from TOC content types.
+ *
+ *  The first check for all three elements is looking at the URL
+ *  builder taxonomy to see if the indicator on the term says to use the information
+ *  stored in the URL builder term, or to use the information from the
+ *  TOC content type.  The remainder of the code per block pulls the correct
+ *  information and renders it as block output.
+ *
+ */
+
+/**
+ * Render the appropriate Banner for TOCs
+ */
+function igcommerce_utility_articles_toc_banner() {
+  global $language;
+  $output = NULL;
+  $desktop_banner_image_uri = NULL;
+  $tablet_banner_image_uri = NULL;
+  $mobile_banner_image_uri = NULL;
+  $desktop_image = FALSE;
+  $tablet_image = FALSE;
+  $mobile_image = FALSE;
+  $alt = NULL;
+
+  $term = igcommerce_utility_articles_get_term();
+  // This should never be true, but just in case
+  //if (!$term) {
+  //  return $output;
+  //}
+  // if there is a banner on the term associated with this page then load the URLs.
+  // If not, the pattern in the else will be executed, looking for images in the
+  // parent terms of this pages term.
+  if (isset($term->field_header_banner_vgr) && sizeof($term->field_header_banner_vgr) > 0) {
+    $banners = entity_load('field_collection_item', array($term->field_header_banner_vgr['und'][0]['value']));
+    foreach ($banners as $banner) {
+      if (sizeof($banner->field_header_banner_image_uri) > 0) {
+        $desktop_banner_image_uri = $banner->field_header_banner_image_uri['und'][0]['url'];
+      }
+      if (sizeof($banner->field_header_banner_image_tb_uri) > 0) {
+        $tablet_banner_image_uri = $banner->field_header_banner_image_tb_uri['und'][0]['url'];
+      }
+      if (sizeof($banner->field_header_banner_image_mbl_ur) > 0) {
+        $mobile_banner_image_uri = $banner->field_header_banner_image_mbl_ur['und'][0]['url'];
+      }
+    }
+    if (!is_null($desktop_banner_image_uri) ||
+        !is_null($tablet_banner_image_uri) ||
+        !is_null($mobile_banner_image_uri)) {
+      if (!is_null($desktop_banner_image_uri)) {
+        $desktop_image = $desktop_banner_image_uri;
+      }
+      if (!is_null($tablet_banner_image_uri)) {
+        $tablet_image = $tablet_banner_image_uri;
+      }
+      if (!is_null($mobile_banner_image_uri)) {
+        $tablet_image = $mobile_banner_image_uri;
+      }
+      if (sizeof($term->field_url_title[$language->language]) > 0) {
+        $alt = $term->field_url_title[$language->language][0]['value'];
+      }
+    }
+  }
+  else {
+    $parents = $term ? taxonomy_get_parents_all($term->tid) : NULL;
+
+    // if there weren't any parents then display the default banner.
+    if (sizeof($parents) < 1) {
+      $default_banner = variable_get('default_banner_image', FALSE);
+      $alt = isset($term->field_url_title[$language->language][0]['value']) ? $term->field_url_title[$language->language][0]['value'] : '';
+      $output = igcommerce_utility_determine_banner_image($default_banner, $default_banner, $default_banner, $alt);
+      return $output;
+    }
+
+    $parent_banner = FALSE;
+    foreach ($parents as $parent) {
+      if (!$parent_banner) {
+
+        if (sizeof($parent->field_header_banner_vgr) > 0) {
+          $banners = entity_load('field_collection_item', array($parent->field_header_banner_vgr['und'][0]['value']));
+
+          foreach ($banners as $banner) {
+            if (sizeof($banner->field_header_banner_image_uri) > 0) {
+              $desktop_image = $banner->field_header_banner_image_uri['und'][0]['url'];
+            }
+            if (sizeof($banner->field_header_banner_image_tb_uri) > 0) {
+              $tablet_image = $banner->field_header_banner_image_tb_uri['und'][0]['url'];
+            }
+            if (sizeof($banner->field_header_banner_image_mbl_ur) > 0) {
+              $mobile_image = $banner->field_header_banner_image_mbl_ur['und'][0]['url'];
+            }
+          }
+        }
+        else {
+          if (!is_null($desktop_banner_image_uri) ||
+              !is_null($tablet_banner_image_uri) ||
+              !is_null($mobile_banner_image_uri)) {
+            if (!is_null($desktop_banner_image_uri)) {
+              $desktop_image = $desktop_banner_image_uri;
+            }
+            if (!is_null($tablet_banner_image_uri)) {
+              $tablet_image = $tablet_banner_image_uri;
+            }
+            if (!is_null($mobile_banner_image_uri)) {
+              $tablet_image = $mobile_banner_image_uri;
+            }
+            if (sizeof($term->field_url_title[$language->language]) > 0) {
+              $alt = $term->field_url_title[$language->language][0]['value'];
+            }
+            $parent_banner = TRUE;
+          }
+        }
+      }
+    }
+  }
+  $output = igcommerce_utility_determine_banner_image($desktop_image, $tablet_image, $mobile_image, $alt);
+
+  return $output;
+}
+
+/**
+ * Render the appropriate Display Title as an H1 for TOCs
+ */
+function igcommerce_utility_articles_toc_h1() {
+
+  global $language;
+  $output = NULL;
+  $title = '';
+  $term = igcommerce_utility_articles_get_term();
+
+  // This should never be true, but just in case
+  if (!$term) {
+    return $output;
+  }
+
+  $url_parts = explode('/', $_GET['q']);
+
+  if ($url_parts[0] == 'node') {
+    $node = node_load(array_pop($url_parts));
+    if (isset($node->field_h1_title[$language->language][0]['value'])) {
+      $title = $node->field_h1_title[$language->language][0]['value'];
+    }
+    else {
+      if (isset($node->field_content_title[$language->language][0]['value'])) {
+        $title = $node->field_content_title[$language->language][0]['value'];
+      }
+    }
+    $output = "<h1>" . $title . "</h1>";
+  }
+  else {
+    if (isset($term->field_h1_title[$language->language][0]['value'])) {
+      $title = $term->field_h1_title[$language->language][0]['value'];
+    }
+    else {
+      if (isset($term->field_content_title[$language->language][0]['value'])) {
+        $title = $term->field_content_title[$language->language][0]['value'];
+      }
+    }
+    $output = "<h1>" . $title . "</h1>";
+  }
+
+  return $output;
+}
+
+/**
+ * Output the appropriate Description for TOCs
+ */
+function igcommerce_utility_articles_toc_description() {
+
+  global $language;
+  $output = NULL;
+
+  $term = igcommerce_utility_articles_get_term();
+
+  // This should never be true, but just in case
+  if (!$term) {
+    return $output;
+  }
+
+  $url_parts = explode('/', $_GET['q']);
+
+  if ($url_parts[0] == 'node') {
+    $node = node_load(array_pop($url_parts));
+    if (sizeof($node->description_field) > 0) {
+      if (isset($node->description_field[$language->language])) {
+        $output = $node->description_field[$language->language][0]['value'];
+      }
+      else {
+        $output = $node->description_field[LANGUAGE_NONE][0]['value'];
+      }
+    }
+  }
+  else {
+    if (sizeof($term->description_field) > 0) {
+      if (isset($term->description_field[$language->language])) {
+        $output = $term->description_field[$language->language][0]['value'];
+      }
+      if (isset($term->description_field[LANGUAGE_NONE][0]['value'])) {
+        $output = $term->description_field[LANGUAGE_NONE][0]['value'];
+      }
+    }
+  }
+
+  return $output;
+}
+
+function igcommerce_utility_articles_get_term_parent() {
+
+  $url_parts = explode('/', $_GET['q']);
+
+  // determine whether this is a node based TOC or a URL taxonomy term based
+  // TOC and grab the correct category
+  if ($url_parts[0] === 'node') {
+    $alias = drupal_get_path_alias($_GET['q']);
+    $alias_parts = explode("/", $alias);
+    $category = array_pop($alias_parts);
+    $parent = array_pop($alias_parts);
+  }
+  else {
+    $category = array_pop($url_parts);
+    $parent = array_pop($url_parts);
+  }
+
+  $tid = NULL;
+
+  $query = new EntityFieldQuery();
+  $query
+      ->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', 'url_builder')
+      ->fieldCondition('field_url_title', 'value', $category, '=');
+
+  $term_results = $query->execute();
+
+  if (!$term_results || sizeof($term_results) < 1) {
+    return FALSE;
+  }
+
+  $query = new EntityFieldQuery();
+  $query
+      ->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', 'url_builder')
+      ->fieldCondition('field_url_title', 'value', $parent, '=');
+
+  $parent_results = $query->execute();
+
+  if (isset($parent_results['taxonomy_term'])) {
+    $true_parent = array_keys($parent_results['taxonomy_term']);
+    $parent_id = $true_parent[0];
+  }
+
+  foreach ($term_results['taxonomy_term'] as $key => $value) {
+    $temp_parent = array_keys(taxonomy_get_parents($key));
+
+    if (!isset($parent_results['taxonomy_term']) || $temp_parent[0] == $parent_id) {
+      $tid = $parent_id;
+    }
+  }
+
+  $term = taxonomy_term_load($tid);
+
+  return $term;
+}
+
+function igcommerce_utility_articles_get_term() {
+
+  $url_parts = explode('/', $_GET['q']);
+
+  // determine whether this is a node based TOC or a URL taxonomy term based
+  // TOC and grab the correct category
+  if ($url_parts[0] === 'node') {
+    //adding english locale as default alias as for taxonomy we get english url only for any locale
+    //$alias = drupal_get_path_alias($_GET['q']);
+    $alias = drupal_get_path_alias($_GET['q'], 'en-us');
+    $alias_parts = explode("/", $alias);
+
+    $category = array_pop($alias_parts);
+    $term_results = igcommerce_utility_articles_term_get_term($category);
+
+    $parent = array_pop($alias_parts);
+      }
+  else {
+    $category = array_pop($url_parts);
+    $term_results = igcommerce_utility_articles_term_get_term($category);
+
+    //if $term_results is empty, it means that this is a content url part.
+    //pop it and take its parent to get the taxonomy term
+    if (empty($term_results)) {
+      $category = array_pop($url_parts);
+      $term_results = igcommerce_utility_articles_term_get_term($category);
+    }
+    $parent = array_pop($url_parts);
+  }
+
+  $tid = NULL;
+
+//  $query = new EntityFieldQuery();
+//  $query
+//      ->entityCondition('entity_type', 'taxonomy_term')
+//      ->entityCondition('bundle', 'url_builder')
+//      ->fieldCondition('field_url_title', 'value', $category, '=');
+//
+//  $term_results = $query->execute();
+
+  if (!$term_results || sizeof($term_results) < 1) {
+    return FALSE;
+  }
+
+  foreach ($term_results['taxonomy_term'] as $key => $value) {
+    //check if parent is empty(i.e. we are at the top and there is no more parent) then set the current term id as tid
+    if (!empty($parent)) {
+      //check if term's parent url title matches with the current parent
+      if ($value->parent_term_url_title == $parent) {
+        $tid = $value->tid;
+        break;
+      }
+    }
+    else {
+      $tid = $value->tid;
+      break;
+    }
+  }
+
+  //commented below line, ajana - 21feb2017
+  //$parent_results = igcommerce_utility_articles_term_get_term($parent);
+  /*previously commented as of 21feb2017
+//  $query = new EntityFieldQuery();
+//  $query
+//      ->entityCondition('entity_type', 'taxonomy_term')
+//      ->entityCondition('bundle', 'url_builder')
+//      ->fieldCondition('field_url_title', 'value', $parent, '=');
+//
+//  $parent_results = $query->execute();
+  */
+
+  /*commented below block on 21feb2017 - ajana
+  if (isset($parent_results['taxonomy_term'])) {
+    $true_parent = array_keys($parent_results['taxonomy_term']);
+    $parent_id = $true_parent[0];
+  }
+
+  foreach ($term_results['taxonomy_term'] as $key => $value) {
+    $temp_parent = array_keys(taxonomy_get_parents($key));
+
+    if (!isset($parent_results['taxonomy_term']) || $temp_parent[0] == $parent_id) {
+      $tid = $key;
+    }
+  }*/
+
+  $term = taxonomy_term_load($tid);
+
+  return $term;
+}
+
+function igcommerce_utility_articles_term_get_term($category) {
+  $query = new EntityFieldQuery();
+  $query
+      ->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', 'url_builder')
+      ->fieldCondition('field_url_title', 'value', $category, '=');
+  $term_results = $query->execute();
+
+  //get parent url title for every item and add it to results($term_results) array
+  if (isset($term_results['taxonomy_term'])) {
+    foreach ($term_results['taxonomy_term'] as $key => $value) {
+      $txn_parents = taxonomy_get_parents($key);
+      $term_results['taxonomy_term'][$key]->parent_term_url_title = $txn_parents[key($txn_parents)]->field_url_title['en-us'][0]['value'];
+    }
+  }
+
+  return $term_results;
+}
+
+/**
+ * Determine what type of TOC this is -- one built from the URL builder taxonony
+ * term or one from the TOC content type
+ */
+function igcommerce_utility_articles_get_toc_type($term) {
+
+  $toc_type = FALSE;
+
+  if (sizeof($term->field_toc_type) > 0) {
+    if ($term->field_toc_type['und'][0]['value'] == 1) {
+      $toc_type = "URL";
+    }
+    else {
+      $toc_type = "TOC";
+    }
+  }
+  else {
+    $toc_type = "TOC";
+  }
+
+  return $toc_type;
+}
+
+function igcommerce_utility_articles_build_toc_url_resources() {
+  global $language;
+  $output = NULL;
+  $tid = NULL;
+
+  $url_parts = explode('/', $_GET['q']);
+  $category = array_pop($url_parts);
+
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', 'url_builder')
+      ->fieldCondition('field_url_title', 'value', $category, '=');
+
+  $results = $query->execute();
+
+  if (!$results || sizeof($results) < 1) {
+    return $output;
+  }
+
+  foreach ($results['taxonomy_term'] as $key => $value) {
+    $tid = $key;
+  }
+
+  if (is_null($tid)) {
+    return $output;
+  }
+
+  $term = taxonomy_term_load($tid);
+
+  if (isset($term->field_recommended_resources_coll) && sizeof($term->field_recommended_resources_coll) > 0) {
+    $output .= "<h3 class='pane-title'>Recommended resources</h3>";
+    foreach ($term->field_recommended_resources_coll['und'] as $resources) {
+      $resource_details = entity_load('field_collection_item', array($resources['value']));
+      foreach ($resource_details as $resource) {
+        if (isset($resource->field_related_articles['und'])) {
+          $node = node_load($resource->field_related_articles['und'][0]['target_id']);
+          if ($node) {
+            $node_path_alias = $language->language . '/' . drupal_get_path_alias("node/" . $node->nid);
+            $output .= "<div class='toc-article-related-resource-wrapper'>";
+            $output .= "<div class='card'>";
+            $output .= "<h5 class='toc-article-related-resource-title'>";
+            $output .= '<a href="/' . $node_path_alias . '" alt="' . $node->field_content_title[$language->language][0]['value'] . '">';
+            $output .= $node->field_content_title[$language->language][0]['value'];
+            $output .= "</a>";
+            $output .= "</h5>";
+            $output .= "</div>";
+            $output .= "</div>";
+          }
+        }
+        elseif (isset($resource->field_related_digital_assets_uri) && sizeof($resource->field_related_digital_assets_uri) > 0) {
+          $output .= "<div class='toc-article-related-resource-wrapper'>";
+          $output .= "<div class='card'>";
+          $output .= "<h5 class='toc-article-related-resource-title'>";
+          $output .= '<a href="' . $resource->field_related_digital_assets_uri['und'][0]['url'] . '" alt="' . $resource->field_related_digital_assets_uri['und'][0]['alt'] . '">';
+          $output .= $resource->field_related_digital_assets_uri['und'][0]['alt'];
+          $output .= "</a>";
+          $output .= "</h5>";
+          $output .= "</div>";
+          $output .= "</div>";
+        }
+      }
+    }
+  }
+
+  return $output;
+}
+
+function igcommerce_utility_articles_build_toc_url_products() {
+
+  $output = NULL;
+  global $language;
+
+  $url_parts = explode('/', $_GET['q']);
+  $category = array_pop($url_parts);
+
+  $tid = NULL;
+
+  $query = new EntityFieldQuery();
+  $query
+      ->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', 'url_builder')
+      ->fieldCondition('field_url_title', 'value', $category, '=');
+
+  $results = $query->execute();
+
+  if (!$results || sizeof($results) < 1) {
+    return $output;
+  }
+
+  foreach ($results['taxonomy_term'] as $key => $value) {
+    $tid = $key;
+  }
+
+  if (is_null($tid)) {
+    return $output;
+  }
+
+  $term = taxonomy_term_load($tid);
+
+  if (isset($term->field_related_products) && sizeof($term->field_related_products) > 0) {
+    $output .= "<h3 class='pane-title'>Recommended products</h3>";
+    foreach ($term->field_related_products['und'] as $related_product) {
+      $product = node_load($related_product['target_id']);
+      $node_path_alias = $language->language . '/' . drupal_get_path_alias("node/" . $product->nid);
+      if (sizeof($product->field_slideshow) < 1) {
+        $product_image = path_to_theme() . "/images/no_image_available.jpg";
+      }
+      else {
+        // to do -- once the DAM URI is working we need to display the first image in the slide show and not the no image
+        $product_image = path_to_theme() . "/images/no_image_available.jpg";
+      }
+
+      $output .= "<div class='toc-article-related-product-wrapper'>";
+
+      $output .= "<div class='card'>";
+
+      $output .= "<div class='toc-article-related-product-image'>";
+      $output .= '<a href="/' . $node_path_alias . '" alt="' . $product->field_content_title[$language->language][0]['safe_value'] . '">';
+      $output .= '<img src="/' . $product_image . '" alt="' . $product->field_content_title[$language->language][0]['safe_value'] . '" />';
+      $output .= "</a>";
+      $output .= "</div>"; // end of image
+
+      $output .= "<h5 class='toc-article-related-product-title'>";
+      $output .= '<a href="/' . $node_path_alias . '" alt="' . $product->field_content_title[$language->language][0]['safe_value'] . '">';
+      $output .= $product->field_content_title[$language->language][0]['safe_value'];
+      $output .= "</a>";
+      $output .= "</h5>";  // end of title
+
+      $output .= "<div class='toc-article-related-product-see-spec'>";
+      $output .= t("See specification");
+      $output .= "</div>";
+
+      $output .= "<div class='toc-article-related-product-download'>";
+      $output .= t("Download datasheet");
+      $output .= "</div>";
+
+      $output .= "</div>"; // end of card
+
+      $output .= "</div>"; // end of wrapper
+    }
+  }
+
+  return $output;
+}
+
+function igcommerce_utility_articles_build_category_toc_articles() {
+
+  $output = NULL;
+  global $language;
+
+  $url_parts = explode("/", $_GET['q']);
+  $nid = array_pop($url_parts);
+
+  if ($nid > 0) {
+    $node = node_load($nid);
+  }
+  else {
+    return $output;
+  }
+  if (isset($node->field_toc_related_articles[$language->language]) && sizeof($node->field_toc_related_articles) > 0) {
+    foreach ($node->field_toc_related_articles[$language->language] as $card) {
+      $card_details = entity_load('field_collection_item', array($card['value']));
+      $card_size = "";
+
+      foreach ($card_details as $toc_card) {
+        if (!empty($card_details)) {
+          if (!empty($toc_card->field_card_size_toc[$language->language])) {
+            $card_size_term = taxonomy_term_load($toc_card->field_card_size_toc[$language->language][0]['tid']);
+            $card_size = strtolower($card_size_term->name);
+          }
+          elseif (!empty($toc_card->field_card_size_toc[LANGUAGE_NONE])) {
+            $card_size_term = taxonomy_term_load($toc_card->field_card_size_toc[LANGUAGE_NONE][0]['tid']);
+            $card_size = strtolower($card_size_term->name);
+          }
+
+          if (!empty($toc_card->field_related_articles[$language->language])) {
+            $toc_card_node = node_load($toc_card->field_related_articles[$language->language][0]['target_id']);
+            $toc_card_alias = drupal_get_path_alias('node/' . $toc_card_node->nid, $language->language);
+          }
+          elseif (!empty($toc_card->field_related_articles[LANGUAGE_NONE])) {
+            $toc_card_node = node_load($toc_card->field_related_articles[LANGUAGE_NONE][0]['target_id']);
+            $toc_card_alias = drupal_get_path_alias('node/' . $toc_card_node->nid, $language->language);
+          }
+
+          $card_image_small = NULL;
+          $card_image_medium = NULL;
+          $card_image_large = NULL;
+
+          //if(sizeof($toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_small) > 0 &&
+          if (isset($toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_small[$language->language])) {
+            $card_image_small = $toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_small[$language->language][0]['url'];
+          }
+
+          //if(sizeof($toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_medium) > 0 &&
+          if (isset($toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_medium[$language->language])) {
+            $card_image_medium = $toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_medium[$language->language][0]['url'];
+          }
+
+          //if(sizeof($toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_large) > 0 &&
+          if (isset($toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_large[$language->language])) {
+            $card_image_large = $toc_card->field_related_articles[$language->language][0]['entity']->field_toc_image_large[$language->language][0]['url'];
+          }
+
+          $card_images = igcommerce_utility_articles_get_article_toc_images($card_image_small, $card_image_medium, $card_image_large);
+
+
+          switch ($card_size) {
+            case "small":
+              $card_image = $card_images['mobile'];
+              break;
+
+            case "medium":
+              $card_image = $card_images['tablet'];
+              break;
+
+            case "large":
+              $card_image = $card_images['desktop'];
+              break;
+
+
+            default:
+              $card_image = '<img src="/' . path_to_theme() . '/images/no_image_available.jpg" />';
+              break;
+          }
+          if (isset($toc_card_node->nid)) {
+            $node_path_alias = $language->language . '/' . drupal_get_path_alias("node/" . $toc_card_node->nid);
+          }
+        }
+      }
+
+      $output .= "<div class='toc_article_card_" . $card_size . "'>";
+      $output .= "<div class='card'>";
+      $output .= "<div class='toc_article_card_image_" . $card_size . "'>";
+
+// prototype URL
+// <a class="colorbox-node" href="blogs/my-example" data-inner-width="600" data-inner-height="600">My Example</a>
+
+      if (isset($toc_card_node->field_content_title[$language->language])) {
+        $output .= '<a class="colorbox-node"  data-inner-width="75%" data-inner-height="90%" href="/' . $toc_card_alias . '"  alt="' . $toc_card_node->field_content_title[$language->language][0]['safe_value'] . '">';
+      }
+      elseif (isset($toc_card_node->field_content_title[LANGUAGE_NONE])) {
+        $output .= '<a class="colorbox-node"  data-inner-width="75%" data-inner-height="90%" href="/' . $toc_card_alias . '"  alt="' . $toc_card_node->field_content_title[LANGUAGE_NONE][0]['safe_value'] . '">';
+      }
+
+      if (isset($toc_card_node->field_content_title[$language->language])) {
+        $output .= '<img src="' . $card_image . '" alt="' . $toc_card_node->field_content_title[$language->language][0]['safe_value'] . '"/>';
+      }
+      elseif (isset($toc_card_node->field_content_title[LANGUAGE_NONE])) {
+        $output .= '<img src="' . $card_image . '" alt="' . $toc_card_node->field_content_title[LANGUAGE_NONE][0]['safe_value'] . '"/>';
+      }
+
+      $output .= "</a>";
+      $output .= "</div>"; // end of image
+      $output .= "<div class='toc_article_card_title'>";
+
+      if (isset($toc_card_node->field_content_title[$language->language])) {
+        $output .= '<a class="colorbox-node" data-inner-width="75%" data-inner-height="90%" href="/' . $toc_card_alias . '"  alt="' . $toc_card_node->field_content_title[$language->language][0]['safe_value'] . '">';
+      }
+      elseif (isset($toc_card_node->field_content_title[LANGUAGE_NONE])) {
+        $output .= '<a class="colorbox-node" data-inner-width="75%" data-inner-height="90%" href="/' . $toc_card_alias . '"  alt="' . $toc_card_node->field_content_title[LANGUAGE_NONE][0]['safe_value'] . '">';
+      }
+
+      if (isset($toc_card_node->field_content_title[$language->language])) {
+        $output .= $toc_card_node->field_content_title[$language->language][0]['safe_value'];
+      }
+      elseif (isset($toc_card_node->field_content_title[LANGUAGE_NONE])) {
+        $output .= $toc_card_node->field_content_title[LANGUAGE_NONE][0]['safe_value'];
+      }
+
+      $output .= "</a>";
+      $output .= "</div>"; // end of title
+      $output .= "</div>";  // end of card
+      $output .= "</div>"; // end of card size
+    }
+  }
+
+  return $output;
+}
+
+function igcommerce_utility_articles_category_toc_listing() {
+
+  global $language;
+  $output = NULL;
+  //$url_parts = explode('/', $_GET['q']);
+  //$category =  array_pop($url_parts);
+  $vocab = taxonomy_vocabulary_machine_name_load('url_builder');
+
+  $tid = NULL;
+  /*
+    $query = new EntityFieldQuery();
+    $query
+    ->entityCondition('entity_type', 'taxonomy_term')
+    ->entityCondition('bundle', 'url_builder')
+    ->fieldCondition('field_url_title', 'value', $category, '=');
+
+    $results = $query->execute();
+
+    if (!$results || (sizeof($results) < 1)) {
+    return $output;
+    }
+
+    foreach($results['taxonomy_term'] as $key => $value) {
+    $tid = $key;
+    }
+   */
+  $term = igcommerce_utility_articles_get_term();
+  $tid = $term ? $term->tid : NULL;
+
+  if (is_null($tid)) {
+    return $output;
+  }
+
+  $industry_tree = taxonomy_get_tree($vocab->vid, $tid, $max_depth = 1, $load_entities = TRUE);
+
+  $output .= "<div class='toc-listing-image-wrapper'>";
+
+  foreach ($industry_tree as $industry_url_builder_term) {
+
+    if (!isset($industry_url_builder_term->field_hide_from_toc_left_navigat[$language->language][0]['value']) || $industry_url_builder_term->field_hide_from_toc_left_navigat[$language->language][0]['value'] != 1) {
+
+    $toc_item_url = igcommerce_utility_articles_build_url($industry_url_builder_term); //$_GET['q'] . "/" . $industry_url_builder_term->field_url[$language->language][0]['url'];
+    // build the responsive images using the HTML picture functionality
+    $desktop_alt = NULL;
+    $tablet_alt = NULL;
+    $mobile_alt = NULL;
+    $image_url_desktop = NULL;
+    $image_url_tablet = NULL;
+    $image_url_mobile = NULL;
+    $alt = NULL;
+
+    if (sizeof($industry_url_builder_term->field_category_image_toc_uri) > 0) {
+      $image_url_desktop = $industry_url_builder_term->field_category_image_toc_uri['und'][0]['url'];
+    }
+
+    if (sizeof($industry_url_builder_term->field_category_image_toc_tb_uri) > 0) {
+      $image_url_tablet = $industry_url_builder_term->field_category_image_toc_tb_uri['und'][0]['url'];
+    }
+
+    if (sizeof($industry_url_builder_term->field_category_image_toc_mbl_uri) > 0) {
+      $image_url_mobile = $industry_url_builder_term->field_category_image_toc_mbl_uri['und'][0]['url'];
+    }
+    if (isset($industry_url_builder_term->field_content_title[LANGUAGE_NONE][0]['value'])) {
+      $alt = $industry_url_builder_term->field_content_title[LANGUAGE_NONE][0]['value'];
+    }
+    // generate the output using the igcommerce_utility_fomrat_image
+    $pic = igcommerce_utility_determine_toc_image($image_url_desktop, $image_url_tablet, $image_url_mobile, $alt);
+
+    // Output the TOC item
+    $output .= "<div class='toc-listing-item-wrapper'>";
+
+    $output .= "<div class='toc-listing-image'>";
+    if ($toc_item_url->type == "auto") {
+      $output .= "<a href='/" . $language->language . "/" . $toc_item_url->link . "'>";
+    }
+    else {
+      $output .= "<a href='" . $toc_item_url->link . "'>";
+    }
+    $output .= $pic;
+    $output .= "</a>";
+    $output .= "</div>"; // end of image
+
+    if (!empty($industry_url_builder_term->field_content_title[$language->language][0]['value'])) {
+      $output .= "<div class='toc-listing-title'>";
+      if ($toc_item_url->type == "auto") {
+        $output .= "<a href='/" . $language->language . "/" . $toc_item_url->link . "'>";
+      }
+      else {
+        $output .= "<a href='" . $toc_item_url->link . "'>";
+      }
+      $output .= "<h3 class='toc-listing-title-h3'>";
+      $output .= $industry_url_builder_term->field_content_title[$language->language][0]['value'];
+      $output .= "</h3>";
+      $output .= "</a>";
+      $output .= "</div>"; // end of title wrapper
+    }
+    $output .= "</div>"; // end of item wrapper
+    }
+  }
+
+  $output .= "</div>"; // end of image wrapper
+
+
+  return $output;
+}
+
+/*
+ *  Handle the promotion list.
+ */
+
+function igcommerce_utility_articles_promotions() {
+  global $language;
+
+  $url_parts = explode('/', $_GET['q']);
+  //$category = 'promotions-contests';
+  $category = array_pop($url_parts);
+
+  // Query to get url builder tid.
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', 'url_builder')
+      ->fieldCondition('field_url_title', 'value', $category, '=');
+  $term_results = $query->execute();
+
+  $true_parent = array_keys($term_results['taxonomy_term']);
+  $tid = $true_parent[0];
+
+  // Url path of url builder.
+  $url_builder_taxonomy = taxonomy_term_load($tid);
+  $url_builder_path = igcommerce_utility_articles_build_url($url_builder_taxonomy);
+
+  // Get the promotion list.
+  $result = views_get_view_result('promotions_view', 'panel_pane_1');
+
+  $output = " ";
+
+  $output .= "<div class='toc-listing-image-wrapper'>";
+
+  foreach ($result as $key => $value) {
+    if (in_array($tid, $value->im_field_url_builder)) {
+      $toc_image_decode = json_decode($value->sm_toc_image_large[0]);
+      // Toc image and alt.
+      //$toc_image_url = $toc_image_decode->url;
+      $toc_image_url = preg_replace('#^https?://#', '//', $toc_image_decode->url); //DP 02/24/17 - Removed Protocol from img src
+      $toc_alt_text = $toc_image_decode->alt;
+      $toc_image = igcommerce_utility_determine_toc_image($toc_image_url, FALSE, FALSE, $toc_alt_text);
+
+      // Long description of promotion.
+      $description = $value->ts_long_description;
+
+      // Path of items.
+      $content_path = $value->ts_promotion_alias;
+
+      // Content Title.
+      $title = $value->label;
+
+      // Output the TOC item
+      $output .= "<div class='toc-listing-item-wrapper'>";
+
+      $output .= "<div class='toc-listing-image'>";
+      if ($url_builder_path->type == "auto") {
+        $output .= "<a href='/" . $language->language . "/" . $url_builder_path->link . "/" . $content_path . "'>";
+      }
+      else {
+        $output .= "<a href='" . $url_builder_path->link . "/" . $content_path . "'>";
+      }
+      $output .= $toc_image;
+      $output .= "</a>";
+      $output .= "</div>"; // end of image
+      // Title of content.
+      $output .= "<div class='toc-listing-title'>";
+      if ($url_builder_path->type == "auto") {
+        $output .= "<a href='/" . $language->language . "/" . $url_builder_path->link . "/" . $content_path . "'>";
+      }
+      else {
+        $output .= "<a href='" . $url_builder_path->link . "/" . $content_path . "'>";
+      }
+      $output .= "<h3 class='toc-listing-title-h3'>";
+      $output .= $title;
+      $output .= "</h3>";
+      $output .= "</a>";
+      $output .= "</div>"; // end of title wrapper
+      // Description of  content.
+      $output .= "<div class='toc-listing-description'>";
+      $output .= $description;
+      $output .= "</div>"; // end of description wrapper
+
+      $output .= "</div>"; // end of item wrapper
+    }
+  }
+
+  $output .= "</div>"; // end of image wrapper
+
+
+  return $output;
+}
+
+function igcommerce_utility_articles_subcategory_toc_header() {
+
+  $output = NULL;
+  $tid = NULL;
+
+  $url_parts = explode('/', $_GET['q']);
+
+  $category = array_pop($url_parts);
+  $industry = array_pop($url_parts);
+
+  $tid = NULL;
+
+  $query = new EntityFieldQuery();
+  $query
+      ->entityCondition('entity_type', 'taxonomy_term')
+      ->entityCondition('bundle', 'url_builder')
+      ->fieldCondition('field_url_title', 'value', $category, '=');
+
+  $results = $query->execute();
+
+  if (!results || (sizeof($results) < 1)) {
+    return $output;
+  }
+
+  foreach ($results['taxonomy_term'] as $key => $value) {
+    $tid = $key;
+  }
+
+  if (is_null($tid)) {
+    return $output;
+  }
+
+  $output = views_embed_view('url_builder', 'article_toc_header', $tid);
+
+  return $output;
+}
+
+function igcommerce_utility_articles_build_category_toc_listing() {
+
+  $output = NULL;
+
+  $vocab = taxonomy_vocabulary_machine_name_load('url_builder');
+
+  $url_parts = explode('/', $_GET['q']);
+
+  $category = str_replace("-", " ", array_pop($url_parts));
+  $industry = str_replace("-", " ", array_pop($url_parts));
+
+  $industry_terms = taxonomy_get_term_by_name($industry, 'url_builder');
+
+  $itid = NULL;
+
+  foreach ($industry_terms as $industry_term) {
+    $itid = $industry_term->tid;
+  }
+
+  if (is_null($itid)) {
+    return $output;
+  }
+
+  $industry_tree = taxonomy_get_tree($vocab->vid, $itid, $max_depth = 1, $load_entities = TRUE);
+
+  $search_tid = NULL;
+
+  foreach ($industry_tree as $subcategory) {
+    if (strtolower($subcategory->name) === strtolower($category)) {
+      $search_tid = $subcategory->tid;
+    }
+  }
+
+  $output = views_embed_view('article', 'article_industry_subcategory_toc', $search_tid);
+
+  return $output;
+}
+
+function igcommerce_utility_articles_toc_sub_rel_products() {
+
+  $output = NULL;
+
+  $vocab = taxonomy_vocabulary_machine_name_load('url_builder');
+
+  $url_parts = explode('/', $_GET['q']);
+
+  $category = str_replace("-", " ", array_pop($url_parts));
+  $industry = str_replace("-", " ", array_pop($url_parts));
+
+  $category_term = taxonomy_get_term_by_name($category, 'url_builder');
+
+  $tid = NULL;
+
+  foreach ($category_term as $term) {
+    $tid = $term->tid;
+  }
+
+  if (is_null($tid)) {
+    return $output;
+  }
+
+  $output = views_embed_view('url_builder', 'url_builder_related_products', $tid);
+
+  return $output;
+}
+
+function igcommerce_utility_articles_toc_sub_rel_articles() {
+
+  $output = NULL;
+
+  $url_parts = explode('/', $_GET['q']);
+  $category = str_replace("-", " ", array_pop($url_parts));
+
+  $category_term = taxonomy_get_term_by_name($category, 'url_builder');
+
+  $tid = NULL;
+
+  foreach ($category_term as $term) {
+    $tid = $term->tid;
+  }
+
+  if (is_null($tid)) {
+    return $output;
+  }
+
+  $output = views_embed_view('url_builder', 'url_builder_related_resources', $tid);
+
+  return $output;
+}
+
+function igcommerce_utility_articles_build_url($menu_item) {
+
+  global $language;
+
+  $lang = $language->language;
+
+  $created_path = new stdClass;
+
+  if (isset($menu_item->field_url[$lang][0])) {
+    $created_path->link = $menu_item->field_url[$lang][0]['url'];
+    $created_path->type = 'manual';
+    return $created_path;
+  }
+
+  $path = "";
+
+  $parents = array_reverse(taxonomy_get_parents_all($menu_item->tid));
+
+  array_pop($parents);
+  array_shift($parents);
+
+  if (!empty($menu_item->field_url_title[$language->language][0]['safe_value'])) {
+    if (sizeof($parents) > 0) {
+      foreach ($parents as $parent) {
+        $path .= $parent->field_url_title[$language->language][0]['safe_value'] . "/";
+      }
+    }
+    $path .= $menu_item->field_url_title[$language->language][0]['safe_value'];
+  }
+
+  $created_path->link = $path;
+  $created_path->type = 'auto';
+
+  return $created_path;
+}
+
+function igcommerce_utility_articles_build_child_url($parent_path, $child_item) {
+
+  global $language;
+  $lang = $language->language;
+
+  $created_path = new stdClass;
+
+  if (isset($child_item->field_url[$lang][0])) {
+    //$created_path->link = $menu_item->field_url[$lang][0]['url'];
+    $created_path->link = $child_item->field_url[$lang][0]['url'];
+    $created_path->type = 'manual';
+    return $created_path;
+  }
+  if (isset($child_item->field_url_title[$language->language][0]['value'])) {
+    $created_path->type = 'auto';
+    $created_path->link = $parent_path . "/" . str_replace(" ", "-", strtolower($child_item->field_url_title[$language->language][0]['value']));
+  }
+
+  return $created_path;
+}
+
+/**
+ * Generate an image based on the HTML picture tag
+ * Requires you pass the desktop, tablet, and mobile URI and the alt
+ */
+function igcommerce_utility_format_image($image_url_desktop, $image_url_tablet, $image_url_mobile, $alt) {
+
+  $output = '<picture>';
+  $output .= '<source srcset="' . $image_url_desktop . '" media="(min-width: ' . variable_get('large_desktop_min_width', 1280) . 'px)" />';
+  $output .= '<source srcset="' . $image_url_desktop . '" media="(min-width: ' . variable_get('medium_desktop_min_width', 1033) .
+      'px) and (max-width: ' . variable_get('medium_desktop_max_width', 1279) . 'px)" />';
+  $output .= '<source srcset="' . $image_url_tablet . '" media="(min-width: ' . variable_get('tablet_min_width', 768) . 'px) and (max-width: ' . variable_get('tablet_max_width', 1032) . 'px)" />';
+  $output .= '<source srcset="' . $image_url_mobile . '" media="(max-width: ' . variable_get('mobile_max_width', 767) . 'px)" />';
+  $output .= '<img class="lazyload" src="' . $image_url_desktop . '" alt="' . $alt . '" />';
+  $output .= '</picture>';
+
+  return $output;
+}
+
+/**
+ * Return a no image found URI
+ */
+function igcommerce_utility_no_image_found($size = 'desktop') {
+
+  $path_to_image = "/" . path_to_theme() . '/images/';
+
+  switch ($size) {
+
+    case 'desktop':
+      $path_to_image .= variable_get('no_image_found_desktop', NULL);
+      break;
+
+    case 'tablet':
+      $path_to_image .= variable_get('no_image_found_tablet', NULL);
+      break;
+
+    case 'mobile':
+      $path_to_image .= variable_get('no_image_found_mobile', NULL);
+      break;
+
+    default:
+      $path_to_image .= variable_get('no_image_found_desktop', NULL);
+      break;
+  }
+
+
+  return $path_to_image;
+}
+
+/**
+ * Handle the various scenarios where there are three possible images - desktop, tablet, and mobile
+ * And only some of those images exist.
+ */
+function igcommerce_utility_determine_banner_image($image_url_desktop = FALSE, $image_url_tablet = FALSE, $image_url_mobile = FALSE, $alt = NULL) {
+
+  $default_banner = variable_get('default_banner_image', '//data.fluke.com/sites/default/files/solution-oil-gas-banner_placeholder-1920x290.jpg');
+
+    $image_url_desktop = igcommerce_utility_s3_check($image_url_desktop);
+    $image_url_tablet = igcommerce_utility_s3_check($image_url_tablet);
+    $image_url_mobile = igcommerce_utility_s3_check($image_url_mobile);
+
+  $banner_images = array();
+
+  /** the following scenarios may occur with banner images -- editorial may load
+    one or more of the following:  desktop, tablet, and mobile
+
+    Scenario  Desktop Tablet  Mobile
+    1        Y      Y      Y
+    2        Y      Y      N
+    3        Y      N      N
+    4        Y      N      Y
+    5        N      Y      Y
+    6        N      N      Y
+    7        N      Y      N
+    8        N      N      N
+   * */
+  // scenario 1
+  if ($image_url_desktop && $image_url_tablet && $image_url_mobile) {
+    $banner_images['desktop'] = $image_url_desktop;
+    $banner_images['tablet'] = $image_url_tablet;
+    $banner_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 2
+  if ($image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+    $banner_images['desktop'] = $image_url_desktop;
+    $banner_images['tablet'] = $image_url_tablet;
+    $banner_images['mobile'] = $image_url_tablet;
+  }
+
+  // scenario 3
+  if ($image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+    $banner_images['desktop'] = $image_url_desktop;
+    $banner_images['tablet'] = $image_url_desktop;
+    $banner_images['mobile'] = $image_url_desktop;
+  }
+
+  // scenario 4
+  if ($image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+    $banner_images['desktop'] = $image_url_desktop;
+    $banner_images['tablet'] = $image_url_desktop;
+    $banner_images['mobile'] = $image_url_mobile;
+  }
+
+  // Scenario 5
+  if (!$image_url_desktop && $image_url_tablet && $image_url_mobile) {
+    $banner_images['desktop'] = $image_url_tablet;
+    $banner_images['tablet'] = $image_url_tablet;
+    $banner_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 6
+  if (!$image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+    $banner_images['desktop'] = $image_url_mobile;
+    $banner_images['tablet'] = $image_url_mobile;
+    $banner_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 7
+  if (!$image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+    $banner_images['desktop'] = $image_url_tablet;
+    $banner_images['tablet'] = $image_url_tablet;
+    $banner_images['mobile'] = $image_url_tablet;
+  }
+
+  // scenario 8
+  if (!$image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+    $banner_images['desktop'] = $default_banner;
+    $banner_images['tablet'] = $default_banner;
+    $banner_images['mobile'] = $default_banner;
+  }
+
+  return igcommerce_utility_format_image($banner_images['desktop'], $banner_images['tablet'], $banner_images['mobile'], $alt);
+}
+
+/**
+ * Handle the various scenarios where there are three possible images - desktop, tablet, and mobile
+ * And only some of those images exist.
+ */
+function igcommerce_utility_determine_toc_image($image_url_desktop = FALSE, $image_url_tablet = FALSE, $image_url_mobile = FALSE, $alt = NULL) {
+
+  $default_image = variable_get('no_image_found_desktop', '/sites/all/themes/figstrap/images/no_image_available.jpg');
+
+    $image_url_desktop = igcommerce_utility_s3_check($image_url_desktop);
+    $image_url_tablet = igcommerce_utility_s3_check($image_url_tablet);
+    $image_url_mobile = igcommerce_utility_s3_check($image_url_mobile);
+
+  $article_images = array();
+
+  /** the following scenarios may occur with banner images -- editorial may load
+    one or more of the following:  desktop, tablet, and mobile
+
+    Scenario  Desktop Tablet  Mobile
+    1        Y      Y      Y
+    2        Y      Y      N
+    3        Y      N      N
+    4        Y      N      Y
+    5        N      Y      Y
+    6        N      N      Y
+    7        N      Y      N
+    8        N      N      N
+   * */
+  // scenario 1
+  if ($image_url_desktop && $image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 2
+  if ($image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_tablet;
+  }
+
+  // scenario 3
+  if ($image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_desktop;
+    $article_images['mobile'] = $image_url_desktop;
+  }
+
+  // scenario 4
+  if ($image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_desktop;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // Scenario 5
+  if (!$image_url_desktop && $image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_tablet;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 6
+  if (!$image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_mobile;
+    $article_images['tablet'] = $image_url_mobile;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 7
+  if (!$image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $image_url_tablet;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_tablet;
+  }
+
+  // scenario 8
+  if (!$image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $default_image;
+    $article_images['tablet'] = $default_image;
+    $article_images['mobile'] = $default_image;
+  }
+
+  // Change to s3 url if set
+  return igcommerce_utility_format_image($article_images['desktop'], $article_images['tablet'], $article_images['mobile'], $alt);
+}
+
+function igcommerce_utility_articles_get_article_toc_images($image_url_mobile = NULL, $image_url_tablet = NULL, $image_url_desktop = NULL) {
+
+  $default_image = variable_get('no_image_found_desktop', '/sites/all/themes/figstrap/images/no_image_available.jpg');
+
+    $image_url_desktop = igcommerce_utility_s3_check($image_url_desktop);
+    $image_url_tablet = igcommerce_utility_s3_check($image_url_tablet);
+    $image_url_mobile = igcommerce_utility_s3_check($image_url_mobile);
+
+  $article_images = array();
+
+  /** the following scenarios may occur with banner images -- editorial may load
+    one or more of the following:  desktop, tablet, and mobile
+
+    Scenario  Desktop Tablet  Mobile
+    1        Y      Y      Y
+    2        Y      Y      N
+    3        Y      N      N
+    4        Y      N      Y
+    5        N      Y      Y
+    6        N      N      Y
+    7        N      Y      N
+    8        N      N      N
+   * */
+  // scenario 1
+  if ($image_url_desktop && $image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 2
+  if ($image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_tablet;
+  }
+
+  // scenario 3
+  if ($image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_desktop;
+    $article_images['mobile'] = $image_url_desktop;
+  }
+
+  // scenario 4
+  if ($image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_desktop;
+    $article_images['tablet'] = $image_url_desktop;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // Scenario 5
+  if (!$image_url_desktop && $image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_tablet;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 6
+  if (!$image_url_desktop && !$image_url_tablet && $image_url_mobile) {
+    $article_images['desktop'] = $image_url_mobile;
+    $article_images['tablet'] = $image_url_mobile;
+    $article_images['mobile'] = $image_url_mobile;
+  }
+
+  // scenario 7
+  if (!$image_url_desktop && $image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $image_url_tablet;
+    $article_images['tablet'] = $image_url_tablet;
+    $article_images['mobile'] = $image_url_tablet;
+  }
+
+  // scenario 8
+  if (!$image_url_desktop && !$image_url_tablet && !$image_url_mobile) {
+    $article_images['desktop'] = $default_image;
+    $article_images['tablet'] = $default_image;
+    $article_images['mobile'] = $default_image;
+  }
+
+  return $article_images;
+}
+
+/**
+ * Implement hook_apachesolr_query_alter()
+ */
+function igcommerce_utility_articles_apachesolr_query_alter($query) {
+  global $language;
+  $url_parts = explode('/', $_GET['q']);
+  if ($url_parts[0] == 'search') {
+    $query->removeParam('qf');
+    $query->removeParam('bq');
+
+    // Setting up stage for content types needs to be displayed on search
+    // page , extra configuration can be set from the configuration page
+    // http://<SITENAME>/en-us/admin/config/search/apachesolr/igcommerce
+    $dam_ctypes = variable_get('dam_ctype_selection', '');
+    $ecm_ctypes = variable_get('ecm_ctype_selection', '');
+
+    if (!empty($dam_ctypes) && isset($dam_ctypes)) {
+
+    }
+    else {
+      $dam_ctypes = array('video', 'document');
+    }
+
+    if (!empty($ecm_ctypes) && isset($ecm_ctypes)) {
+
+    }
+    else {
+      $ecm_ctypes = array('article', 'product_display');
+    }
+
+
+    // FW-1779: Created a UNION based solr query where LEFT side of query
+    // deals with results from ECM and RIGHT side deals with search results
+    // from DAM.
+    $filter = new SolrFilterSubQuery('OR');
+
+    // Modify search solr query to pull content from ECM and later merge.
+    $a = new SolrFilterSubQuery('AND');
+    $a->addFilter('bundle', '(article OR product_display)');
+    $a->addFilter("ss_language", $language->language);
+    $filter->addFilterSubQuery( $a );
+
+    // Modify search solr query to pull content from DAM and later merge.
+    $b = new SolrFilterSubQuery('AND');
+    $b->addFilter('bundle', 'video');
+    $b->addFilter("ss_language", '(' . str_replace('-', ' OR ', $language->language) . ')');
+
+    $filter->addFilterSubQuery( $b );
+
+    $query->addFilterSubQuery( $filter );
+
+    //$query->addFilter("ss_language", '(' . $language->language . ' OR ' . str_replace('-', ' OR ', $language->language) . ')');
+    $query->addParam('mm', 1);
+    $query->addParam('bq', 'bundle:product_display^840');
+    $query->addParam('qf', 'tm_field_content_title^840');
+    $query->setSolrsort('score', 'desc');
+  }
+  elseif ($url_parts[0] == 'support' && $url_parts[1] == 'manuals') {
+    if (!empty($_GET['tm_field_display_title'])) {
+      $query->addFilter("ss_language", '(' . $language->language . ' OR ' . str_replace('-', ' OR ', $language->language) . ')');
+    }
+    else {
+      $query->addFilter("ss_language", $language->language);
+    }
+  }
+  elseif ($url_parts[0] == 'training' && $url_parts[1] == 'training-library') {
+    /**if (!empty($_GET['tm_field_content_title'])) {
+      $query->addFilter("ss_language", '(' . $language->language . ' OR ' . str_replace('-', ' OR ', $language->language) . ')');
+    }
+    else {
+      $query->addFilter("ss_language", $language->language);
+    }**/
+    if (!empty($_GET['tm_field_content_title'])) {
+      $filter = new SolrFilterSubQuery('OR');
+
+      // Modify search solr query to pull content from ECM and later merge.
+      $a = new SolrFilterSubQuery('AND');
+      $a->addFilter('bundle', '(article)');
+      $a->addFilter("ss_language", $language->language);
+      $filter->addFilterSubQuery( $a );
+
+      // Modify search solr query to pull content from DAM and later merge.
+      $b = new SolrFilterSubQuery('AND');
+      $b->addFilter('bundle', '(video OR document)');
+      $b->addFilter("ss_language", '(' . str_replace('-', ' OR ', $language->language) . ')');
+      $filter->addFilterSubQuery( $b );
+
+      // Modify search solr query to pull content from DAM and later merge.
+      $c = new SolrFilterSubQuery('AND');
+      $c->addFilter('bundle', 'manual');
+      $c->addFilter('im_field_asset_category', '923');
+      $c->addFilter("ss_language", '(' . str_replace('-', ' OR ', $language->language) . ')');
+      $filter->addFilterSubQuery( $c );
+
+      $query->addFilterSubQuery( $filter );
+    }
+  }
+  else {
+    $query->addFilter("ss_language", $language->language);
+  }
+
+  // Fetch content, based on Site Opco
+  $site_opco = variable_get('site_opco');
+  if (isset($site_opco) && $site_opco != 0) {
+    $opco_term = taxonomy_term_load($site_opco);
+    $query->addFilter("sm_vid_Opco", '"' . $opco_term->name . '"');
+  }
+}
+
+/**
+ * View Name : Artilce-solr
+ * If h1 title field is empty show display title field data
+ */
+function igcommerce_utility_articles_views_pre_render(&$view) {
+  global $language, $base_url;
+  // view : Article - Solr
+  dpm($view, 'article');
+  if (
+      ($view->name == 'support_page_view' && $view->current_display == 'support_pages_desc') ||
+      ($view->name == 'support_page_view' && $view->current_display == 'support_aboutus_pages_desc') ||
+      ($view->name == 'support_page_view' && $view->current_display == 'footer_pages_desc') ||
+      ($view->name == 'support_page_view' && $view->current_display == 'training_educators_pages_desc') ||
+      ($view->name == 'support_page_view' && $view->current_display == 'training_pages_desc')
+  ) {
+    $html = NULL;
+    if (!empty($view->result[0]->ss_article_h1_title)) {
+      $html = "<h1>" . $view->result[0]->ss_article_h1_title . "</h1>";
+    }
+    else {
+      if (!empty($view->result[0]->ss_field_content_title )) {
+        $html = "<h1>" . $view->result[0]->ss_field_content_title  . "</h1>";
+      }
+    }
+    $view->result[0]->ss_field_content_title  = $html;
+  }
+
+  if ($view->name == 'homepage_latest_news' && $view->current_display == 'home_page_latest_news') {
+    $news_data = array();
+    $latest_newsArr = array();
+    $latest_news_homeArr = array();
+    $latest_news = '';
+    if (!empty($view->result[0]->sm_latest_news[0])) {
+      $latest_newsArr = json_decode($view->result[0]->sm_latest_news[0]);
+      foreach ($latest_newsArr as $key => $latest_news) {
+        $path_alias = "#";
+        if (!empty($latest_news->product)) {
+          $keyword = '';
+          $parameter = '';
+          $parameter = '';
+          $keyword = "bundle:product_display";
+          $parameter[]['fl'] = 'path_alias';
+          $parameter[]['fl'] = 'ss_field_content_title ';
+          $filter[]['entity_id'] = $latest_news->product;
+          $filter[]['ss_language'] = $language->language;
+          $filter[]['bs_status'] = "true";
+          $data = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+          if (!empty($data->response->docs)) {
+            if (!empty($data->response->docs[0]->path_alias)) {
+              $path_alias = 'product/' . $data->response->docs[0]->path_alias;
+            }
+            $latest_news_homeArr[] .= l($data->response->docs[0]->ss_field_content_title , $path_alias);
+          }
+        }
+        if (!empty($latest_news->article)) {
+          $keyword1 = '';
+          $parameter1 = '';
+          $filter1 = '';
+          $keyword1 = "bundle:article";
+          $parameter1[]['fl'] = 'path_alias';
+          $parameter1[]['fl'] = 'ss_field_content_title ';
+          $filter1[]['entity_id'] = $latest_news->article;
+          $filter1[]['ss_language'] = $language->language;
+          $filter1[]['bs_status'] = "true";
+          $data = igcommerce_utility_articles_solr_toc_sol_query($keyword1, $parameter1, $filter1);
+          if (!empty($data->response->docs)) {
+            if (!empty($data->response->docs[0]->path_alias)) {
+              $path_alias = $data->response->docs[0]->path_alias;
+            }
+            $latest_news_homeArr[] .= l($data->response->docs[0]->ss_field_content_title , $path_alias);
+          }
+        }
+        if (!empty($latest_news->promotion)) {
+          $keyword2 = '';
+          $parameter2 = '';
+          $filter2 = '';
+          $keyword2 = 'bundle:("promotion" OR "toc" OR "event")';
+          $parameter2[]['fl'] = 'path_alias';
+          $parameter2[]['fl'] = 'ss_field_content_title ';
+          $filter2[]['entity_id'] = $latest_news->promotion;
+          $filter2[]['ss_language'] = $language->language;
+          $filter2[]['bs_status'] = "true";
+          $data = igcommerce_utility_articles_solr_toc_sol_query($keyword2, $parameter2, $filter2);
+          if (!empty($data->response->docs)) {
+            if (!empty($data->response->docs[0]->path_alias)) {
+              $path_alias = $data->response->docs[0]->path_alias;
+            }
+            $latest_news_homeArr[] .= l($data->response->docs[0]->ss_field_content_title , $path_alias);
+          }
+        }
+        if (!empty($latest_news->digital_asset->title)) {
+          $latest_news_homeArr[] .= l($latest_news->digital_asset->title, $latest_news->digital_asset->url);
+        }
+      }
+      $latest_news = igcommerce_utility_articles_latest_news_links($latest_news_homeArr);
+    }
+
+    $view->result = $latest_news;
+  }
+}
+
+function igcommerce_utility_articles_latest_news_links($data) {
+  $newArr = array();
+  foreach ($data as $key => $values) {
+    $newArr[$key] = (object) (array('sm_latest_news' => array($values)));
+  }
+
+  return $newArr;
+}
+
+/**
+ * Code to show Featured Articles from lists(IG)
+ */
+function igcommerce_utility_articles_hompage_featured_articles() {
+  global $language;
+  $html = NULL;
+  // Query to get Featured Article Tab data from Lists content type
+  $keyword = "bundle:lists";
+  $parameter[]['fl'] = 'sm_featured_article_home';
+  $filter[]['path_alias'] = "featured-articles-home"; // node Featured Articles Home
+  $filter[]['ss_language'] = $language->language;
+  $filter[]['bs_status'] = "true";
+  $data = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+
+  if (!empty($data->response->docs[0]->sm_featured_article_home[0])) {
+    $featurarticlehomeArr = array();
+    $featureArr = array();
+    $featureArr = json_decode($data->response->docs[0]->sm_featured_article_home[0]);
+
+    foreach ($featureArr as $key => $feature) {
+
+      // Fetch Products display title & Featured Image
+      $keywordfa1 = '';
+      $parameterfa1 = '';
+      $filterfa1 = '';
+      $keywordfa = '';
+      $parameterfa = '';
+      $filterfa = '';
+      $keywordfa2 = '';
+      $parameterfa2 = '';
+      $filterfa2 = '';
+      $keywordfa3 ='';
+      $parameterfa3 = '';
+      $filterfa3 = '';
+      $data1 = '';
+      $data2 = '';
+      $data3 = '';
+      $data4 = '';
+      // Fetch Articel display title & Featured Image
+      if (!empty($feature->article)) {
+        $keywordfa = "bundle:article";
+        $parameterfa[]['fl'] = 'path_alias';
+        $parameterfa[]['fl'] = 'ss_field_content_title ';
+        $parameterfa[]['fl'] = 'ss_toc_featured_img_url';
+        $parameterfa[]['fl'] = 'bundle';
+        $filterfa[]['entity_id'] = $feature->article;
+        $filterfa[]['bs_status'] = "true";
+        $filterfa[]['ss_language'] = $language->language;
+        $data1 = igcommerce_utility_articles_solr_toc_sol_query($keywordfa, $parameterfa, $filterfa);
+        if (!empty($data1->response->docs)) {
+          $featurarticlehomeArr[] = igcommerce_utility_articles_featured_articles_links($data1->response->docs);
+        }
+      }
+
+      if (!empty($feature->product)) {
+        $keywordfa1 = "bundle:product_display";
+        $parameterfa1[]['fl'] = 'path_alias';
+        $parameterfa1[]['fl'] = 'ss_field_content_title ';
+        $parameterfa1[]['fl'] = 'sm_product_slideshow';
+        $parameterfa1[]['fl'] = 'bundle';
+        $filterfa1[]['entity_id'] = $feature->product;
+        $filterfa1[]['bs_status'] = "true";
+        $filterfa1[]['ss_language'] = $language->language;
+        $data2 = igcommerce_utility_articles_solr_toc_sol_query($keywordfa1, $parameterfa1, $filterfa1);
+        if (!empty($data2->response->docs)) {
+          $featurarticlehomeArr[] = igcommerce_utility_articles_featured_articles_links($data2->response->docs);
+        }
+      }
+
+      // Fetch Promtion display title & Featured Image
+      // Fetch TOC display title & Featured Image from Taxonomy Term
+      if (!empty($feature->promotion)) {
+        //promotion, toc
+        $keywordfa2 = 'bundle:("promotion" OR "toc")';
+        $parameterfa2[]['fl'] = 'path_alias';
+        $parameterfa2[]['fl'] = 'ss_field_content_title ';
+        $parameterfa2[]['fl'] = 'sm_url_path_builder';
+        $parameterfa2[]['fl'] = 'sm_toc_featured_image';
+        $parameterfa2[]['fl'] = 'sm_vid_URL_Builder';
+        $parameterfa2[]['fl'] = 'bundle';
+        $filterfa2[]['entity_id'] = $feature->promotion;
+        $filterfa2[]['bs_status'] = "true";
+        $filterfa2[]['ss_language'] = $language->language;
+        $data3 = igcommerce_utility_articles_solr_toc_sol_query($keywordfa2, $parameterfa2, $filterfa2);
+        if (!empty($data3->response->docs)) {
+          $featurarticlehomeArr[] = igcommerce_utility_articles_featured_articles_links($data3->response->docs);
+        }
+      }
+
+      //Fetch Elink data.
+      if (!empty($feature->elink)) {
+        //promotion, toc
+        $keywordfa3 = 'bundle:e_link';
+        $parameterfa3[]['fl'] = 'path_alias';
+        $parameterfa3[]['fl'] = 'ss_field_content_title ';
+        $parameterfa3[]['fl'] = 'ss_external_url';
+        $parameterfa3[]['fl'] = 'sm_toc_image_large';
+        $filterfa3[]['entity_id'] = $feature->elink;
+        $filterfa3[]['bs_status'] = "true";
+        $filterfa3[]['ss_language'] = $language->language;
+        $data4 = igcommerce_utility_articles_solr_toc_sol_query($keywordfa3, $parameterfa3, $filterfa3);
+        if (!empty($data4->response->docs)) {
+          $featurarticlehomeArr[] = igcommerce_utility_articles_featured_articles_links($data4->response->docs);
+        }
+      }
+    }
+    if (count($featurarticlehomeArr) > 0) {
+      // max 4 Featured Articles
+      $i = 0;
+      foreach ($featurarticlehomeArr as $key => $val) {
+        if ($i < 4) {
+
+          $url = "#";
+          if (strpos($val['path_alias'], "http") === FALSE) {
+              $url = urldecode($language->language . "/" . $val['path_alias']);
+          }
+          else {
+              $url =  urldecode($val['path_alias']);
+          }
+
+          $html .= '<div class="featured_product">
+                          <a href="' . $url . '" target="_blank">' . igcommerce_utility_determine_toc_image($val['image']) . '</a>
+                      <h3><a href="' . $url . "/" . $val['path_alias'] . '"  target="_blank">' . $val['title'] . '</a></h3>
+                     </div>';
+          $i++;
+        }
+      }
+    }
+  }
+  return $html;
+}
+
+/**
+ * Create a array of Featured Articles
+ */
+function igcommerce_utility_articles_featured_articles_links($data) {
+
+  global $language, $base_url;
+  $newfeatureArr = array();
+  $path_alias = "#";
+  $title = NULL;
+  $image = NULL;
+  foreach ($data as $key => $values) {
+    // check  whether path_alias field exist
+    if (!empty($values->path_alias)) {
+      if ($values->bundle == 'product_display') {
+        $path_alias = 'product/' . $values->path_alias;
+      }
+      else {
+        $path_alias = $values->path_alias;
+      }
+    }
+
+    //Path for elink.
+    if (!empty($values->ss_external_url)) {
+      $path_alias = $values->ss_external_url;
+    }
+
+    // check whether Display Title field exist
+    if (!empty($values->ss_field_content_title )) {
+      $title = $values->ss_field_content_title;
+    }
+
+    // check whether Featured Image field exist for Article
+    if (!empty($values->ss_toc_featured_img_url)) {
+      $image = $values->ss_toc_featured_img_url;
+    }
+    // check whether Featured Image field exist for Promotion
+    if (!empty($values->sm_toc_featured_image[0])) {
+      $featureimage = json_decode($values->sm_toc_featured_image[0], TRUE);
+      $image = $featureimage['url'];
+    }
+
+    // Check whether Featured Image field exist for elink.
+    if (!empty($values->sm_toc_image_large[0])) {
+      $elink_image = json_decode($values->sm_toc_image_large[0], TRUE);
+      $image = $elink_image['url'];
+    }
+
+    // created url for TOC because there is no path_aliases generated
+    // So to know whether it is promotion or TOC .  I have used bundle field.
+    // if (!empty($values->sm_url_path_builder) && $values->bundle == 'toc') {
+    // $arr = array_reverse($values->sm_url_path_builder); //bring parent to 0th position
+    // $arr_url = $arr;
+    // unset($arr_url[0]);  // unsets fluke-ig from the url
+    // $path_alias = strtolower($base_url . "/" . $language->language . "/" . implode('/', $arr_url));
+    // }
+    // check whether Featured Image field exist in Products
+    // Taking first image from slideshow
+    if (!empty($values->sm_product_slideshow[0])) {
+      $product_slideshow_image = json_decode($values->sm_product_slideshow[0], TRUE);
+      $product_slideshow_image_count = count($product_slideshow_image['field_product_image_desktop'][LANGUAGE_NONE][0]['url']);
+      if ($product_slideshow_image_count > 0) {
+        $image = $product_slideshow_image['field_product_image_desktop'][LANGUAGE_NONE][0]['url'];
+      }
+    }
+    //  To Get TOC Images check in taxonomy term (url_builder)
+    //  TOC Desktop on taxonomy Term
+
+    if (!empty($values->bundle) && !empty($values->sm_url_path_builder)) {
+      if ($values->bundle == 'toc') {
+        // Getting data from Taxonomy(URL Builder) from Local database
+        // load url_buider vocabulary
+        $vocab = taxonomy_vocabulary_machine_name_load('url_builder');
+        // take first parameter to search by name in taxonomy terms
+        $termsArr = taxonomy_get_term_by_name(current($values->sm_vid_URL_Builder), 'url_builder');
+
+        foreach ($termsArr as $key => $val) {
+          //check if parent exist
+          $parent_data = taxonomy_get_parents($val->tid);
+          if (!empty($parent_data)) {
+            $term_data = array_values($parent_data);
+            // check parent term matches to the url builder second parameter.
+            // second Parmetere exist in the sm_vid_URL_Builder
+            if (!empty($values->sm_vid_URL_Builder[1])) {
+              if ($term_data[0]->name == $values->sm_vid_URL_Builder[1]) {
+                $term = taxonomy_term_load($val->tid);
+                if (!empty($term->field_category_image_toc_uri[LANGUAGE_NONE][0]['url'])) {
+                  $image = $term->field_category_image_toc_uri[LANGUAGE_NONE][0]['url'];
+                }
+              }
+            }
+          }
+          else {
+            // If no Parent found Load the Taxonomy term.
+            $term = taxonomy_term_load($val->tid);
+            if (!empty($term->field_category_image_toc_uri[LANGUAGE_NONE][0]['url'])) {
+              $image = $term->field_category_image_toc_uri[LANGUAGE_NONE][0]['url'];
+            }
+          }
+        }
+      }
+    }
+
+
+    $newfeatureArr = array('path_alias' => $path_alias, 'title' => $title, 'image' => $image);
+  }
+
+  return $newfeatureArr;
+}
+
+function igcommerce_utility_articles_get_node_path() {
+  $arg = arg();
+  if ($arg != NULL) {
+    $path = '';
+    if ($arg[0] == 'node') {
+      $path = $arg;
+    }
+    else {
+      // array_pop($arg);
+      $url_path = '';
+      $url_path = implode('/', $arg);
+      $path = drupal_lookup_path("source", $url_path);
+      $path = explode('/', $path);
+    }
+  }
+  return $path;
+}
+
+//Searches Solr server with q=$keyword, fq=$keyword and returns the fl=$paremeter as output
+function igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter) {
+  // Use Apache Solr module features, without enable it.
+  module_load_include('inc', 'apachesolr', 'apachesolr.interface');
+  module_load_include('php', 'apachesolr', 'Drupal_Apache_Solr_Service');
+  module_load_include('module', 'apachesolr');
+
+  $solr = apachesolr_get_solr();
+  $query = apachesolr_drupal_query("custom", array('q' => $keyword));
+  $value = '';
+  //FL parametes to retun in the output
+  foreach ($parameter as $result) {
+    foreach ($result as $key => $value) {
+      $query->addParam($key, $value);
+    }
+  }
+
+  foreach ($filter as $result) {
+    if (is_array($result)) {
+      foreach ($result as $key => $value) {
+        $query->addFilter($key, $value); // print($value);
+      }
+    }
+  }
+
+  $data = $query->search();
+
+  return $data;
+}
+
+/*
+ * Utility function to get "alt" and "caption" text from from "dam" of image
+ * content type.
+ */
+
+function igcommerce_utility_articles_alt_capation_dam_image($image_obj, $image_id) {
+
+  global $language;
+  $output = FALSE;
+  if (!empty($image_obj) && isset($image_id)) {
+    $keyword = "entity_type:node";
+    $parameter[]['rows'] = '1';
+    $parameter[]['fl'] = 'ss_field_content_title ';
+    $parameter[]['fl'] = 'ss_field_caption';
+    $parameter[]['fl'] = 'ss_language';
+    $parameter[]['fl'] = 'entity_id';
+    $filter[]['bundle'] = 'image';
+    $filter[]['entity_id'] = $image_id;
+    $filter[]['ss_language'] = '(' . str_replace('-', ' OR ', $language->language) . ')';
+    $data = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+    if (!empty($data->response->docs)) {
+      $output = array(
+        'alt' => $data->response->docs[0]->ss_field_content_title ,
+        'caption' => $data->response->docs[0]->ss_field_caption,
+      );
+    }
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_token_info(). This hook will register custom token for
+ *  request URI.
+ */
+function igcommerce_utility_articles_token_info() {
+  //This custom token is for to fetch current page browser url
+  $info['tokens']['custom']['requested_url'] = array(
+    'name' => t('Requested url'),
+    'description' => t('Fetch current page requested url.'),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_tokens(). This hook will operate the token and replace it with it's value.
+ */
+function igcommerce_utility_articles_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+  $sanitize = !empty($options['sanitize']);
+
+  if ($type == 'custom') {
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'requested_url':
+          $toreplace = igcommerce_utility_articles_get_requested_url();
+          $replacements[$original] = $toreplace;
+
+          break;
+      }
+    }
+  }
+
+  return $replacements;
+}
+
+/**
+ * Set the value of custom token
+ */
+function igcommerce_utility_articles_get_requested_url() {
+  $actual_link = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+  return $actual_link;
+}

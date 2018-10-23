@@ -1,0 +1,311 @@
+/**
+ * @file 00-navbar.less
+ * Styles for the navbar and head items on all pages
+ *
+ * Styles for the navbar and head items on all pages, shadow bar at top, navigation
+ * logo, and search
+ *
+ *
+ *
+ */ 
+
+ //This is the semi-opaque gray strip above the main navbar. Hides on tab & mob.
+ #gray-shadow-head-bar {
+  display: none;
+  @media (min-width: @screen-md-min) {
+    display: block;
+    width: 100%;
+    height: 29px;
+    background-color: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    z-index: 1030;
+    top: 0;
+  }
+}
+// Hamburger Button on mobile
+.navbar-toggle {
+  position: relative;
+  float: right;
+  color: white;
+  text-align: text-center;
+  font-size: 2em;
+  margin: 15px;
+  width: 50px;
+  height: 50px;
+  padding-top: 7px;
+  background-color: @fluke-gray;
+  background-image: none;
+  border: none;
+  border-radius: 0px;
+}
+
+// Overrides default navbar styles
+#navbar {
+  border-bottom: 5px solid @fluke-white; 
+}
+
+// Main nav dropdown menu width. The markup comes from igcommerce_utility.module
+@media (min-width: @screen-md-min) {
+  .top-lvl-products .dropdown-menu {
+    left: -179px; //Puts products dropdown to the left of parent container (Under logo)
+    width: 972px;
+    @media (min-width: @screen-lg-min) {
+      width: 1230px;
+    }
+    // .nav-column {
+    //   &:nth-child(2) { 
+    //     border-left: 1px solid @fluke-menu-item;
+    //     height: 100%;
+    //   }
+    // }
+  }
+  .top-lvl-support .dropdown-menu {
+    width: 600px; 
+    left: -200px;
+    @media (min-width: @screen-lg-min) {
+      left: 0;
+    }
+  }
+  .top-lvl-solutions .dropdown-menu {
+    width: 600px;  
+  }
+  .top-lvl-where-to-buy,
+  .top-lvl-training,
+  .top-lvl-fluke-connect {
+    .dropdown-menu {
+      width: 256px;   
+    }
+  }
+}
+
+.navbar-fixed-top {
+
+  // Makes room for semi-opaque gray strip on desktop only.
+  @media (min-width: @screen-md-min) {
+    top: 29px;
+  }
+  // This functionality was moved into figstrap-utility.js to make
+  // The parent link clickable.
+  // Turns on hover dropdowns for the main nav only on desktop
+  // .dropdown:hover .dropdown-menu {
+  //   @media (min-width: @screen-md-min) {
+  //     //display: block;
+  //   }
+  // }
+}
+
+.logo {
+  &.navbar-btn {
+    margin: 0; // Overrides default bootstrap styling.
+  }
+  img {
+    padding: 15px 0;
+    width: auto;
+  //height: 50px;
+  @media (min-width: @screen-md-min) {
+    width: 165px;
+    /* rules for tablet (768 > 992) */
+    padding: 22px 0;
+  }
+}
+}
+
+// Top level navigation items only
+.navbar-inverse .navbar-nav > li > a {
+  color: #fff;
+  font-size: 16px;
+  &.active {
+    //border-bottom: 5px solid @fluke-yellow;
+    margin-bottom: -5px;
+  }
+  &.dropdown-toggle {
+    @media (min-width: @screen-md-min) {  
+      padding: 40px 20px;
+    }
+  }
+}
+// Second level navigation items that appear on hover
+.dropdown-menu { 
+  line-height: 1; // Reduced from 1.5 so that words that wrap will stay close.
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.75); // Semi-opaque bg for dropdown navs
+  padding: 45px 16px; 
+  li {
+      padding-top: 13px; //Spacing between all list items, some 40px exceptions below
+    }
+    ul { 
+      list-style: none; // Strips default list styles
+      padding-left: 0;
+    }
+    .nav-column {
+      padding: 0 16px;
+      > li:first-child {
+        padding-top: 0; // Removes top padding from first item in each column
+      }
+    }
+    .second-lvl {
+    //&:not(:first-child),
+    &:not(.second-lvl-no-child) {
+      padding: 40px 0 0; // Parent items, excluding those w/o children
+    }
+  }
+  .second-lvl > a {
+    color: @fluke-yellow; // Parents with children
+  }
+  // .second-lvl-no-child,
+  a {
+    text-decoration: none; //Kills underline
+    color: @fluke-white; // All links should be white except parents with children
+    &:hover {
+      color: @fluke-yellow;
+    }
+  }
+}
+
+#block-views-exp-display-products-page {
+  position: relative;
+  top: 0;
+  right: 0;
+}
+
+/**
+* - Forms
+* ----------------------------------------------------------------------------
+*/
+// Kills default form margins 
+.navbar #block-search-form {
+  margin: 0;
+}
+.region-navigation #block-search-form{
+  float:right;
+  height: 100px;
+}
+
+.region-navigation .form-search .btn-primary{
+  display: none;
+}
+.region-navigation .form-search .input-group{
+  float: right;
+}
+
+.region-navigation .form-search .input-group .form-control {
+  position: relative;
+  z-index: 2;
+  float: right;
+  margin-bottom: 0;
+  border: none;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  height:100px;
+  padding: 0 30px;
+}
+
+@-moz-document url-prefix() { 
+  .region-navigation .form-search .input-group .form-control {
+    position: relative;
+    z-index: 2;
+    float: right;
+    margin-bottom: 0;
+    border: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    height:100px;
+    width: 75px;
+  }
+}
+.region-navigation .form-search .form-group {
+  margin-bottom: 0px;
+}
+.region-navigation .form-search textarea, input {
+  outline: none;
+}
+.region-navigation .form-search .form-control:focus {
+  border-color: none;
+  outline: 0;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+}
+
+.region-navigation .form-search input[type=text] {
+
+  background: lighten(@fluke-body-text, 10%) url(../../../../../sites/default/files/search_icon.svg) no-repeat center center;
+  background-size: 14px;
+  -webkit-transition: all .5s;
+  -moz-transition: all .5s;
+  transition: all .5s;
+  -webkit-appearance: textfield;
+  -webkit-box-sizing: content-box;
+  font-family: inherit;
+  font-size: 100%;
+  width: 15px;
+  padding-left: 10px;
+  color: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.region-navigation .form-search input[type=text]:hover {
+  background-color: #efefef;
+}
+.region-navigation .form-search input[type=text]:focus {
+  width: 100%;
+  padding-left: 62px;
+  padding-right: 30px;
+  color: #212121;
+  background: #efefef url(../../../../../sites/default/files/search_icon.svg) no-repeat 29px center;
+  background-size: 14px;
+  cursor: auto;
+}
+.region-navigation .form-search input:-moz-placeholder  {
+  color: transparent;
+  position: relative;
+  padding-left: 100px;
+  -moz-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input::-moz-placeholder {  /* Firefox 19+ */
+  color: transparent;
+  position: relative;
+  padding-left: 100px;
+  -moz-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input:-ms-input-placeholder {  
+  color: #212121;
+  position: relative;
+  padding-left: 100px;
+  -ms-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input::-webkit-input-placeholder {
+  color: #212121;
+  position:relative;
+  padding-left:100px;
+  -webkit-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input:focus::-webkit-input-placeholder, input:focus::-webkit-input-placeholder {
+  font-style: italic;
+  padding-left: 0;
+}
+.region-navigation .form-search input:focus:-moz-placeholder, input:focus:-moz-placeholder {
+  color: #212121;
+  font-style: italic;
+  padding-left: 0;
+}
+.region-navigation .form-search input:focus::-moz-placeholder, input:focus::-moz-placeholder {
+  /* Firefox 19+ */
+  color: #212121;
+  font-style: italic;
+  padding-left: 0;
+}
+.region-navigation .form-search input:focus:-ms-input-placeholder, input:focus:-ms-input-placeholder {
+  font-style: italic;
+  padding-left: 0;
+}

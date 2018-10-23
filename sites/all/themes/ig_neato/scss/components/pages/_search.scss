@@ -1,0 +1,224 @@
+// This affects multiple search boxes across multiple pages:
+// /support/software-downloads
+// /en-us/search/page/?keyword=fluke
+// /en-us/support/manuals
+
+// These are left over from some template adjustment years ago. It's 
+// easier to override them than it is to figure out why we have the 
+// templates in the first palce.
+.views-exposed-form .views-exposed-widget .form-submit {
+  margin-top: 0;
+}
+.views-exposed-form .views-exposed-widget {
+  padding: 0; /* LTR */
+  width: 100%;
+  float: none;
+}
+//Hides the search label
+.pane-custom-faceted-search label[for=edit-keyword] {
+  @extend %element-invisible;
+}
+
+// Keeps the input text at 8 columns on desktop. this layout is used several times.
+input.form-text {
+  padding: 1.1rem 3rem;
+  border: 1px solid $gray-c;
+  &:active {
+    border: 1px solid $blue-medium;
+  }
+  @include span-columns(12);
+  @include media($tablet) {
+    @include span-columns(8);
+    &:last-child {margin-right: 2.43902%;}
+  }
+}
+// Keeps the submit button at 4 columns on desktop. this layout is used several times.
+input.form-submit {
+  @include transition(background .25s ease-in-out);
+  margin-top: 0;
+  @include span-columns(12);
+  @include media($tablet) {
+    @include span-columns(4);
+    margin-right: 0;
+  }
+}
+// If a search form has a filter, this will knock it below the submit button
+.form-item-sort-order {
+  clear: both;
+}
+//Search page filters
+div.pane-igcommerce-utility-solr-search-filters{
+  //Filter by type
+  h3{
+    padding: 2rem 4rem .7rem 2rem; //Pulled from navigation--sidebar.scss
+    display: none;
+    @include media($desk-lg) {
+      display: block;
+    }
+  }
+  .no-filters{
+    padding: $spacing-1;
+  }
+}
+
+//Label for number of results of term
+.num-results{
+  font-size: $font-size-sm;
+  margin-top: $spacing-2;
+}
+  // Search Result Items
+  .pane-igcommerce-utility-solr-search-results{
+    ul.search-result-list-items{
+      padding: 0;
+      list-style: none;
+      @include span-columns(12);
+    }
+    .search-result-item-wrapper{
+      @include span-columns(12);
+      border-bottom: 1px solid $gray-c;
+      margin-bottom: 1em;
+      padding-bottom: 1em;
+      &.views-row-first{
+        margin-top: $spacing-3;
+      }
+    }
+    select.search-sort{
+      background: $gray-d ;
+      border-radius: 0;
+      border: none;
+      height: 40px;
+      margin-top: 1rem;
+      @include span-columns(12);
+      @include media($tablet) {
+        @include span-columns(5);
+      }
+    }
+  //No Results popular categories, fixed column width in mobile
+  .toc-listing-item-wrapper{
+    @include span-columns(12);
+    @include media($tablet) {
+      @include span-columns(4);
+      }
+    }
+  }
+
+// 404 block section on 404page and search/page with no queries
+div.pre-not-found{
+  @include span-columns(12);
+}
+// Gives the "Sorry the page you were looking for was not found" errors more padding between the facets and search tips
+.no-results{
+  padding-top: $spacing-1;
+}
+.not-found-content{
+  @include span-columns(12);
+  padding: $spacing-2 0 ;
+}
+.not-found-flukie{
+  @include span-columns(12);
+  @include media($tablet) {
+    @include span-columns(3);
+  }
+}
+.not-found-tips-decription{
+  @include span-columns(12);
+  @include media($tablet) {
+    @include span-columns(8);
+  }
+}
+//body.template-srch{
+//  div.form-type-checkbox{
+//    @extend %element-invisible; //Removes facet checkboxes on 404 page
+//  }
+//}
+// THis is legacy button styling. Removed 12-11-17 -rrn
+
+// //General search page + search found on indivdual support or product pages
+
+//     //These wrappers are all named differently, so I need to include them all to hit all pages with search.
+//     #views-exposed-form-search-list-solr-training-library, // Appears on /en-us/training/training-library
+//     #edit-sm-field-content-title-wrapper, 
+//     #edit-tm-article-display-title-wrapper,
+//     #edit-tm-awards-display-title-wrapper, // new awards page wrapper -rrn 1-12-17
+//     #edit-tm-product-display-title-wrapper,
+//     #edit-keyword-wrapper,
+//     #edit-tm-field-display-title-wrapper,
+//     #edit-tm-article-display-title-wrapper2,
+//     #views-exposed-form-custom-faceted-search-default,
+//     #search-block-form {
+//       margin-top: 0;
+//       label{
+//         visibility: hidden;
+//         display: block;
+//         height: 0;
+//         margin-bottom: 0;
+//       }
+//       @include span-columns(12);
+//       @include media($tablet) {
+//         @include span-columns(8);
+//       }
+//       input[type="text"]{
+//         -webkit-appearance: none;
+//         @include transition(background .25s ease-in-out);
+//         background: white;
+//         border-radius: 0;
+//         border: 1px solid $gray-lighter;
+//         height: 48px;
+//         &:hover{
+//           background: darken($gray-lightest, 5%);
+//         }
+//       }
+
+//     // Submit button
+//     .form-actions,
+//     .views-submit-button {
+
+//     }
+//     .views-exposed-form .views-exposed-widget .form-submit {
+//     margin-top: 0;
+// }
+//     input[type="submit"] {
+//       @include transition(background .25s ease-in-out);
+//       color: $black;
+//       font-weight: normal;
+//       margin-top: 0;
+//       width:100%;
+//        @include span-columns(12);
+//       @include media($tablet) {
+//         @include span-columns(4);
+//         margin-right: 0;
+//       }
+//     }
+
+
+//   }
+//   .flukestrap-layouts-content {
+//     // Sort oder Chosen-container(module) 100% of column
+//     .solr-sort-order{
+//       width: 100%;
+//       label{
+//         display: none;
+//       }
+//     }
+//     // Search results found in the right column
+//     .view-search-list-solr .views-row,
+//     .view-custom-faceted-search .views-row {
+//       @include outer-container;
+//       border-bottom: 1px solid $gray-lightest;
+//       padding: 2.25rem 0;
+//     }
+//     .views-row-last{
+//       margin-bottom: 2.25rem;
+//     }
+//     // No longer in solr - Remove?
+//     .search-snippet-info{
+//       padding-left: 0;
+//     }
+//     // Facet Search Item Footer - date | category
+//   .views-field-sm-vid-Article, // Support pages
+//   .views-field-ds-created, // Search page
+//   .views-field-nothing //Default value, views class keeps vanishing on live...
+//   {
+//     font-weight: 700;
+//   } 
+// }

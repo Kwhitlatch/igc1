@@ -1,0 +1,8 @@
+<?php 
+
+/**
+ * Revert fluke_articles to update fluke-news page and add date format
+ */
+function fluke_articles_update_7002() {
+  features_revert(array('fluke_articles'));
+}

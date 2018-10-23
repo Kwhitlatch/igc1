@@ -1,0 +1,25 @@
+// New Fluke Products TOC
+// Example: /en-us/products/new-fluke-products
+
+//New Product Wrapper
+.new-product-container{
+  @include outer-container;
+  border-bottom: 1px solid $gray-c;
+  padding: $spacing-1 0;
+  &:last-of-type{
+    border-bottom: none;
+  }
+}  
+// 
+.new-product-img{
+  @include span-columns(12);
+  @include media($screen-sm){
+    @include span-columns(4);
+  }
+} 
+.new-product-summary{
+  @include span-columns(12);
+  @include media($screen-sm){
+    @include span-columns(8);
+  }
+}

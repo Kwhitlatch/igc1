@@ -1,0 +1,38 @@
+// Fluke News Articles, example: solutions/fluke-news/vibration/inspect-moving-machinery-putting-freeze
+body.page-solutions-fluke-news{
+  /* Left aligns lists in content */
+    ol, ul {
+    padding-left: 1.5rem;
+    margin: 0 0 1rem;
+    }
+  .article_header_img{
+    margin-top: $spacing-1;
+  }
+  .article_header_caption{
+    font-size: $font-size-sm;
+  }
+  .pane-share-block{
+    //Float social links to the right - Additional margin 
+    %social-boxes{
+      margin-top: $spacing-3;
+      margin-bottom: $spacing-1;
+      float: left;
+    }
+  }
+  //Default article image styles. Can be over-ridden with pull left. 
+  img{
+    // float: right;
+    // margin-left: $spacing-1;
+    // margin-right: 0;
+    // margin-bottom: $spacing-1;
+    &.pull-left{
+      margin-left: 0;
+      margin-right: $spacing-1;
+    }
+  }
+  //Related items at the bottom of the page
+  .pane-igcommerce-utility-articles-articles-solr-recommended-product,  .pane-igcommerce-utility-articles-articles-solr-recent-article{
+      margin-top: $spacing-1;
+  }
+}
+

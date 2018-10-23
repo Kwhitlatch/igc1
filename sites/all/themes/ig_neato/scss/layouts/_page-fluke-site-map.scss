@@ -1,0 +1,25 @@
+// /en-us/fluke/site-map
+
+.page-fluke-site-map {
+  .toc_article_body {
+    hyphens: none;
+    h2 a {
+      color: black;
+    }
+    section {
+      border-bottom: 1px solid $gray-c;
+      margin-bottom: 1.6rem;
+      ul {
+        list-style-type: none;
+        padding-left: 20px;
+        @include media($screen-sm) {
+          column-count: 2;
+          column-gap: 30px;
+        }
+        @include media($screen-md) {
+          column-count: 3;
+        }
+      }
+    }
+  }
+}

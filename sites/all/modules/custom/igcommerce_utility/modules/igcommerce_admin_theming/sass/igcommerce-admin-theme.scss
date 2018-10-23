@@ -1,0 +1,17 @@
+/*! Sub-theme overrides for Commerce Kickstart Admin theme
+ *  Version 1.01
+ */
+// The note to offshore devs is to discourage people from editing the comiled css file.
+@import "note-to-offshore-developers.scss";
+
+// Make sure the charset is set appropriately
+@charset "UTF-8";
+
+// Use the fluke custom icon font. (This only gets loaded if the font is used on the page)
+@import url(https://s3.amazonaws.com/icomoon.io/90508/FWW/style.css?kzenbz);
+
+// Import mixins
+@import "helpers-mixins/*.scss";
+
+// Seperate file for each admin page themed.
+@import "pages/**/*.scss";

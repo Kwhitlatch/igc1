@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Fluke Panel Pages feature.
+ */
+
+include_once 'fluke_panel_pages.features.inc';

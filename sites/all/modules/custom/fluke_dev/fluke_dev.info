@@ -1,0 +1,4 @@
+name = Fluke Dev
+description = Dev module for experimentation.
+core = "7.x"
+package = Fluke

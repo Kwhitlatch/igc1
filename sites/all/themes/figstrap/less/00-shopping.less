@@ -1,0 +1,92 @@
+/**
+ * @file 00-shopping.less
+ * Styling that affects all shopping cart functionality.
+ *
+ * Any styles that affect multiple types of pages should go here.
+ *
+ * - Shopping Cart
+ * - Login Menu
+ */
+
+/**
+ * - Shopping Cart
+ *
+ * This is the cart that appears on the top of each page.
+ * The template block--views--shopping-cart-block.tpl.php controlls the wrapper
+ * for this content.
+ * ----------------------------------------------------------------------------
+ */ 
+ 
+ #block-views-shopping-cart-block .content {
+  background-color: white;
+  // Adds shopping cart icon
+  &:before {
+    font-family: fluke-icon-font;
+    padding: 10px 10px 0;
+    content: "\e00d"; // same as .icon-cart;
+    color: @fluke-yellow;
+    display: inline;
+    float: left;
+  }
+  .view-shopping-cart {
+    .view-empty p {
+      margin: 10px 5px 0 0; // Overrides some last child logic found elsewhere.
+      float: left;
+    }
+    .line-item-total {
+     margin-top: 10px;
+     display: inline;
+     float: left;
+   }
+   .line-item-summary {
+    margin-bottom: 0;
+    .links {
+      margin-bottom: 0;
+      margin-top: 0;
+      clear: none;
+    }
+    ul.links a {
+      font-size: 14px;
+        height: 39px;
+        .btn; // Applies btn styles to checkout using mixins.
+        .btn-primary;
+      }
+      .line-item-total-label {
+        display: none; //Hides "Total" Label
+      }
+    }
+  }
+}
+
+
+
+
+
+
+/**
+ * - Login Menu
+ *
+ * This is the Login and My Account link that appears on the top of each page.
+ * The template block--menu--menu-user-menu.tpl.php controlls the wrapper
+ * for this content.
+ * ----------------------------------------------------------------------------
+ */ 
+ #block-menu-menu-user-menu .content {
+  float: right;
+  ul.menu {
+    list-style: none; 
+  }
+  li {
+    display: block;
+    float: left;
+    a {
+      &.active:hover,
+      &.active{
+        text-decoration: underline;
+        color: white;
+      }
+    }
+  }
+}
+
+

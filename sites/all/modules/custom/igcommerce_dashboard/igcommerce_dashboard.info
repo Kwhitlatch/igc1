@@ -1,0 +1,3 @@
+name = "IGcommerce_Dashboard"
+description = "Dashboard for url alias dashboard and product promotions."
+core = "7.x"

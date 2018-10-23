@@ -1,0 +1,858 @@
+<?php
+function fluke_dev_menu() {
+
+    $items['admin/config/development/fluke_dev/301checker']= array(
+        'title' => t('301 Checker'),
+        'description' => t('Shows what would happen if a given URL was visited in the 301/404 logic.'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('fluke_dev_301checker_form'),
+        'access arguments' => array('administer site configuration'),
+    );
+
+    $items['admin/config/development/fluke_dev/solrtest']= array(
+        'title' => t('Development page'),
+        'description' => t('Page for development.'),
+        'access arguments' => array('administer site configuration'),
+        'page callback' => 'fluke_dev_test_page',
+    );
+
+    $items['admin/config/development/fluke_dev/resaveallnodes'] = array(
+        'title' => 'Re-Save all nodes',
+        'description' => 'Update all nodes for solr to pick it up.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('fluke_dev_nodes_resave_form'),
+        'access arguments' => array('administer site configuration'),
+    );
+    
+    $items['admin/config/development/fluke_dev/rollback301'] = array(
+        'title' => 'Rollback all 301 redirects',
+        'description' => 'Delete all 301 redirect entries.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('fluke_dev_rollback_301_form'),
+        'access arguments' => array('administer site configuration'),
+    );
+    
+    $items['admin/config/development/fluke_dev/import301'] = array(
+        'title' => 'Import 301 redirects',
+        'description' => 'Import and process 301 redirect entries.',
+        'page callback' => array('fluke_dev_import_301_pagecallback'),
+        'access arguments' => array('administer site configuration'),
+    );
+    return $items;
+}
+
+function fluke_dev_permission() {
+    return array(
+        'administer fluke dev module' => array(
+            'title' => t('Administer Fluke Dev'),
+            'description' => t('Perform administration tasks for my Fluke Dev Module.'),
+        ),
+    );
+}
+
+function fluke_dev_test_page($type) {
+    switch ($type) {
+
+        case 'awards':
+            //ecm_utility_solr_node_awards($document, $entity, $entity_type);
+            break;
+
+        case 'cta_web_card_lead_gen':
+            //ecm_utility_solr_node_cta($document, $entity, $entity_type);
+            break;
+
+        case 'article':
+//            module_load_include('inc', "ecm_utility_solr", "includes/fluke_ecm_utility_solr.article");
+//            ecm_utility_solr_article($document, $entity, $entity_type);
+            break;
+
+        case 'product_display':
+//            module_load_include('inc', "ecm_utility_solr", "includes/fluke_ecm_utility_solr.product_display");
+//            ecm_utility_solr_product_display($document, $entity, $entity_type);
+            break;
+
+        default:
+            break;
+
+    } // end of switch on case node
+
+//
+//    dpm(fluke_solr_get_related_software($entityLanguage, $entity));
+//    dpm(fluke_solr_get_translated_term($entity_language, $term_id));
+//    dpm(fluke_solr_fallback($language_entity, $entity_data, $field_machine_name, $field_type = 'value', $default_language = FALSE), 'fluke_solr_fallback'));
+//
+//    dpm(fluke_solr_fallback_assign_values($entityLanguage, $entity, $field_machine_name, $field_type = 'value'));
+//
+//    dpm(fluke_solr_get_taxonomy_terms($language_entity, $entity_data, $field_machine_name, $field_type = 'tid', $default_language = FALSE, $multiple = FALSE));
+//    dpm(fluke_solr_get_taxonomy_fallback($language_entity, $term_id));
+}
+
+function fluke_dev_nodes_resave_form() {
+    $node_types = node_type_get_types();
+    $types = array();
+    if(!empty($node_types)) {
+        foreach($node_types as $node_type) {
+            $types[$node_type->type] = $node_type->name;
+        }
+    }
+    // Provide a text field.
+    $form['name'] = array(
+        '#title' => t('Node types to update'),
+        '#type' => 'checkboxes',
+        '#options' => $types,
+        '#required' => TRUE,
+    );
+
+    // Provide a submit button.
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => 'Update Nodes',
+    );
+
+    return $form;
+}
+
+/**
+ * Update all the nodes on the site so that solr can pick them up
+ */
+function fluke_dev_nodes_resave_form_submit($form, &$form_state) {
+    module_load_include('inc', 'node', 'node.admin');
+    if(!empty($form_state['values']['name'])) {
+        $message = '';
+        foreach ($form_state['values']['name'] as $node_type => $value) {
+            if($value !== 0) {
+                $nids = db_query('SELECT nid FROM {node} n WHERE n.type = :type', array(':type' => $value))->fetchCol();
+                node_mass_update($nids, array());
+                watchdog('flukedev', 'Updated %count %type.', array('%count' => count($nids), '%type' => t($value)), WATCHDOG_NOTICE);
+                $message .= count($nids) . ' ' . $value .',';
+            }
+        }
+    }
+    drupal_set_message(t('Updated '. $message));
+}
+
+
+/**
+ * @return mixed
+ * Implement
+ */
+function fluke_dev_rollback_301_form() {
+  if(module_exists('redirect')) {
+    $types = db_query('SELECT DISTINCT status_code FROM {redirect}')->fetchAllKeyed();
+    if(!empty($types)) {
+      $final_array = array_combine(array_keys($types), array_keys($types));
+      $form['type'] = array(
+        '#title' => t('Redirect Status'),
+        '#type' => 'radios',
+        '#description' => t('Select which redirect types to delete.'),
+        '#options' => $final_array,
+        '#required' => TRUE,
+      );
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Delete'),
+      );
+      return $form;
+    }
+    
+  }
+  else {
+    drupal_set_message("Redirect module needs to be installed and enabled for this page to work");
+  }
+}
+
+function fluke_dev_rollback_301_form_submit(&$form, &$form_state) {
+  // Run the batch.
+  $batch = fluke_dev_rollback_301_batch_info($form_state['values']['type']);
+  batch_set($batch);
+}
+
+
+function fluke_dev_rollback_301_batch_info($type) {
+  $operations[] = array('fluke_dev_rollback_301_batch_delete', array($type));
+  
+  return array(
+    'operations' => $operations,
+    'finished' => 'fluke_dev_rollback_301_batch_finished',
+    'file' => drupal_get_path('module', 'redirect') . '/redirect.generate.inc',
+  );
+}
+
+function fluke_dev_rollback_301_batch_delete($type, array &$context) {
+  if (empty($context['sandbox'])) {
+    $context['sandbox'] = array();
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_rid'] = 0;
+    $context['sandbox']['max'] = db_query('SELECT COUNT(DISTINCT rid) FROM {redirect} WHERE status_code = :status_code', array(':status_code' => $type))->fetchField();
+  }
+  
+  $limit = 150;
+  $rids = db_query_range("SELECT rid FROM {redirect} WHERE rid > :rid AND status_code = :status_code ORDER BY rid", 0, $limit, array(':rid' => $context['sandbox']['current_rid'], ':status_code' => $type))->fetchCol();
+  redirect_delete_multiple($rids);
+  //$result = db_truncate('redirect')->execute();
+  
+  // Update our progress information.
+  $context['sandbox']['progress'] += count($rids);
+  $context['sandbox']['current_rid'] = end($rids);
+  $context['message'] = t('Deleted URL redirect @rid. remaining total: @total', array('@rid' => end($rids), '@total' => $context['sandbox']['max']));
+  
+  // Inform the batch engine that we are not finished,
+  // and provide an estimation of the completion level we reached.
+  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+    $context['finished'] = ($context['sandbox']['progress'] >= $context['sandbox']['max']);
+  }
+}
+
+function fluke_dev_rollback_301_batch_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message('Operation completed successfully.');
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    drupal_set_message(t('An error occurred while processing @operation with arguments : @args', array('@operation' => $error_operation[0], '@args' => print_r($error_operation[0], TRUE))));
+  }
+}
+
+function fluke_dev_import_301_pagecallback(){
+  //$module_path = drupal_get_path('module', 'fluke_dev');
+  
+  $form1 = drupal_get_form('fluke_dev_import_301_form');
+  $form2 = drupal_get_form('fluke_dev_import_301_precess_form');
+  
+  $output = "<p>This tool will attempt to import CSV data";
+  $output .= drupal_render($form1);
+  $output .= drupal_render($form2);
+  
+  if(file_exists('sites/default/files/bad_301_records.csv')) {
+    $file = file_create_url('public://bad_301_records.csv');
+    drupal_set_message('<div> Some redirect records could not be imported and have been added to this file: ' . l('Download', $file, array('query' => array('download' => '1'))), 'error');
+  }
+  
+  return $output;
+}
+
+function fluke_dev_import_301_precess_form() {
+  $uri = 'public://Master_ROW_301.csv';
+  
+  if (file_exists(strtolower($uri))) {
+    
+    $file = drupal_realpath($uri);
+    $bytes = filesize(strtolower('sites/default/files/Master_ROW_301.csv'));
+//    dpm($bytes, '$bytes');
+//    dpm($file, '$file');
+//    dpm(file_create_url($file), '$file');
+    if ($bytes == 0) {
+      $file_size = "0.00 B";
+    } else {
+      $s = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+      $e = floor(log($bytes, 1024));
+      $file_size = round($bytes/pow(1024, $e), 2).$s[$e];
+    }
+    
+    $form['url'] = array (
+      '#prefix' => '<div style="float: right;">',
+      '#type' => 'textfield',
+      '#value' => $uri,
+      '#disabled' => TRUE,
+      '#title' => t('Existing File'),
+      '#description' => t('There is a file already uploaded of size: ('. $file_size .')'),
+      //'#default_value' => variable_get('certificates', ''),
+    );
+    
+    $form['opperations']['process'] = array(
+      '#type' => 'submit',
+      '#value' => t('Process'),
+      '#suffix' => '</div>',
+    );
+    return $form;
+  }
+}
+
+/**
+ * @file
+ * Devel generate integration for the redirect module.
+ */
+
+function fluke_dev_import_301_form() {
+  if(module_exists('redirect')) {
+    $form['#attributes'] = array(
+      'enctype' => 'multipart/form-data',
+      '#prefix' => '<div style="float: left;">',
+    );
+    $form['csvupload'] = array(
+      '#title' => t('CSV File'),
+      '#type'  => 'file',
+      '#description' => ($max_size = parse_size(ini_get('upload_max_filesize'))) ? t('- File name must be Master_ROW_301.csv.
+      <br>- The CSV file must include columns in the following order:
+      <br>"From URL","To URL","Redirect Status","Redirect Language".
+      <br>- Defaults for status and language can be set in the advanced options.
+      <br>- Due to server restrictions, the <strong>maximum upload file size is !max_size</strong>.
+      <br>- Files that exceed this size will be disregarded.', array('!max_size' => format_size($max_size))) : '',
+    ) ;
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Commence Import'),
+      '#suffix' => '</div>',
+    ) ;
+    $form['#validate'] = array(
+      'fluke_dev_import_301_validate_fileupload',
+    ) ;
+    
+    return $form;
+  }
+  drupal_set_message("Redirect module needs to be installed and enabled for this page to work");
+}
+
+function fluke_dev_import_301_validate_fileupload(&$form, &$form_state) {
+  $validators = array(
+    'file_validate_extensions' => array( 'csv' ),
+  );
+  
+  if ( $file = file_save_upload('csvupload', $validators, "public://", FILE_EXISTS_REPLACE) ) {
+    $form_state['values']['csvupload'] = $file->destination;
+  }
+  else {
+    form_set_error('fluke_dev_import_301_', t('Unable to copy upload file to !dest', array('!dest' => $file->destination)));
+  }
+}
+
+function fluke_dev_import_301_precess_form_submit(&$form, &$form_state) {
+  $batch = array(
+    'title' => t('Importing CSV ...'),
+    'operations' => array(),
+    'init_message' => t('Commencing'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('An error occurred during processing'),
+    'finished' => 'fluke_dev_import_301_import_finished',
+  );
+  $bad_records = array();
+  
+  if (file_exists(strtolower('sites/default/files/Master_ROW_301.csv'))) {
+    if ( $handle = fopen(strtolower('sites/default/files/Master_ROW_301.csv'), 'r') ) {
+      if(isset($form_state['values']['url'])) {
+        $filename = $form_state['values']['url'];
+      } else {
+        $filename = 'public://Master_ROW_301.csv';
+      }
+      $batch['operations'][] = array('_fluke_dev_import_301_remember_filename', array($filename));
+      $line_count = 1 ;
+      $first = TRUE ;
+      $line = fgetcsv($handle, 4096);
+      while ( $line = fgetcsv($handle, 4096) ) {
+        if(strlen($line[0]) < 255) {
+          /**
+           * we use base64_encode to ensure we don't overload the batch
+           * processor by stuffing complex objects into it
+           */
+          $batch['operations'][] = array('_fluke_dev_import_301_import_line', array(array_map('base64_encode', $line)));
+        } else {
+          // The source was too long, then write it to a file and continue
+          $bad_records[] = $line;
+        }
+        unset($line);
+      }
+      fclose($handle);
+      
+    } // we caught this in fluke_dev_import_301_validate_fileupload()
+  } // we caught this in fluke_dev_import_301_validate_fileupload()
+  
+  if(count($bad_records) > 2) {
+    $f = fopen('sites/default/files/bad_301_records.csv', "wa+");
+    foreach ($bad_records as $row) {
+        fputcsv($f, $row);
+    }
+    fclose($f);
+  }
+  
+  batch_set($batch);
+  
+  
+}
+
+function fluke_dev_import_301_import_finished($success, $results, $operations) {
+  if ( !empty($results['failed_rows']) ) {
+    $dir  = file_directory_path() . '/csvImporter/' ;
+    if ( file_check_directory( $dir, FILE_CREATE_DIRECTORY ) ) {
+      $csv_filename = 'failed_rows-'. basename($results['uploaded_filename']); // we validated extension on upload
+      $csv_filepath = $dir .'/'. $csv_filename;
+      $targs = array(
+        '!csv_url' => l(check_plain($csv_filename), $csv_filepath),
+        '%csv_filename' => $csv_filename,
+        '%csv_filepath' => $csv_filepath,
+      ) ;
+      if ( $handle = fopen($csv_filepath, 'w+') ) {
+        foreach( $results['failed_rows'] as $failed_row ) {
+          fputcsv($handle, $failed_row);
+        }
+        fclose($handle);
+        drupal_set_message(t('Some rows failed to import. You may download a CSV of these rows: !csv_url', $targs), 'error');
+      }
+      else {
+        drupal_set_message(t('Some rows failed to import, but unable to write error CSV to %csv_filepath', $targs), 'error');
+      }
+    }
+    else {
+      drupal_set_message(t('Some rows failed to import, but unable to create directory for error CSV at %csv_directory', $targs), 'error');
+    }
+  }
+  return t('The CSV import has completed.');
+}
+
+
+function _fluke_dev_import_301_remember_filename($filename, &$context) {
+  $context['results']['uploaded_filename'] = $filename;
+}
+
+function _fluke_dev_import_301_import_line($line, &$context) {
+  
+  $context['results']['rows_imported']++;
+  $line = $cleaned_line = array_map('base64_decode', $line);
+  
+  
+  //-------------------------------------------------------------------------------------------|
+  //  Give feedback to the importer about which operation we're preforming
+  //-------------------------------------------------------------------------------------------|
+  //Show the row count by default
+  $context['message'] = t('Importing row !c', array( '!c' => $context['results']['rows_imported'] ));
+  
+  //Or, Provide some feedback about the row currently being processed
+  $context['message'] = t('Importing %title', array('%title' => $line[0]));
+  
+  
+  watchdog('fluke_dev','Importing number: %number redirect records: %title', array('%title' => $line[0], '%number' => $context['results']['rows_imported']), WATCHDOG_INFO);
+  //-------------------------------------------------------------------------------------------|
+  //  End giving feedback to the importer
+  //-------------------------------------------------------------------------------------------|
+  
+  //-------------------------------------------------------------------------------------------|
+  //  This is where you would convert the line of the CSV file into a new object, be it a node, user, etc.
+  //-------------------------------------------------------------------------------------------|
+  
+  $source_path = $line[0];
+  $redirect_path = $line[1];
+  //$redirect['status_code'] = $line[2];
+  $redirect['status_code'] = 301;
+  $redirect['language'] = $line[3];
+  
+  $source_parsed = redirect_parse_url($source_path);
+  $redirect['source'] = $source_parsed['url'];
+  if (isset($source_parsed['query'])) {
+    $redirect['source_options']['query'] = $source_parsed['query'];
+  }
+
+  $redirect_parsed = redirect_parse_url($redirect_path);
+  $redirect['redirect'] = $redirect_parsed['url'];
+  if (isset($redirect_parsed['query'])) {
+    $redirect['redirect_options']['query'] = $redirect_parsed['query'];
+  }
+  if (isset($redirect_parsed['fragment'])) {
+    $redirect['redirect_options']['fragment'] = $redirect_parsed['fragment'];
+  }
+  
+  //=============//
+  $hash = array(
+    'source' => $source_path,
+    'language' => $line[3],
+  );
+  drupal_alter('redirect_hash', $hash, $redirect);
+  redirect_sort_recursive($hash, 'ksort');
+  $hash = drupal_hash_base64(serialize($hash));
+  
+  $redirect['hash'] = $hash;
+  //=============//
+  
+  $redirect_object = new stdClass();
+  redirect_object_prepare($redirect_object, $redirect);
+  try
+  {
+    redirect_save($redirect_object);
+  }
+  catch (SomeException $e)
+  {
+    // do nothing... php will ignore and continue
+  }
+  
+//  $source_options = array();
+//  $redirect_options = array();
+//  $source_parsed = redirect_parse_url($source_path);
+//  $redirect['source'] = $source_parsed['url'];
+//  if (isset($source_parsed['query'])) {
+//    $source_options = $source_parsed['query'];
+//  }
+//
+//  $redirect_parsed = redirect_parse_url($redirect_path);
+//  $redirect['redirect'] = $redirect_parsed['url'];
+//  if (isset($redirect_parsed['query'])) {
+//    $redirect_options = $redirect_parsed['query'];
+//  }
+//  if (isset($redirect_parsed['fragment'])) {
+//    $redirect['redirect_options']['fragment'] = $redirect_parsed['fragment'];
+//  }
+//
+//
+//  $hash = array(
+//    'source' => $source_path,
+//    'language' => $line[3],
+//  );
+//  drupal_alter('redirect_hash', $hash, $redirect);
+//  redirect_sort_recursive($hash, 'ksort');
+//  $hash = drupal_hash_base64(serialize($hash));
+//
+//  $record = db_insert('redirect') // Table name no longer needs {}
+//  ->fields(array(
+//    'hash' => $hash,
+//    'type' => 'redirect',
+//    'uid' => $GLOBALS['user']->uid,
+//    'source' => $source_path,
+//    'source_options' => serialize($source_options),
+//    'redirect' => $line[1],
+//    'redirect_options' => serialize($redirect_options),
+//    'language' => $line[3],
+//    'status_code' => 301,
+//    'status' => 1,
+//  ))
+//    ->execute();
+  
+  
+  
+  drupal_set_message("Parsed line {$line[0]}");
+  
+  //-------------------------------------------------------------------------------------------|
+  //  End converting the line to a drupal object
+  //-------------------------------------------------------------------------------------------|
+  
+  //-------------------------------------------------------------------------------------------|
+  //  You can capture and report on failed lines by doing something like this
+  //-------------------------------------------------------------------------------------------|
+  if ( $line[1] == 'ROW' && $line[2] == 'FAILS' ) {
+    $context['results']['failed_rows'][] = $line ;
+  }
+  //-------------------------------------------------------------------------------------------|
+  //  End capturing and reporting on failed lines
+  //-------------------------------------------------------------------------------------------|
+}
+
+function fluke_dev_cron()
+{
+  module_load_include('inc', 'system', 'system.admin');
+  $form_state = array();
+  $form_state['values']['url'] = 'public://Master_ROW_301.csv';
+  //$form_state['values']['op'] = 'Save configuration';
+  drupal_form_submit('fluke_dev_import_301_precess_form', $form_state);
+  watchdog('fluke_dev','Importing redirect records');
+}
+
+
+
+
+
+function fluke_dev_301checker_form() {
+
+    // Provide a text field.
+    $form['srcurl'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Source URL'),
+        '#description' => t('Enter the source URL in the form of fluke/mxes/instrumentos-de-medida-electricos/comprobadores-para-automocion/fluke-88.htm'),
+        '#size' => 120,
+        '#maxlength' => 512,
+        '#required' => TRUE,
+
+    );
+
+    // Provide a submit button.
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => 'Check redirects',
+    );
+
+    return $form;
+}
+
+function fluke_dev_301checker_form_submit(&$form, &$form_state) {
+
+    dpm($form_state['values']['srcurl'], "Form value is");
+
+    fluke_dev_301checker_validate_src($form_state['values']['srcurl']);
+
+    return;
+
+}
+
+
+function fluke_dev_301checker_validate_src($inbound) {
+
+    $inbound = str_replace("+", "%20", $inbound);
+    $inbound = str_replace(" ", "%20", $inbound);
+
+    drupal_set_message("Beginning analaysis of $inbound");
+
+    if (php_sapi_name() != 'cli' &&
+        !preg_match('/^\/[a-zA-Z][a-zA-Z]-[a-zA-Z][a-zA-Z]\//', $inbound) &&
+        !preg_match('/^\/[Ff][Rr]\//', $inbound) &&
+        !preg_match('/^\/[Ee][Nn]\//', $inbound)) {
+
+        drupal_set_message("Step 1 validation: checking condition where src does not have a XX-XX version of lang-locale");
+
+        $src = ltrim($inbound, '/');
+
+        $src = str_replace('(', "\(", $src);
+        $src = str_replace(')', "\)", $src);
+
+        $src = urlencode($src);
+
+        $src = str_replace("%20", "*", $src);
+
+        $url = "https://fluke2xl-replica3.solrcluster.com/solr/301/select?df=src&fl=dest&q=" . $src . "&wt=json";
+
+        drupal_set_message("Step 1 validation: Solr query URL is: <a href=" . $url . ">$url</a>");
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $dest = json_decode(curl_exec($ch));
+        curl_close($ch);
+
+
+        if (isset($dest) && isset($dest->response) && isset($dest->response->numFound) &&
+            $dest->response->numFound == 0) {
+            $src = strtolower($src);
+            $url = "https://fluke2xl-replica3.solrcluster.com/solr/301/select?df=src&fl=dest&q=" . $src . "&wt=json";
+            drupal_set_message("Step 1 validation: did not find it in solr, taking it to lowercase using this URL: <a href=" . $url . ">$url</a>");
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            $dest = json_decode(curl_exec($ch));
+            curl_close($ch);
+        }
+
+
+        if (isset($dest) && isset($dest->response) && isset($dest->response->numFound) &&
+            $dest->response->numFound > 0) {
+            if (strpos($dest->response->docs[0]->dest, "ttp") > 0) {
+                drupal_set_message("Step 1 validation: found a match in Solr, destination is external URL: " . $dest->response->docs[0]->dest);
+            }
+            else {
+                drupal_set_message("Step 1 validation: found a match in Solr, destination is internal URL: " . $dest->response->docs[0]->dest);
+            }
+
+            return;
+        }
+        else {
+
+            drupal_set_message("Step 2 validation:  src was not found in Solr - removing special characters and trying again");
+
+            $src = ltrim($inbound, '/');
+            $src = str_replace('(', "\(", $src);
+            $src = str_replace(')', "\)", $src);
+
+            $str = preg_replace('/[[:^print:]]/', '*', $src);
+            $src = str_replace("%20", "*", $src);
+
+            $url = "https://fluke2xl-replica3.solrcluster.com/solr/301/select?df=src&fl=dest&q=" . $src . "&wt=json";
+            drupal_set_message("Step 2 validation: looking in Solr using the following query: <a href=" . $url . ">$url</a>");
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            $dest = json_decode(curl_exec($ch));
+            curl_close($ch);
+
+
+            if (isset($dest) && isset($dest->response) && isset($dest->response->numFound) &&
+                $dest->response->numFound == 0) {
+                    $src = strtolower($src);
+                    $url = "https://fluke2xl-replica3.solrcluster.com/solr/301/select?df=src&fl=dest&q=" . $src . "&wt=json";
+                    drupal_set_message("Step 2 validation: did not find it in solr, taking it to lowercase using this URL: <a href=" . $url . ">$url</a>");
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                    $dest = json_decode(curl_exec($ch));
+                   curl_close($ch);
+            }
+
+            if (isset($dest) && isset($dest->response) && isset($dest->response->numFound) &&
+                $dest->response->numFound > 0) {
+                if (strpos($dest->response->docs[0]->dest, "ttp") > 0) {
+                    drupal_set_message("Step 2 validation: found a match in Solr using 2nd approach, will be 301 redirecting to external destination: " . $dest->response->docs[0]->dest);
+                } else {
+                    drupal_set_message("Step 2 validation: found a match in Solr using 2nd approach, will be 301 redirecting to internal destination: " . $dest->response->docs[0]->dest);
+                }
+                return;
+            } else {
+
+                drupal_set_message("Step 3 validation: last check to see if we can at least send them to the homepage of the right language locale for $src");
+
+                if (!$inbound == '/brands.html' &&
+                    !$inbound == '/') {
+
+                    $src = $inbound;
+                    // this catches the case where the inbound was a default.html or default.htm
+                    // for some reason the patterns below line 848 were not catching just
+                    // the scenario of default.html and default.htm -- this fixes the issue
+
+                    $src = str_replace('.html', '', $src);
+                    $src = str_replace('.htm', '', $src);
+                    $src = str_replace("%20", "*", $src);
+
+                    $src_parts = explode("?", $src);
+                    $src = $src_parts[0];
+
+                    drupal_set_message("Step 3 validation: after stripping every off of $src, now processing it as $src");
+
+                    if (preg_match('/^\/[A-Za-z][A-Za-z]-[A-Za-z][A-Za-z]$/', $src)) {
+                        drupal_set_message("Step 3 validation: found a pattern that looks like only lang-locale, so using it as is: $src");
+                        // the inbound URL is a valid language-local but had a default.html in the
+                        // URL -- this case just pass the page on to Drupal and it renders
+                        // as desired -- this is an edgecase only in the case where
+                        // default.html is in site.
+                    } else {
+                        drupal_set_message("Step 3 validation: checking for known legacy localelang patterns and in found, generate 404 redirect");
+                        if (preg_match('/\/[Uu][Ss][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-us';
+                        } elseif (preg_match('/\/[Aa][Uu][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-au';
+                        } elseif (preg_match('/\/[Cc][Aa][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-ca';
+                        } elseif (preg_match('/\/[Uu][Kk][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-gb';
+                        } elseif (preg_match('/\/[Ii][Dd][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-id';
+                        } elseif (preg_match('/\/[Ii][Ee][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-ie';
+                        } elseif (preg_match('/\/[Ii][Nn][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-in';
+                        } elseif (preg_match('/\/[Mm][Yy][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-my';
+                        } elseif (preg_match('/\/[Pp][Hh][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-ph';
+                        } elseif (preg_match('/\/[Ss][Gg][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-sg';
+                        } elseif (preg_match('/\/[Tt][Hh][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-th';
+                        } elseif (preg_match('/\/[Vv][Nn][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-vn';
+                        } elseif (preg_match('/\/[Mm][2][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en';
+                        } elseif (preg_match('/\/[Dd][Ee][Dd][Ee]\//', $src)) {
+                            $default_lang_locale = 'de-de';
+                        } elseif (preg_match('/\/[Aa][Tt][Dd][Ee]\//', $src)) {
+                            $default_lang_locale = 'de-at';
+                        } elseif (preg_match('/\/[Cc][Hh][Dd][Ee]\//', $src)) {
+                            $default_lang_locale = 'de-ch';
+                        } elseif (preg_match('/\/[Ff][Rr][Ff][Rr]\//', $src)) {
+                            $default_lang_locale = 'fr-fr';
+                        } elseif (preg_match('/\/[Bb][Ee][Ff][Rr]\//', $src)) {
+                            $default_lang_locale = 'fr-be';
+                        } elseif (preg_match('/\/[Cc][Aa][Ff][Rr]\//', $src)) {
+                            $default_lang_locale = 'fr-ca';
+                        } elseif (preg_match('/\/[Cc][Hh][Ff][Rr]\//', $src)) {
+                            $default_lang_locale = 'fr-ch';
+                        } elseif (preg_match('/\/[Mm][1][Ff][Rr]\//', $src)) {
+                            $default_lang_locale = 'fr';
+                        } elseif (preg_match('/\/[Mm][Xx][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-mx';
+                        } elseif (preg_match('/\/[Uu][Ss][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-us';
+                        } elseif (preg_match('/\/[Aa][Rr][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-ar';
+                        } elseif (preg_match('/\/[Bb][Oo][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-bo';
+                        } elseif (preg_match('/\/[Cc][Ll][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-cl';
+                        } elseif (preg_match('/\/[Cc][Oo][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-co';
+                        } elseif (preg_match('/\/[Cc][Rr][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-cr';
+                        } elseif (preg_match('/\/[Dd][Oo][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-do';
+                        } elseif (preg_match('/\/[Ee][Cc][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-ec';
+                        } elseif (preg_match('/\/[Gg][Tt][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-gt';
+                        } elseif (preg_match('/\/[Pp][Ee][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-pe';
+                        } elseif (preg_match('/\/[Ss][Vv][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-sv';
+                        } elseif (preg_match('/\/[Uu][Yy][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-uy';
+                        } elseif (preg_match('/\/[Vv][Ee][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-ve';
+                        } elseif (preg_match('/\/[Nn][Ll][Nn][Ll]\//', $src)) {
+                            $default_lang_locale = 'nl-nl';
+                        } elseif (preg_match('/\/[Bb][Ee][Nn][Ll]\//', $src)) {
+                            $default_lang_locale = 'nl-be';
+                        } elseif (preg_match('/\/[Ff][Ii][Ff][Ii]\//', $src)) {
+                            $default_lang_locale = 'fi-fi';
+                        } elseif (preg_match('/\/[Ee][Ss][Ee][Ss]\//', $src)) {
+                            $default_lang_locale = 'es-es';
+                        } elseif (preg_match('/\/[Cc][Zz][Cc][Ss]\//', $src)) {
+                            $default_lang_locale = 'cs-cz';
+                        } elseif (preg_match('/\/[Dd][Kk][Dd][Aa]\//', $src)) {
+                            $default_lang_locale = 'da-dk';
+                        } elseif (preg_match('/\/[Ii][Dd][Ii][Dd]\//', $src)) {
+                            $default_lang_locale = 'id-id';
+                        } elseif (preg_match('/\/[Ii][Tt][Ii][Tt]\//', $src)) {
+                            $default_lang_locale = 'it-it';
+                        } elseif (preg_match('/\/[Jj][Pp][Jj][Aa]\//', $src)) {
+                            $default_lang_locale = 'ja-jp';
+                        } elseif (preg_match('/\/[Kk][Rr][Kk][Oo]\//', $src)) {
+                            $default_lang_locale = 'ko-kr';
+                        } elseif (preg_match('/\/[Nn][Oo][Nn][Oo]\//', $src)) {
+                            $default_lang_locale = 'no-no';
+                        } elseif (preg_match('/\/[Pp][Ll][Pp][Ll]\//', $src)) {
+                            $default_lang_locale = 'pl-pl';
+                        } elseif (preg_match('/\/[Bb][Rr][Pp][Tt]\//', $src)) {
+                            $default_lang_locale = 'pt-br';
+                        } elseif (preg_match('/\/[Pp][Tt][Pp][Tt]\//', $src)) {
+                            $default_lang_locale = 'pt-pt';
+                        } elseif (preg_match('/\/[Rr][Uu][Rr][Uu]\//', $src)) {
+                            $default_lang_locale = 'ru-ru';
+                        } elseif (preg_match('/\/[Ss][Ee][Ss][Vv]\//', $src)) {
+                            $default_lang_locale = 'sv-se';
+                        } elseif (preg_match('/\/[Tt][Hh][Tt][Hh]\//', $src)) {
+                            $default_lang_locale = 'th-th';
+                        } elseif (preg_match('/\/[Tt][Rr][Tt][Rr]\//', $src)) {
+                            $default_lang_locale = 'tr-tr';
+                        } elseif (preg_match('/\/[Vv][Nn][Vv][Ii]\//', $src)) {
+                            $default_lang_locale = 'vi-vn';
+                        } elseif (preg_match('/\/[Cc][Nn][Zz][Hh]\//', $src)) {
+                            drupal_set_message("Step 3 validation: found a China URL - redirecting to fluke.com.cn using $src");
+                            return;
+                        } elseif (preg_match('/\/[Tt][Ww][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en-tw';
+                        } elseif (preg_match('/\/[Mm][3][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en';
+                        } elseif (preg_match('/\/[Rr][0][Ee][Nn]\//', $src)) {
+                            $default_lang_locale = 'en';
+                        } elseif (preg_match('/\/[Rr][Oo][Rr][Oo]\//', $src)) {
+                            $default_lang_locale = 'en';
+                        } elseif (preg_match('/\/[Cc][Hh][Ii][Tt]\//', $src)) {
+                            $default_lang_locale = 'it-it';
+                        } elseif (preg_match('/\/[Mm][2][Pp][Tt]\//', $src)) {
+                            $default_lang_locale = 'pt-pt';
+                        } else {
+                            $default_lang_locale = "en";
+                        }
+                        $src = str_replace('default.htm', '', $src);
+                        $src = str_replace('default.html', '', $src);
+
+                        drupal_set_message("Step 3 validation: approach generated a URL of https://" . $_SERVER['HTTP_POST'] . '/' . $default_lang_locale . $src);
+
+                        header('Location: https://' . $_SERVER['HTTP_HOST'] . '/' . $default_lang_locale . $src);
+                        return;
+                    }
+
+                }
+
+            }
+
+        }
+    }
+
+    drupal_set_message("Step 4:  Worst Case Sceanrio - I couldn't find anything to do with $inbound, just returning it as is");
+    
+    
+}
+

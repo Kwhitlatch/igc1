@@ -1,0 +1,27 @@
+<?php
+/**
+ * @file
+ * The IG Commerce Utility Admin theming module.
+ *
+ * Utility module for IG commerce Administration theme overrides.  The admin
+ * theme is commerce_kickstart_admin - which is already a subtheme of Shiny.
+ * Since we can't make a subtheme of a subtheme, we override the styles using 
+ * this lightweight custom module.
+ *
+ * @author ryan.ray.neff@fluke.com
+ * based on this thread: 
+ * http://drupal.stackexchange.com/questions/4289/how-to-override-some-admin-theme-css-rules
+ */
+
+/**
+ * Implements template_preprocess_html().
+ */
+function igcommerce_admin_theming_preprocess_html(&$variables) {
+// Add conditional stylesheets for admin pages on admin theme.
+  if (arg(0)=="admin") {
+    // reference your current admin theme  
+    $theme_path = drupal_get_path('theme', 'commerce_kickstart_admin');
+    // reference your own stylesheet    
+    drupal_add_css(drupal_get_path('module', 'igcommerce_admin_theming') . '/css/igcommerce-admin-theme.css', array('group' => CSS_THEME));
+  }
+}

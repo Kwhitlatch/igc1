@@ -1,0 +1,79 @@
+/** 
+ * View : Share Block 
+ * to change the view apperance from vertical to horizontal  
+ * TODO: This styling needs to be moved to the theme layer
+ */
+
+.figstrap-social-share{
+display: inline-block;
+}
+
+.figstrap-share-link{
+cursor:pointer;
+}
+.pane-igcommerce-utility-articles-articles-solr-web-card-popup-article {
+    max-width: 100% !important;
+}
+.col-sm-12.flukestrap-layouts-content.panel-panel {
+    padding: 0px;
+}
+#overlay {
+    background: #000;
+}
+div#myModal {
+    position: absolute;
+    background: rgba(0,0,0, 0.85);
+    overflow: visible;
+}
+.pane-igcommerce-utility-articles .node-toc {
+    opacity: 0.3;
+}
+
+#overlay-close-wrapper {
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    right: 0;
+    z-index: 99;
+}
+ /*Removed - Moving to theme SASS - DP */
+/*a.close-button {*/
+    /*right: 0;*/
+    /*width: 28px;*/
+    /*height: 28px;*/
+    /*cursor: pointer;*/
+    /*color: #fff;*/
+    /*background: #605F61;*/
+    /*font-size: 31px;*/
+    /*font-weight: bold;*/
+    /*display: inline-block;*/
+    /*line-height: 0px;*/
+    /*padding: 14px 5px;*/
+    /*position: absolute;*/
+    /*opacity: 0.7;*/
+    /*margin: 6px 10px;*/
+/*}*/
+/*a.close-button:hover,*/
+/*a.close-button:active {*/
+    /*text-decoration: none;*/
+    /*color: #fff;*/
+    /*font-size: 34px;*/
+/*}*/
+/*.lazyload {*/
+    /*position: relative !important;*/
+    /*transform: unset !important;*/
+    /*left: 0 !important;*/
+/*}*/
+.node-type-toc .pane-igcommerce-utility-articles-articles-toc-url-products-solr,
+.node-type-toc .pane-igcommerce-utility-articles-articles-toc-url-resources-solr {
+    float: left;
+}
+/* Was this helpful section in WebCards */
+
+// .feedbackmsg {
+//     display:none;
+// }
+
+// .admin-menu #navbar {
+//     position: inherit;
+// }

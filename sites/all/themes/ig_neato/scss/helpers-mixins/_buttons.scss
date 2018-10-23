@@ -1,0 +1,10 @@
+@mixin button($type, $padding) {
+  color: $white;
+  background-color: $type;
+  padding: $padding;
+  text-align: center;    
+  &:hover {
+    background-color: darken($type, 10%);
+    text-decoration: none;
+  }
+}

@@ -1,0 +1,200 @@
+// The product spec tables are a shitshow. The html has been created malformed 
+// and poorly nested for years.  Rather than rework 40,000+ tables manually,
+// we imported the tables from clickability and MSCMS2002 directly.  Inline
+// widths were removed, but we left the inline styles and classes intact.  
+// We shimmed in the styling from the old sites, so things will be inconsistent.
+// Spec table cleanup is slated for "the future".
+
+#fluke-product-display-specs {
+  #specification_content {
+    table {
+      // .not-trash wrapper is really important.
+      // The styles used in .not-trash (standardized-table) will become the default table style 
+      // as the legacy tables cruddy html is phased out.
+      // The usage guide can be found here: https://codepen.io/RyanRayNeff/pen/oqjYKz?editors=1100#0
+      // because the standardized-table(.not-trash) appears so often throughout  
+      // the site, it was split off into its own extend in _tables.scss
+      &.not-trash {
+        @extend %standardized-table;
+      }
+
+      // These styles are independent of the legacy cms.
+      thead th {
+        background-color: #ccc;
+      }
+      th {
+        font-weight: 700;
+      }
+      th,
+      tr td {
+        padding: .2rem .4rem;
+        border: 1px solid #cccccc;
+      }
+      // The MSCMS2002 site used tables for layout, so there are not any default
+      // table styles. All the spec tables were styled using classes.  We scraped
+      // a list of classes, then ported only those. That list can be found at
+      // the bottom of this file. Here's the complete legacy css:
+      // http://www.fluke.com/Fluke_www/CSS/fluke_css.css
+      .tablehead,
+      .tableHead { 
+        background-color: $gray-c; 
+        border-bottom: 1px solid $gray-c; 
+      }
+      .tableBody { 
+        border-bottom: 1px solid $gray-c;
+      }
+      .bodybold {
+        font-weight:bold;
+        // not sure if these vert/align paddings are needed, so I'll start without em.
+      /*  margin-bottom: 0;
+        padding-bottom: 0;*/
+      }
+      .PrdBoldText,
+      .PrdSpecItem,
+      .PrdSpecSubject
+      {
+        font-weight: bold;
+      /*  vertical-align: top;*/
+      }
+      .PrdSub
+      {
+        vertical-align: sub;
+        font-size: 14px;
+      }
+      .PrdSup
+      {
+        vertical-align: super;
+        font-size: 14px;
+      }
+      .PrdSym
+      {
+        font-family: symbol;
+      }
+      .Prdtextxsml,
+      .SmallText, 
+      .smallText,
+      .small-font,
+      .small
+      {
+        font-size:14px;
+      }
+      .xsmall
+      {
+        font-size:12px;
+      }
+      .PrdPlainText {
+        font-size:16px;
+      }
+      // We found some inline styles have been depricated with html5, so we 
+      // had to swap out the inline styles with these utility classes:
+      .bgcolor {
+        background-color: $gray-c;
+      }
+      .no-border {
+        border: 0;
+      }
+      .border-one {
+        border: 1px solid $gray-c;
+      }
+      .v-top {
+        vertical-align: top;
+      }
+      .no-bold {
+        font-weight: normal;
+      }
+    }
+    // These styles come directly from Clickabiltiy Css (adapted to scss)
+    // http://en-us.fluke.com/includes/additional.css
+    // I also included the default clickability table styling that wasn't
+    // included in the spec-table overrides.
+    .clickability {
+      table {
+        // There was some trouble with data-cleansing when the tables were imported 
+        // from clickability, and a bunch of <b> tags were left in weird spots.
+        // Rather than edit all the products to fix them, it was easier to strip
+        // out the <b> tag styling. RNN 5-9-18 UAT-950 UAT-951, UAT-952, UAT-954, MIG-3046
+        b {
+          font-weight: 400;
+        }
+        margin-bottom: 0px;
+        tr td {
+          padding: 4px; 
+          vertical-align: top;  
+          text-align: left; 
+          border-bottom: solid $gray-c 1px;
+          // Removed for ticket https://teamfluke.atlassian.net/browse/MIG-2157
+          // &:first-child {
+          //   font-weight: bold;
+          // }
+        }
+        tr:first-child td,
+        tr.head td {
+          background-color: $gray-c;
+          font-weight: bold;
+        }
+        // Nested tables
+        table {
+          tr {
+            &:first-child td {
+              background-color: transparent;
+            }
+          }
+          tr td {
+            padding: 0px; 
+            border-bottom: none;
+            &:first-child {
+              font-weight: normal; 
+              background-color: transparent;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Here's all the classes found in Clickability spec tables:
+class=“head”
+class=“nobold”
+class=“small”
+class=“nobold small-font”
+class=“small-font nobold”
+class=“nobold small”
+class=“class”
+class=“small-font”
+class=“PrdSup”
+
+Here's all the classes found in MSCMS2002 Spec tables:
+class="tableHead"
+class="bodybold"
+class="PrdSpecItem"
+class="PrdSpecSubject"
+class="PrdSup"
+class="prdtextxsml"
+class="tableHead PrdSpecItem"
+class="small"
+class="xsmall"
+class="nobold"
+class="PrdPlainText"
+class="small-font"
+class="noindent"
+class="PrdSub"
+class="head"
+class="certifications"
+class=""
+class="icon-CE"
+class="hide"
+class="icon-CSA_C_US"
+class="icon-N10140"
+class="icon-TUV_SUD"
+class="tablehead"
+class="table-responsive"
+class="PrdBoldText"
+class="smalltext"
+class="PrdSym"
+class="_Tgc"
+class="short_text"
+class="hps"
+class="atn"
+
+*/

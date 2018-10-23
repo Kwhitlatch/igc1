@@ -1,0 +1,101 @@
+/*
+*  Brand settings for Pomona.
+*
+*/
+
+/*
+*
+*  ____   ___  ____   ___  ____   ____
+* |  _ \ / _ \|    \ / _ \|  _ \ / _  |
+* | | | | |_| | | | | |_| | | | ( ( | |
+* | ||_/ \___/|_|_|_|\___/|_| |_|\_||_|
+* |_|
+*
+*/
+
+/*
+*   COLORS
+*/
+
+
+$base-font-color              : $gray-very-dark;
+$heading-font-color           : $gray-28;
+
+$color-primary                : $red;              // ** Primary Action buttons **        ** Special action color (other things) **
+
+$color-secondary              : $gray-light;         // ** Secondary Action buttons **      ** Action Color (links) **
+
+$color-tertiary               : 'not used';           // As of this writing, there is no tertiary color
+
+$base-background-color        : $white;
+
+$background-color-darkest     : $gray-3;             // Navigation
+
+$background-color-dark        : $gray-4;           // Footer first, Navigation Hover, Search initial
+
+$background-color-mid         : $gray-medium;         // Search hover
+
+$background-color-light       : $gray-light;
+
+$background-color-very-light  : $gray-very-light;    // Sidebars
+
+
+$action-color                 : $gray-dark;
+$special-action-color         : $color-primary;
+
+/*
+*   FONTS
+*/
+
+$base-font-family                     : $helvetica;
+$heading-font-family                  : $roboto;
+
+$font-family-base                     : $helvetica;
+$font-family-heading                  : $roboto;
+
+$font-size-base                       : 16px;
+
+/*
+*   BITS AND PIECES
+*/
+
+
+$body-background                      : $white;
+$body-text                            : $base-font-color;
+$body-text-special                    : $black;
+
+$country-picker-inactive              : rgba($black, .5);
+$country-picker-active-desk           : linear-gradient(lighten($background-color-darkest, 5%), $background-color-darkest);
+$country-picker-active-mobile         : $background-color-darkest;
+$country-picker-text                  : $white;
+$country-picker-text-active           : $action-color;
+
+$nav-primary-background               : $gray-light;
+$nav-primary-background-hover         : $gray-medium;
+$nav-primary-text                     : $white;
+$nav-primary-text-special             : $special-action-color;
+
+$nav-secondary-background             : $background-color-dark;
+$nav-secondary-text                   : $white;
+$nav-secondary-text-special           : $special-action-color;
+
+$footer-primary-background            : $gray-dark;
+$footer-primary-text                  : $white;
+$footer-primary-text-heading          : $white;
+$footer-primary-text-special          : $special-action-color;
+
+$footer-secondary-background          : $gray-darker;
+$footer-secondary-text                : $white;
+$footer-secondary-text-heading        : $gray-light;
+$footer-secondary-text-special        : $special-action-color;
+
+$sidebar-background                   : $gray-light;
+$sidebar-text                         : $black;
+$sidebar-special-text                 : $action-color;
+
+$products-section-background          : $gray-light;
+$products-section-text                : $black;
+
+$alert-warning                        : $yellow;
+$alert-error                          : $red;
+$alert-success                        : $green;

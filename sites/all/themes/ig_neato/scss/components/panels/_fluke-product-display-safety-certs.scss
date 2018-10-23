@@ -1,0 +1,11 @@
+// Safety certifications on product key-features section
+
+#fluke-product-display-safety-certs {
+  display: inline-block;
+  float: left;
+  @extend %m-b-1;
+  .safety-icon {
+    font-size: 2rem;
+    margin-right: .75rem;
+  }
+}

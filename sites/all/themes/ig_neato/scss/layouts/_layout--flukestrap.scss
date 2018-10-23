@@ -1,0 +1,97 @@
+// This affects the Panelizer templates flukestrap-pascal,flukestrap-toc-card and flukestrap-toc
+.fnpshortline,
+.flukestrap-pascal,
+.flukestrap-pascalfnp, 
+.flukestrap-toc,
+.flukestrap-toc-card,
+.view-mode-full {
+    // Extends the gray background of the left hand nav to the edge of the screen on desktop
+    // @include media($screen-md) {
+    //   @include linear-gradient(90deg, $gray-e 0%, $gray-e 20%, $white 20%, $white 100%);
+    // }
+    // @include media($screen-xxl ) {
+    //   @include linear-gradient(90deg, $gray-e 0%, $gray-e 25%, $white 25%, $white 100%);
+    // }
+    background-color: $gray-e;
+    // Keeps the banners full width
+    .flukestrap-layouts-header,
+    .pane-igcommerce-utility-articles-articles-toc-banner,
+    .pane-igcommerce-utility-articles-articles-solr-banner {
+      @include outer-container(100%);
+      line-height: 0;
+    }
+    .container {
+    // Keeps the sidebar full height on tablet and desktop
+    @include media($screen-md) {
+      .row{
+        display: flex;
+      }
+    }
+    @include outer-container;
+    .flukestrap-layouts-sidebar {
+      @include outer-container(100%);
+      //padding: 1.5rem;
+      @include media($screen-md) {
+        @include span-columns(3);
+         margin-top: 4.5rem;
+      }
+      >.panel-panel-inner {
+        //padding: 1.5rem 2rem 1.5rem 1.5rem;
+        background-color: $gray-d;
+      }
+    }
+    .flukestrap-layouts-content {
+      @include span-columns(12);
+      padding: 3rem 1.5rem;
+      @include media($screen-md) {
+        @include span-columns(9);
+        padding: 4.5rem 3rem 3rem 0;
+      }
+      @include media($screen-lg) {
+        padding-right: 0;
+      }
+      /* Left aligns lists in content */
+      // ol, ul {
+      //   padding-left: 1.5rem;
+      //   margin: 0 0 1rem;
+      // }
+    }
+  }
+  .flukestrap-layouts-header{
+    //see .pane-igcommerce-utility-articles-articles-toc-banner
+
+  }
+}
+// This affects ONLY the Panelizer template flukestrap-toc-card    
+.flukestrap-toc-card {
+  // Modifies ONLY Flukestrap-toc-card to change right white column to grey. White footer found under left nav.
+  @include media($screen-lg) {
+    @include linear-gradient(90deg, $gray-e 0%, $gray-e 20%, $gray-e 20%, $gray-e 100%);
+  }
+  .flukestrap-layouts-footer{
+    background: $white;
+  }
+}
+// Used for footer support pages, ex: fluke/privacy-policy
+.flukestrap-todd {
+  background-color: $gray-e;
+}
+// Darwin templates have no sidebar, example here: /en-th/where-to-buy
+.flukestrap-darwin {
+  .flukestrap-layouts-content {
+    @include span-columns(12);
+    padding: 3rem 1.5rem;
+  }
+}
+
+// This template is only used for Fluke news plus articles, to keep the line
+// length reasonable on desktop.
+// 
+.fnpshortline {
+  .fnpshortline-center {
+    @include span-columns(12);
+    @include media($screen-md) {
+      @include span-columns(9);
+    }
+  }
+}

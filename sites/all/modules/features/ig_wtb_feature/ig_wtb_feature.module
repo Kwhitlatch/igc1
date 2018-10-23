@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the IG WTB Feature feature.
+ */
+
+include_once 'ig_wtb_feature.features.inc';

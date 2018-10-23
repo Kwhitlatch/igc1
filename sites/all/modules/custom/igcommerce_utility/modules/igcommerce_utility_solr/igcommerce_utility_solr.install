@@ -1,0 +1,29 @@
+<?php
+/**
+ * @file
+ * Implements hook_update_N().
+ */
+function igcommerce_utility_solr_update_7001() {
+  // Set Empty Text.
+  variable_set('igcommerce_utility_solr_empty_result_text', t('No Search Results available'));
+
+  // Set tip label.
+  variable_set('igcommerce_utility_solr_empty_search_tips_label', t('Search tips'));
+
+  // Set description.
+  $description = '';
+  $description .= '<ul><li>' . t('Check if your spelling is correct, or try removing filter.') . '</li>';
+  $description .= '<li>' . t('Remove quotes around phrases to match each word individually: "blue drop" will match less than blue drop.') . '</li>';
+  $description .= '<li>' . t('You can require or exclude terms using + and -:big + blue drop will require a match on blue while big blue -drop will exclude results that contain drop.') . '</li></ul>';
+
+  variable_set('igcommerce_utility_solr_empty_search_tips_description', $description);
+
+  // Set mail footer variable as multilingual.
+  module_load_include('inc', 'igcommerce_utility', 'igcommerce_utility.install');
+  $variables = array(
+    'igcommerce_utility_solr_empty_result_text',
+    'igcommerce_utility_solr_empty_search_tips_label',
+    'igcommerce_utility_solr_empty_search_tips_description',
+  );
+  igcommerce_utilities_solr_install_variables_i18n($variables);
+}

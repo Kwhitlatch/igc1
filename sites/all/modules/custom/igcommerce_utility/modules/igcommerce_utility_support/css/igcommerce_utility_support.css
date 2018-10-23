@@ -1,0 +1,10 @@
+.highlight {
+  border: 1px solid #f00;
+  color: #000;
+}
+.utility-support-separator {
+  margin: 20px;
+}
+.support_manual_top {
+  padding-top: 2.25rem 0 !important;
+}

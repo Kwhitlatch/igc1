@@ -1,0 +1,31 @@
+// Styles the readmore button. This works with the readmore.js library, that
+// is implemented via this module:
+// custom/igcommerce_utility/modules/igcommerce_utitliy_products/js/igcommerce_utility_products.js
+
+// Styles the readmore button. This works with the readmore.js library, that
+// is implemented via this module:
+// custom/igcommerce_utility/modules/igcommerce_utitliy_products/js/igcommerce_utility_products.js
+#keyfeature_content + [data-readmore-toggle] {
+   font-weight: 700;
+  @include icon(before, angle-double-up) {
+    margin-right: .5rem;
+  }
+  &:hover {
+    color: $blue-dark;
+    text-decoration: none;
+  }
+}
+// This adds the gradiant overlay only when readmore is collapsed.
+#keyfeature_content[aria-expanded="false"] + [data-readmore-toggle] {
+  @include icon(before, angle-double-down);   
+  padding-top: 40px;
+  margin-top: -40px;
+  // Position is required to apply a z-index, this keeps the toggle gradient above the content.
+  position: relative;
+  z-index: 0; // this was overlapping the image zoom, so i dropped it from 1 to 0 mig4294
+  transition: all .25s linear;
+  @include linear-gradient(to bottom, transparent, $gray-e 70%, $gray-e, $fallback: transparent);
+  @include media($screen-sm) {
+    @include linear-gradient(to bottom, transparent, white 70%, white, $fallback: transparent);
+  }  
+}

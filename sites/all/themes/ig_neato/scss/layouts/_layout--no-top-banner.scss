@@ -1,0 +1,12 @@
+.page-node-done, /* This is the "thank-you" page after form submission */
+.node-type-webform,
+.page-user,
+.page-node-10{
+  .main-container{
+    padding-top: 150px;
+    @include outer-container();
+
+    padding-bottom: 3em;
+    min-height: 80vh;
+  }
+}

@@ -1,0 +1,6 @@
+name = IG Commerce XML Sitemap
+description = "Generates sitemap.xml documents from content in Solr"
+core = 7.x
+package = IG Commerce
+
+files[] = src/

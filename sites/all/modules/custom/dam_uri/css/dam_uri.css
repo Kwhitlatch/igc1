@@ -1,0 +1,47 @@
+#dam-uri-search-form-wrapper {
+    background-color: #f0f0f0;
+    position: fixed;
+    width: 50%;
+    height: 90vh;
+    bottom: 0px;
+    right: 25%;
+    left: 50%;
+    margin-left: -150px;
+    padding: 15px;
+    border: 1px solid #d2cfcf;
+}
+table.dam-uri-search-filters td {
+    padding: 0px;
+}
+table.dam-uri-search-filters {
+    border: none;
+}
+#dam-form-search-filter-form {
+    padding: 0px 15px;
+    border-bottom: 1px solid #ddd;
+}
+#dam-form-search-filter-form fieldset {
+    border: none;
+    padding: 0px;
+}
+#dam-uri-keyword-query-results {
+    height: 64vh;
+    overflow-y: scroll;
+}
+#dam-uri-keyword-query-results tr.dam_uri_search_result {
+    border-bottom: 1px solid #d5d5d5;
+    cursor: pointer;
+}
+tr.dam_uri_search_result:hover td {
+    background-color: #ffffff;
+}
+
+.dam-uri-search-close {
+    float: right;
+    top: -10px;
+    position: absolute;
+    right: -10px;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+}

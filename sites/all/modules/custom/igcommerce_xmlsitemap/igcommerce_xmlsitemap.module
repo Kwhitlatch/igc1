@@ -1,0 +1,659 @@
+<?php
+
+/**
+ * Code for adding the hreflang links to the HTML head on each page.
+ * No longer used as we decided to put the links in the sitemaps rather than on each page.
+ *
+ * function igcommerce_xmlsitemap_page_alter(&$page) {
+ * global $language;
+ *
+ * $q = ($_GET['q'] != 'home') ? $_GET['q'] : '/'; //@todo: identifier for homepage?
+ *
+ * $query = db_select('igsitemap_links', 'il')
+ * ->fields('il')
+ * ->condition('url', '%' . $q, 'like')
+ * ->condition('language', $language->language);
+ *
+ * $results = $query->execute()->fetchAll();
+ *
+ * if (count($results)) {
+ *
+ * $allResults = db_select('igsitemap_links', 'il')
+ * ->fields('il')
+ * ->condition('identifier', $results[0]->identifier)
+ * ->condition('language', $language->language, '!=')
+ * ->execute()->fetchAll();
+ *
+ * $markup = '';
+ *
+ * foreach ($allResults as $link) {
+ * $markup .= "<link rel='alternate' hreflang='$link->language' href='$link->url' />" . PHP_EOL;
+ *
+ * if ($link->language = 'en') {
+ * $markup .= "<link rel='alternate' hreflang='x-default' href='$link->url' />" . PHP_EOL;
+ * }
+ * }
+ *
+ * drupal_add_html_head(['#markup' => $markup, '#type' => 'markup'], 'alternate_language_links');
+ * }
+ *
+ * }*/
+
+function igcommerce_xmlsitemap_page_alter(&$page) {
+  global $language;
+  global $ig_original_path;
+  $lang = $language->language;
+
+  // query and cache metatag no-index links for the language
+  $no_index = _no_index_query($lang);
+
+  // if the current page is in the list then add the no index metatag.
+  if (in_array($ig_original_path, $no_index)) {
+    $data = [
+      '#type' => 'markup',
+      '#markup' => '<meta name="robots" content="noindex, nofollow" />'
+    ];
+
+    drupal_add_html_head($data, 'ig-noindex');
+  }
+}
+
+function _no_index_query($lang) {
+  // check cache for language
+  $cache = cache_get('ig_noindex');
+
+  if ($cache === FALSE) {
+    $cache = new stdClass();
+
+    $cache->data = [];
+  }
+
+  if (empty($cache->data[$lang])) {
+    $data = $cache->data;
+
+    $options = array(
+      'filters' => [
+        'ss_language' => $lang,
+        'bs_noindex' => TRUE,
+      ],
+      'rows' => 1500,
+      'fl' => 'ss_path_alias_locale',
+    );
+
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, $options);
+
+    $results = fluke_solr_query($filters);
+
+    $return = [];
+
+    foreach ($results->response->docs as $result) {
+      if (!empty($result->ss_path_alias_locale)) {
+        $return[] = $lang . '/' . $result->ss_path_alias_locale;
+      }
+      // If there isn't a path alias set then ignore.
+    }
+
+    _add_exclude_file_items($return, $lang);
+
+    // add to the cache
+    $data[$lang] = $return;
+    cache_set('ig_noindex', $data);
+
+    return $return;
+  } else {
+    // retrieve from cache
+
+    return $cache->data[$lang];
+  }
+}
+
+function _add_exclude_file_items(&$return, $lang) {
+  // Load excluded items csv
+  $path = drupal_get_path('module', 'igcommerce_xmlsitemap') . '/exclude.csv';
+
+  $excluded = [];
+
+  if (($handle = fopen($path, "r")) !== FALSE) {
+    //First line is the header row
+    $header = ($data = fgetcsv($handle, 1000, ","));
+    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+
+      $excluded[$data[0]][] = $data[1];
+    }
+    fclose($handle);
+  }
+
+  foreach ($excluded as $entity_type => $ids) {
+    if (count($ids) > 1) {
+      $idstring = '(';
+
+      $first = TRUE;
+      foreach ($ids as $id) {
+        if ($first) {
+          $idstring .= $id;
+          $first = FALSE;
+        } else {
+          $idstring .= ' OR ' . $id;
+        }
+      }
+      $idstring .= ')';
+    } else {
+      $idstring = $ids[0];
+    }
+
+    $options = array(
+      'filters' => [
+        'ss_language' => $lang,
+        'entity_type' => $entity_type,
+        'entity_id' => $idstring,
+      ],
+      'rows' => 1500,
+      'fl' => 'ss_path_alias_locale,bs_noindex,bundle,entity_type',
+    );
+
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, $options);
+
+    $results = fluke_solr_query($filters);
+
+    foreach ($results->response->docs as $doc) {
+      if(!empty($doc->ss_path_alias_locale)) {
+        if($lang != 'cn') {
+          $return[] = $lang . '/' . $doc->ss_path_alias_locale;
+        }else{
+          $return[] = $doc->ss_path_alias_locale;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Regenerate the sitemap once a day
+ */
+/**
+
+// Disabled so that we can run this through drush and a crontab
+function igcommerce_xmlsitemap_cron() {
+  $day = 60 * 60 * 24;
+
+  $now = REQUEST_TIME;
+
+  $last_run = variable_get('igcommerce_xmlsitemap_last_run', REQUEST_TIME - $day - 1);
+
+  if($last_run < ($now - $day)) {
+    // Set the last run before we launch rebuild, this way we can't end up with multiple processes trying to build the site map
+    variable_set('igcommerce_xmlsitemap_last_run', REQUEST_TIME);
+
+    global $conf;
+
+    if(!empty($conf['igcommerce_xmlsitemap_china'])){
+      // The china rebuild process is a bit different, look for a conf variable to determine if we need to run that version.
+      igcommerce_xmlsitemap_rebuild_china();
+    }else {
+      igcommerce_xmlsitemap_rebuild();
+    }
+  }
+}
+**/
+
+function igcommerce_xmlsitemap_menu() {
+  $menu = [];
+
+  $languages = language_list();
+  foreach ($languages as $key => $language) {
+    $types = [
+      'general',
+      'products',
+      'learn',
+      'support',
+      'image',
+      'video'
+    ];
+
+    foreach ($types as $type) {
+      $menu["sitemap-$key-$type.xml"] = [
+        'page callback' => 'igcommerce_xmlsitemap_output',
+        'page arguments' => ['igxmlsitemap/' . $key . '/sitemap-' . $type . '.xml'],
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+      ];
+    }
+  }
+
+  $menu['sitemap-index.xml'] = [
+    'page callback' => 'igcommerce_xmlsitemap_output',
+    'page arguments' => ['igxmlsitemap/sitemap.xml'],
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  ];
+
+  return $menu;
+}
+
+function igcommerce_xmlsitemap_output($path) {
+  //@todo:Output the file in one go. If this ever caused issues, look into chunking like in xmlsitemap module
+
+  $file = file_build_uri($path);
+
+  if (file_exists($file)) {
+
+    $mtime = filemtime($file);
+    $last_modified = gmdate(DATE_RFC1123, $mtime);
+    $etag = '"' . md5($last_modified) . '"';
+
+    $headers = [
+      'Content-type' => 'text/xml; charset=utf-8',
+      //'Content-length' => filesize($file),
+      'Last-modified' => $last_modified,
+      'Etag' => $etag,
+      'Expires' => gmdate(DATE_RFC1123, $mtime + 0),
+      'Cache-Control' => 'must-revalidate',
+      'X-Robots-Tag' => 'noindex, follow',
+    ];
+
+    foreach ($headers as $name => $value) {
+      drupal_add_http_header($name, $value);
+    }
+
+    if (ob_get_level()) {
+      ob_end_clean();
+    }
+
+    drupal_send_headers();
+
+    readfile($file);
+
+    drupal_exit();
+  } else {
+    drupal_not_found();
+  }
+}
+
+function igcommerce_xmlsitemap_rebuild() {
+
+  require_once dirname(__FILE__). '/vendor/autoload.php';
+
+  $languages = language_list();
+
+  // remove languages that we don't want maps generate for as per MIG-4312 and MIG-4313
+  unset($languages['es-us']);
+  unset($languages['es-gt']);
+  unset($languages['es-sv']);
+  unset($languages['es-co']);
+  unset($languages['es-do']);
+  unset($languages['es-sc']);
+  unset($languages['es-pe']);
+  unset($languages['es-cr']);
+  unset($languages['es-cl']);
+  unset($languages['es-ec']);
+  unset($languages['es-bo']);
+  unset($languages['es-uy']);
+  unset($languages['en-vn']);
+  unset($languages['en-th']);
+  unset($languages['en-id']);
+
+  $start_time = REQUEST_TIME;
+
+  $number_of_maps = count($languages);
+
+  db_truncate('igsitemap_links')->execute();
+
+  $mappers = [];
+
+  foreach ($languages as $lang => $language) {
+    $mappers[$lang] = _rebuild_lang($lang);
+    if (drupal_is_cli()) {
+      echo "Saved links for (1) $lang" . PHP_EOL;
+    }
+  }
+
+  $assignmentNotFound = [];
+  $mispublished = [];
+
+  foreach ($mappers as $lang => $mapper) {
+    $mapper->write();
+
+    $assignmentNotFound[$lang] = $mapper->assignmentNotFound;
+    $mispublished[$lang] = $mapper->mispublished;
+    $mispublished_articles[$lang] = $mapper->mispublished_article;
+    $mispublished_products[$lang] = $mapper->mispublished_product_display;
+
+    if (drupal_is_cli()) {
+      $memory = memory_get_usage();
+
+      echo "Created sitemap for $lang.  Using $memory memory" . PHP_EOL;
+    }
+  }
+
+  \igXmlSitemap\indexWriter::writeIndex($languages);
+
+  _save_reports($mispublished, $assignmentNotFound, $mispublished_articles, $mispublished_products);
+
+  $finish = time();
+
+  $seconds = $finish - $start_time;
+  $message = "Created $number_of_maps sitemaps in $seconds seconds.";
+  if (drupal_is_cli()) {
+    echo $message . PHP_EOL;
+  } else {
+    drupal_set_message($message);
+  }
+
+}
+
+function igcommerce_xmlsitemap_generate_html_maps($lang = null) {
+
+  require_once dirname(__FILE__). '/vendor/autoload.php';
+
+  $languages = language_list();
+
+  // remove languages that we don't want maps generate for as per MIG-4312 and MIG-4313
+  unset($languages['es-us']);
+  unset($languages['es-gt']);
+  unset($languages['es-sv']);
+  unset($languages['es-co']);
+  unset($languages['es-do']);
+  unset($languages['es-sc']);
+  unset($languages['es-pe']);
+  unset($languages['es-cr']);
+  unset($languages['es-cl']);
+  unset($languages['es-ec']);
+  unset($languages['es-bo']);
+  unset($languages['es-uy']);
+  unset($languages['en-vn']);
+  unset($languages['en-th']);
+  unset($languages['en-id']);
+
+  $start_time = REQUEST_TIME;
+
+  $number_of_maps = count($languages);
+
+  $mappers = [];
+
+  if($lang === NULL) {
+
+    foreach ($languages as $lang => $language) {
+      $mapper = new \igXmlSitemap\igXmlSitemapMainHtml($lang);
+
+      $mapper->build();
+
+      $mappers[$lang] = $mapper;
+
+      if (drupal_is_cli()) {
+        echo "Saved links for (2) $lang" . PHP_EOL;
+      }
+    }
+
+    $assignmentNotFound = [];
+    $mispublished = [];
+
+    foreach ($mappers as $lang => $mapper) {
+
+      $assignmentNotFound[$lang] = $mapper->assignmentNotFound;
+      $mispublished[$lang] = $mapper->mispublished;
+      $mispublished_articles[$lang] = $mapper->mispublished_article;
+      $mispublished_products[$lang] = $mapper->mispublished_product_display;
+
+      $mappers[$lang] = $mapper->write();
+
+      if (drupal_is_cli()) {
+        $memory = memory_get_usage();
+
+        echo "Created html sitemap for $lang.  Using $memory memory" . PHP_EOL;
+      }
+    }
+  }elseif(!empty($lang) && !empty($languages[$lang])){
+    $mapper = new \igXmlSitemap\igXmlSitemapMainHtml($lang);
+
+    $mapper->build();
+
+    if (drupal_is_cli()) {
+      echo "Saved links for (3) $lang" . PHP_EOL;
+    }
+
+    $mapper->write();
+
+    if (drupal_is_cli()) {
+      $memory = memory_get_usage();
+
+      echo "Created html sitemap for $lang.  Using $memory memory" . PHP_EOL;
+    }
+  }
+
+  _save_reports($mispublished, $assignmentNotFound, $mispublished_articles, $mispublished_products);
+
+  $finish = time();
+
+  $seconds = $finish - $start_time;
+  $message = "Created $number_of_maps sitemaps in $seconds seconds.";
+  if (drupal_is_cli()) {
+    echo $message . PHP_EOL;
+  } else {
+    drupal_set_message($message);
+  }
+}
+
+
+function igcommerce_xmlsitemap_rebuild_china() {
+  $lang = 'cn';
+  require_once dirname(__FILE__). '/vendor/autoload.php';
+
+  $all_languages = language_list();
+
+  $languages = [];
+
+  $languages['cn'] = $all_languages['cn'];
+
+  $start_time = REQUEST_TIME;
+
+  if ($lang !== NULL && isset($languages[$lang])) {
+    db_delete('igsitemap_links')
+      ->condition('language', $lang)
+      ->execute();
+
+    $number_of_maps = 1;
+    $mapper = _rebuild_lang($lang);
+
+    $mapper->write();
+  }
+
+  \igXmlSitemap\indexWriter::writeIndex($languages, TRUE);
+
+  $finish = time();
+
+  $seconds = $finish - $start_time;
+  $message = "Created $number_of_maps sitemaps in $seconds seconds.";
+  if (drupal_is_cli()) {
+    echo $message . PHP_EOL;
+  } else {
+    drupal_set_message($message);
+  }
+}
+
+function _rebuild_lang($lang) {
+  $mapper = new \igXmlSitemap\igXmlSitemapMain($lang);
+
+  $mapper->build();
+
+  $mapper->writeDB();
+
+  return $mapper;
+}
+
+function _rebuild_lang_write_html(\igXmlSitemap\igXmlSitemapMainHtml $mapper) {
+  $mapper->write();
+}
+
+function igcommerce_xmlsitemap_integrity_check($lang) {
+  require_once dirname(__FILE__). '/vendor/autoload.php';
+
+  $languages = language_list();
+
+  $start_time = REQUEST_TIME;
+
+  if ($lang !== NULL && isset($languages[$lang])) {
+    _check_language($languages[$lang]);
+  } else {
+    foreach ($languages as $language) {
+      _check_language($language);
+    }
+  }
+
+  $finish = time();
+
+  $seconds = $finish - $start_time;
+  $message = "Finished checking links in $seconds seconds"; //@todo:
+  if (drupal_is_cli()) {
+    echo $message . PHP_EOL;
+  } else {
+    drupal_set_message($message);
+  }
+}
+
+function _check_language($language){
+  $ic = new \igXmlSitemap\integrityCheck();
+  $ic->check($language);
+  $failures = $ic->failures;
+
+  foreach($failures as &$failure){
+    $parts = explode('|', $failure->identifier);
+
+    if($parts[0]  == 'node') {
+      $failure->ecm_link = "http://live-fluke-ecm.pantheonsite.io/{$failure->language}/node/{$parts[2]}/edit/{$failure->language}";
+    }elseif($parts[0] == 'taxonomy_term'){
+      $failure->ecm_link = "http://live-fluke-ecm.pantheonsite.io/{$failure->language}/taxonomy/term/{$parts[2]}/edit/{$failure->language}";
+    }
+  }
+
+  _igcommerce_integrity_check_write($language->language, $failures);
+}
+
+function _igcommerce_integrity_check_write($lang, $failures) {
+  $dir = 'private://igxmlsitemap-ic';
+  file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+
+  $filename = drupal_realpath($dir) . '/sitemap-integrity-check-' . $lang . '.csv';
+
+
+// Delete the file
+  unlink($filename);
+
+// Create the file and open for writing
+  $fp = fopen($filename, 'x');
+
+  foreach ($failures as $line) {
+    $line = json_decode(json_encode($line), TRUE);
+
+    fputcsv($fp, $line);
+  }
+
+  fclose($fp);
+}
+
+/**
+ * Query for and statically store a list of paths that are handled by TOCs so that we can filter
+ * out URL Builder terms for which their toc is not published in the language
+ */
+function igcommerce_xmlsitemap_toc_paths() {
+  $tocs = &drupal_static(__FUNCTION__);
+  if (!isset($tocs)) {
+    $filters = [
+      'bundle' => 'toc'
+    ];
+
+    // In order to filter out url builder terms without a published toc, we query for
+    // tocs in such a way that we get all the toc entity ids, published in all languages
+    $options = array(
+      'filters' => $filters,
+      'rows' => 1500,
+    );
+
+    $options['fl'] = 'ss_path_alias,entity_id';
+
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, $options);
+
+    $filters->addParam('group', TRUE);
+    $filters->addParam('group.field', 'entity_id');
+
+    $response = fluke_solr_query($filters);
+
+    $tocs = [];
+    foreach ($response->grouped->entity_id->groups as $item) {
+      $path = $item->doclist->docs[0]->ss_path_alias;
+      if ($path === NULL) {
+        continue;
+      }
+      $tocs[$path] = $path;
+    }
+
+  }
+  return $tocs;
+}
+
+function _save_reports($mispublished, $assignmentNotFound, $mispublished_articles, $mispublished_products){
+
+  $dir = 'private://igxmlsitemap-ic';
+
+  file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+  $filename = drupal_realpath($dir) . '/mispublished.csv';
+  _save_reports_save_file($filename, $mispublished);
+
+  $filename = drupal_realpath($dir) . '/assignmentNotFound.csv';
+  _save_reports_save_file($filename, $assignmentNotFound);
+
+  $filename = drupal_realpath($dir) . '/mispublished-articles.csv';
+  _save_reports_save_file($filename, $mispublished_articles);
+
+  $filename = drupal_realpath($dir) . '/mispublished-products.csv';
+  _save_reports_save_file($filename, $mispublished_products);
+}
+
+function _save_reports_save_file($filename, $lang_items){
+  // Delete the file
+  if(file_exists($filename)) {
+    unlink($filename);
+  }
+
+  // Create the file and open for writing
+  $fp = fopen($filename, 'x');
+
+  $header_row = ['Language', 'Identifier','Label', 'Display Title', 'IG Location', 'Link to Edit/Unpublish'];
+
+  fputcsv($fp, $header_row);
+
+  foreach($lang_items as $lang => $items){
+    if(!empty($items)) {
+      foreach ($items as $identifier => $item) {
+        $row = _save_reports_prep_row($item, $lang);
+        fputcsv($fp, $row);
+      }
+    }
+  }
+  fclose($fp);
+}
+
+
+
+function _save_reports_prep_row($item, $lang){
+  $id_parts = explode('|',$item->identifier);
+  $id = $id_parts[2];
+
+  if($id_parts[0] === 'taxonomy_term'){
+    $edit_link = "https://live-fluke-ecm.pantheonsite.io/$lang/taxonomy/term/$id/edit/$lang";
+  }else{
+    $edit_link = "https://live-fluke-ecm.pantheonsite.io/en-us/node/$id/languagepublishing";
+  }
+
+
+  return [
+    0 => $lang,
+    1 => $item->identifier,
+    2 => $item->label,
+    3 => $item->title,
+    4 => $item->link,
+    5 => $edit_link
+  ];
+}

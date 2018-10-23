@@ -1,0 +1,4 @@
+name = ECM Utility - URLs
+description = Utility module for URLs ECM.
+core = "7.x"
+package = Fluke

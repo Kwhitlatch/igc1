@@ -1,0 +1,368 @@
+<?php
+//function dam_api_get_supported_content_types() {
+//  // Getting DAM service URL from configuration under admin/settings/igcommerce.
+//  $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+//  $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+//  $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetSupportedContentTypes.json";
+//
+//  $options = array(
+//    CURLOPT_RETURNTRANSFER => TRUE,
+//    CURLOPT_HEADER => FALSE,
+//    CURLOPT_USERAGENT => 'dam',
+//    CURLOPT_AUTOREFERER => TRUE,
+//    CURLOPT_CONNECTTIMEOUT => 10,
+//    CURLOPT_TIMEOUT => 300,
+//    CURLOPT_POST => TRUE,
+//    CURLOPT_SSL_VERIFYHOST => FALSE,
+//    CURLOPT_SSL_VERIFYPEER => FALSE
+//  );
+//
+//  $ch = curl_init( $url );
+//  @curl_setopt_array($ch, $options);
+//  $content = curl_exec( $ch );
+//  curl_close( $ch );
+//
+//  if (empty($content))  {
+//    $result = FALSE;  // no data returned
+//  }
+//  else {
+//    $result = $content;
+//  }
+//  return $result;
+//}
+//
+//function dam_api_get_metadata($post_fields) {
+//  // Getting DAM service URL from configuration under admin/settings/igcommerce.
+//  $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+//  $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+//  $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetMetaData.json";
+//
+//  $options = array(
+//    CURLOPT_RETURNTRANSFER => TRUE,
+//    CURLOPT_HEADER => FALSE,
+//    CURLOPT_USERAGENT => 'dam',
+//    CURLOPT_AUTOREFERER => TRUE,
+//    CURLOPT_CONNECTTIMEOUT => 10,
+//    CURLOPT_TIMEOUT => 300,
+//    CURLOPT_POST => TRUE,
+//    CURLOPT_POSTFIELDS => http_build_query($post_fields, '', '&'),
+//    CURLOPT_SSL_VERIFYHOST => FALSE,
+//    CURLOPT_SSL_VERIFYPEER => FALSE
+//  );
+//
+//  $ch = curl_init( $url );
+//  @curl_setopt_array($ch, $options);
+//  $content = curl_exec( $ch );
+//  curl_close( $ch );
+//
+//  if (empty($content))  {
+//    $result = FALSE;  // no data returned
+//  }
+//  else {
+//    $result = $content;
+//  }
+//  return $result;
+//}
+//
+//function dam_api_enabled_languages() {
+//  // Getting DAM service URL from configuration under admin/settings/igcommerce.
+//  $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+//  $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+//  $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetEnabledLanguages.json";
+//
+//  $options = array(
+//    CURLOPT_RETURNTRANSFER => TRUE,
+//    CURLOPT_HEADER => FALSE,
+//    CURLOPT_USERAGENT => 'dam',
+//    CURLOPT_AUTOREFERER => TRUE,
+//    CURLOPT_CONNECTTIMEOUT => 10,
+//    CURLOPT_TIMEOUT => 300,
+//    CURLOPT_POST => TRUE,
+//    CURLOPT_SSL_VERIFYHOST => FALSE,
+//    CURLOPT_SSL_VERIFYPEER => FALSE
+//  );
+//
+//  $ch = curl_init( $url );
+//  @curl_setopt_array($ch, $options);
+//  $content = curl_exec( $ch );
+//  curl_close( $ch );
+//
+//  if (empty($content))  {
+//    $result = FALSE;  // no data returned
+//  }
+//  else {
+//    $result = $content;
+//  }
+//  return $result;
+//}
+//
+//function dam_api_search_assets($type, $filters, $keywords, $search_lang) {
+//  // Getting DAM service URL from configuration under admin/settings/igcommerce.
+//  $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+//  $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+//  $url = $dam_service_url . "/" . $search_lang . "/" . $dam_service_endpoint . "/dam_service_resources/SearchAssets.json";
+//  $post_fields = array("content_type" => $type, "taxonomy" => $filters, "search_string" => $keywords);
+//
+//  $options = array(
+//    CURLOPT_RETURNTRANSFER => TRUE,
+//    CURLOPT_HEADER => FALSE,
+//    CURLOPT_USERAGENT => 'dam',
+//    CURLOPT_AUTOREFERER => TRUE,
+//    CURLOPT_CONNECTTIMEOUT => 10,
+//    CURLOPT_TIMEOUT => 300,
+//    CURLOPT_POST => TRUE,
+//    CURLOPT_POSTFIELDS => http_build_query($post_fields, '', '&'),
+//    CURLOPT_SSL_VERIFYHOST => FALSE,
+//    CURLOPT_SSL_VERIFYPEER => FALSE,
+//    CURLOPT_HTTPHEADER => array("Content-Type: application/x-www-form-urlencoded", 'Accept: application/x-www-form-urlencoded'),
+//  );
+//
+//  $ch = curl_init( $url );
+//  @curl_setopt_array($ch, $options);
+//  $content = curl_exec( $ch );
+//  curl_close( $ch );
+//
+//  if (empty($content))  {
+//    $result = FALSE;  // no data returned
+//  }
+//  else {
+//    $result = $content;
+//  }
+//  return $result;
+//}
+//
+//function dam_api_add_file($node) {
+//  // Getting DAM service URL from configuration under admin/settings/igcommerce.
+//  $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+//  $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+//  $url = $dam_service_url . "/" . $dam_service_endpoint . "/file.json";
+//  $post_fields = $node;
+//  ini_set('default_socket_timeout', 300);
+//
+//  $options = array(
+//    CURLOPT_RETURNTRANSFER => TRUE,
+//    CURLOPT_HEADER => FALSE,
+//    CURLOPT_USERAGENT => 'dam',
+//    CURLOPT_AUTOREFERER => TRUE,
+//    CURLOPT_CONNECTTIMEOUT => 10,
+//    CURLOPT_TIMEOUT => 300,
+//    CURLOPT_POST => TRUE,
+//    CURLOPT_POSTFIELDS => $node,
+//    CURLOPT_SSL_VERIFYHOST => FALSE,
+//    CURLOPT_SSL_VERIFYPEER => FALSE,
+//  );
+//
+//  $ch = curl_init( $url );
+//  @curl_setopt_array($ch, $options);
+//  $content = curl_exec( $ch );
+//  curl_close( $ch );
+//
+//  if (empty($content))  {
+//    $result = FALSE;  // no data returned
+//  }
+//  else {
+//    $result = $content;
+//  }
+//  return $result;
+//}
+//
+//function dam_api_get_file($id) {
+//  // Getting DAM service URL from configuration under admin/settings/igcommerce.
+//  $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+//  $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+//  $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetUrlByFileId.json";
+//  //$url = "http://dev-fluke-dam.pantheonsite.io/api/file/" . $id . "?file_contents=0";
+//  $post_fields = array("file_ID" => $id);
+//
+//  ini_set('default_socket_timeout', 300);
+//  $options = array(
+//    CURLOPT_RETURNTRANSFER => TRUE,
+//    CURLOPT_HEADER => FALSE,
+//    CURLOPT_USERAGENT => 'dam',
+//    CURLOPT_AUTOREFERER => TRUE,
+//    CURLOPT_CONNECTTIMEOUT => 10,
+//    CURLOPT_TIMEOUT => 300,
+//    CURLOPT_POST => TRUE,
+//    CURLOPT_POSTFIELDS => http_build_query($post_fields),
+//    CURLOPT_SSL_VERIFYHOST => FALSE,
+//    CURLOPT_SSL_VERIFYPEER => FALSE,
+//    CURLOPT_HTTPHEADER => array("Content-Type: application/x-www-form-urlencoded", 'Accept: application/x-www-form-urlencoded'),
+//  );
+//
+//  $ch = curl_init( $url );
+//  @curl_setopt_array($ch, $options);
+//  $content = curl_exec( $ch );
+//  curl_close( $ch );
+//
+//  if (empty($content))  {
+//    $result = FALSE;  // no data returned
+//  }
+//  else {
+//    $result = $content;
+//  }
+//  return $result;
+//}
+//
+//function dam_api_add_node($node) {
+//  // Getting DAM service URL from configuration under admin/settings/igcommerce.
+//  $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+//  $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+//  $url = $dam_service_url . "/" . $dam_service_endpoint . "/node.json";
+//  $post_fields = $node;
+//
+//  ini_set('default_socket_timeout', 300);
+//  $options = array(
+//    CURLOPT_RETURNTRANSFER => TRUE,
+//    CURLOPT_HEADER => FALSE,
+//    CURLOPT_USERAGENT => 'dam',
+//    CURLOPT_AUTOREFERER => TRUE,
+//    CURLOPT_CONNECTTIMEOUT => 10,
+//    CURLOPT_TIMEOUT => 300,
+//    CURLOPT_POST => TRUE,
+//    CURLOPT_POSTFIELDS => $node,
+//    CURLOPT_SSL_VERIFYHOST => FALSE,
+//    CURLOPT_SSL_VERIFYPEER => FALSE,
+//    CURLOPT_HTTPHEADER => array("Content-Type: application/json", 'Accept: application/json'),
+//  );
+//
+//  $ch = curl_init( $url );
+//  @curl_setopt_array($ch, $options);
+//  $content = curl_exec( $ch );
+//  curl_close( $ch );
+//
+//  if (empty($content))  {
+//    $result = FALSE;  // no data returned
+//  }
+//  else {
+//    $result = $content;
+//  }
+//  return $result;
+//}
+
+function dam_api_get_supported_content_types() {
+    // Getting DAM service URL from configuration under admin/settings/igcommerce.
+    $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+    $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+    $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetSupportedContentTypes.json";
+
+    $options = array(
+        'method' => 'POST',
+        'timeout' => 300,
+    );
+    $result = drupal_http_request($url, $options);
+    return $result;
+}
+
+function dam_api_get_metadata($post_fields) {
+    // Getting DAM service URL from configuration under admin/settings/igcommerce.
+    $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+    $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+    $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetMetaData.json";
+
+    $options = array(
+        'method' => 'POST',
+        'data' => http_build_query($post_fields, '', '&'),
+        'timeout' => 300,
+    );
+
+    $result = drupal_http_request($url, $options);
+    return $result;
+}
+
+function dam_api_enabled_languages() {
+    // Getting DAM service URL from configuration under admin/settings/igcommerce.
+    $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+    $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+    $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetEnabledLanguages.json";
+
+    $options = array(
+        'method' => 'POST',
+        'timeout' => 300,
+    );
+
+    $result = drupal_http_request($url, $options);
+    return $result;
+}
+
+function dam_api_search_assets($type, $filters, $keywords, $search_lang) {
+    // Getting DAM service URL from configuration under admin/settings/igcommerce.
+    $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+    $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+    $url = $dam_service_url . "/" . $search_lang . "/" . $dam_service_endpoint . "/dam_service_resources/SearchAssets.json";
+    $post_fields = array("content_type" => $type, "taxonomy" => $filters, "search_string" => $keywords);
+
+    $options = array(
+        'method' => 'POST',
+        'data' => http_build_query($post_fields, '', '&'),
+        'timeout' => 300,
+        'headers' => array(
+            'Content-Type' => 'application/x-www-form-urlencoded',
+            'Accept' => 'application/x-www-form-urlencoded'
+        ),
+    );
+
+    $result = drupal_http_request($url, $options);
+    return $result;
+}
+
+function dam_api_add_file($node) {
+    // Getting DAM service URL from configuration under admin/settings/igcommerce.
+    $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+    $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+    $url = $dam_service_url . "/" . $dam_service_endpoint . "/file.json";
+    $post_fields = $node;
+
+    //ini_set('default_socket_timeout', 300);
+    $options = array(
+        'method' => 'POST',
+        'data' => drupal_http_build_query($post_fields),
+        'timeout' => 300,
+    );
+
+    $result = drupal_http_request($url, $options);
+    return $result;
+}
+
+function dam_api_get_file($id) {
+    // Getting DAM service URL from configuration under admin/settings/igcommerce.
+    $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+    $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+    $url = $dam_service_url . "/" . $dam_service_endpoint . "/dam_service_resources/GetUrlByFileId.json";
+    //$url = "http://dev-fluke-dam.pantheonsite.io/api/file/" . $id . "?file_contents=0";
+    $post_fields = array("file_ID" => $id);
+
+    //ini_set('default_socket_timeout', 300);
+    $options = array(
+        'method' => 'POST',
+        'data' => drupal_http_build_query($post_fields),
+        'timeout' => 300,
+        'headers' => array(
+            'Content-Type' => 'application/x-www-form-urlencoded',
+            'Accept' => 'application/x-www-form-urlencoded'
+        ),
+    );
+
+    $result = drupal_http_request($url, $options);
+    return $result;
+}
+
+function dam_api_add_node($node) {
+    // Getting DAM service URL from configuration under admin/settings/igcommerce.
+    $dam_service_url = variable_get('fluke_dam_url', '//data.fluke.com');
+    $dam_service_endpoint = variable_get('fluke_dam_endpoint', 'api');
+    $url = $dam_service_url . "/" . $dam_service_endpoint . "/node.json";
+    $post_fields = $node;
+
+    $options = array(
+        'method' => 'POST',
+        'data' => drupal_http_build_query($post_fields),
+        'timeout' => 300,
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json'
+        ),
+    );
+
+    $result = drupal_http_request($url, $options);
+    return $result;
+}

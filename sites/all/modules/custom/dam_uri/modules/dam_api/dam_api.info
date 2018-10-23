@@ -1,0 +1,7 @@
+name = DAM API
+description = Creates the apis to be used with the DAM eco system.
+package = DAM
+core = 7.x
+dependencies[] = ctools
+dependencies[] = views
+dependencies[] = form_options_attributes

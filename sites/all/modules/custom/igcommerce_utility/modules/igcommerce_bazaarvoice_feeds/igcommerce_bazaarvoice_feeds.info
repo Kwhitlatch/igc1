@@ -1,0 +1,6 @@
+name = IG Commerce Bazaarvoice feeds
+description = Genereates the .xml feed for BV. You can download the file and then upload via sftp.
+core = 7.x
+package = IG Commerce
+
+dependencies[] = fluke_solr

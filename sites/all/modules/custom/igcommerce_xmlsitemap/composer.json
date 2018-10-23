@@ -1,0 +1,22 @@
+{
+    "name": "trev/igcommerce_xmlsitemap",
+    "type": "project",
+    "license": "Property of Fluke Corporation",
+    "authors": [
+        {
+            "name": "Trevor Schara",
+            "email": "trevor.schara@fluke.com"
+        }
+    ],
+    "require": {
+        "thepixeldeveloper/sitemap": "^5.1",
+        "guzzlehttp/guzzle": "~6.0",
+        "tburry/pquery": "^1.1",
+        "amphp/amp": "^2.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "igXmlSitemap" : "src/"
+        }
+    }
+}

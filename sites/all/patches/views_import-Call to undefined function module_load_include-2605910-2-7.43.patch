@@ -1,0 +1,14 @@
+diff --git a/views_import.drush.inc b/views_import.drush.inc
+index 505775b..9af9bf7 100644
+--- a/views_import.drush.inc
++++ b/views_import.drush.inc
+@@ -6,8 +6,7 @@
+  * Command to export includes files to store Views definitions on the disk.
+  */
+ 
+-module_load_include('inc', 'views_import', 'views_import.drush');
+-
++include_once 'views_import.drush.inc';
+ /**
+  * Callback for views_import_export_views command.
+  *

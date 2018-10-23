@@ -1,0 +1,147 @@
+/** 
+ * @file P1-product-category.less
+ * Styles pages of the UI pattern P1
+/**
+ *
+ * TOC
+ * - General Styling
+ * - Left sidebar Facets
+*/
+
+
+/** ===== General Styling ==== *******/
+/**
+/** Generic styles for product TOC **/
+
+
+//== Removing product toc nth child issue. Causing ONLY page 2 errors.
+.page-products .view-display-products li:nth-child(3n+4) {
+  clear: none;
+  float: none;
+}
+
+
+/** ===== Left sidebar Facets ==== *****************/
+/**
+/** Left grey sidebar containing search facests. **/
+
+
+//== Facet Slider Size - Override to fit left column
+.ui-widget-content {
+  -khtml-border-radius: 0;
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  background: @fluke-lines-and-pipes url(images/ui-bg_flat_75_ffffff_40x100.png) 50% 50% repeat-x;
+  border-radius: 0;
+  border: none;
+  color: @fluke-lines-and-pipes;
+  height:5px;  
+  max-width: 200px;
+}
+
+//== Facet Slider - Active Color
+.ui-widget-header {
+  background: @fluke-blue-link url(images/ui-bg_highlight-soft_75_cccccc_1x100.png) 50% 50% repeat-x;
+  border: none;
+  color: #222;
+  font-weight: 700;
+  height:5px;
+}
+
+//== Facet Slider Anchor
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+  -khtml-border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  background: @fluke-white;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 1px 0px 1px rgba(0,0,0,0.15);
+  color: @fluke-white;
+  font-weight: 400;
+  margin-top:-2px;
+}
+
+//== Padding left for product TOC items
+.region-content{
+  margin-top: -15px;
+  padding-left: 15px;
+  padding-top: 55px;
+}
+
+//== TODO: Figure out a solution around fixed height sidebar
+#region-sidebar-first {
+  background: @fluke-sidebar; 
+  height: 2445px; // Fixed height hack
+  margin-left: -30px;
+  padding-right: 15px;
+  padding-top: 30px;
+}
+
+//== Left column on product pages - grey 
+.page-products .zone-content-wrapper , .page-product-category .zone-content-wrapper{
+  background: -moz-linear-gradient(left,@fluke-sidebar 25%,@fluke-white 25%);
+  background: -webkit-linear-gradient(left,@fluke-sidebar 25%,@fluke-white 25%);
+  background: @fluke-sidebar;
+  background: linear-gradient(to right,@fluke-sidebar 25%,@fluke-white 25%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='@fluke-sidebar',endColorstr='@fluke-white',GradientType=1);
+}
+
+//== TOC item wrapper
+.toc-item{
+  background-color: inherit;
+  display: inline-block;
+  width:30%;
+}
+
+
+//== TOC Product Name
+.toc-item h3{
+  font-family: @subheadings-font-family;
+  font-weight: @subheadings-font-weight;
+  line-height: @subheadings-line-height;
+}
+
+//== TOC filters
+.region-sidebar-first .block-facetapi {
+  border-top: none;
+  margin-bottom: 30px;
+  margin-left: 15px;
+  margin-top: 15px;
+  padding-left: 15px;
+  padding-top: 15px;
+}
+
+//== Hiding taxonomy title. TODO: Remove from views
+.taxonomy-title{
+  display:none;
+}
+
+//== Facet header style
+.region-sidebar-first .block-facetapi h2 {
+  font-family: @subheadings-font-family;
+  font-size: @font-size-h3;
+  font-weight: @subheadings-font-weight;
+  line-height: @subheadings-line-height;
+  padding-bottom: 5px;
+}
+
+//== Facet paragraph style
+.region-sidebar-first .block-facetapi p {
+  font-size: 14px;
+ }
+
+//== Facet list style
+ .region-sidebar-first .block-facetapi ul li a {
+  color: @fluke-blue-link;
+  font-family: @font-family-sans-serif;
+  font-size:14px;
+  font-weight: 300;
+  line-height: 30px;
+  text-decoration: none;
+}
+
+//== Removing un-needed "Go" button.
+.search-api-ranges-widget #edit-submit{
+  display: none;
+}

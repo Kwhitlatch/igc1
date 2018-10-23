@@ -1,0 +1,13 @@
+diff --git a/profiles/commerce_kickstart/modules/contrib/chosen/chosen.js b/profiles/commerce_kickstart/modules/contrib/chosen/chosen.js
+index e0a6406..000582c 100644
+--- a/profiles/commerce_kickstart/modules/contrib/chosen/chosen.js
++++ b/profiles/commerce_kickstart/modules/contrib/chosen/chosen.js
+@@ -32,6 +32,8 @@
+           options.max_selected_options = $(element).data('cardinality');
+         }
+ 
++        options.inherit_select_classes = true;
++
+         return options;
+       };
+ 

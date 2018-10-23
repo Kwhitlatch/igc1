@@ -1,0 +1,110 @@
+// DON'T FORGET TO COPY THE CONTENTS OF THIS FILE INTO
+// ALL OF THE STYLE PAGES.
+
+/*
+ * @file
+ * This file is a custom file that loads all files. Each non-base layer
+ * can be disabled.
+ *
+ * Do not name this file "STARTER.scss". This file should be named
+ * ig_neato.scss. If you used the drush command to generate this subtheme,
+ * it should be named for you.
+ *
+ * This application file (ig_neato.scss) is where all the partials are
+ * imported.
+ *
+ * If you have changed the paths where bower components live, please update the mappings below.
+ */
+
+// Make sure the charset is set appropriately
+
+@charset "UTF-8";
+
+
+// Import normalize.css
+@import "../../neato/bower_components/normalize.css/normalize.css";
+
+// Import Bourbon.
+@import "../../neato/bower_components/bourbon/app/assets/stylesheets/bourbon";
+
+@import "variables/grid-settings.scss";
+
+// Import Neat.
+// So this needs to be done after the variables for some things to work right.
+@import "../../neato/bower_components/neat/app/assets/stylesheets/neat";
+@import "../../neato/bower_components/neat/app/assets/stylesheets/neat-helpers";
+
+
+/*
+ * A NOTE ABOUT UPDATEING OUR WERD *SS FONTS
+ * 
+ * Even though we use webfonts for our headings and icons, we must serve 
+ * those fonts from our own sites to get around "the great firewall of china"
+ * 
+ * All the fonts should live in ig_neato/fonts, and the css/scss in those fonts
+ * should be pulled in through the variables section below. We do it this way
+ * instead of through the .info file so that we can use auto-prefixing, linting,
+ * and minification.
+ *
+ * For Roboto Slab Updates:
+ * I used https://google-webfonts-helper.herokuapp.com/fonts to pull google fonts local
+ * We chose Roboto slab specifically because it supports many non-latin languages.
+ * I don't forsee needing to update this font unless a new file type comes into 
+ * fashion. Last updated from the cloud on 1-7-2018 -RRN 
+ *
+ * Icomoon fonts are designed to be cloud hosted - so it's a pain in the dick to 
+ * update these locally. You'll have to go to the icomoon browser app, update
+ * the font, go to the far right tab, and click "download". Then you can paste 
+ * the whole folder in ig_neato/fonts. (You should delete the demo content that
+ * comes with it by default.)  The default download will have a css
+ * file already compiled. We use that. If you don't use a file suffix (ex: .css) in the 
+ * @import, sass will include the css content in the css output.  If you do use 
+ * a suffix in the @import, that .css file won't be aggregated, instead it will
+ * be linked to, and you get an additional file call.
+ * You'll need to go into the style.css files and replace:
+ * url('fonts/ with url('../fonts/<font folder name>/fonts/)
+ *
+ * Icomoon does offer the option to generate .scss files,
+ * but we do not use them because they have problems with name space 
+ * collisions.  (We use two different icomoon font sets and the default variable
+ * names are the same.)  As of 1-8-18 Danny Pouley and Ryan Ray Neff have access
+ * to the icomoon account credentials. Icomoon also has the option to encode the
+ * font as utf-8 and embed in your css. Don't do this, it slows down your main 
+ * css load, and not every font is used on every page. 
+ */
+
+// Import variables
+/*
+*
+* BRAND VARIABLES
+* This section to be updated in each of the individual brand settings
+* files. Change the brand-settings-default to the individual brands.
+*
+*/
+@import "variables/colors.scss";
+@import "../fonts/robotoslab/style"; // See note about fonts above
+@import "../fonts/fluke-icon-font/style"; // See note about fonts above
+@import "../fonts/regulation-certification/style"; // See note about fonts above
+@import "variables/typography.scss";
+@import "variables/all-other-variables.scss";
+@import "variables/brand-settings-default.scss";
+
+
+
+// Import mixins
+@import "helpers-mixins/**/*.scss";
+
+// Import Bitters.
+@import "base/base";
+
+// Import yer base stuff
+@import "base/**/*.scss";
+
+// Import some layouts
+@import "layouts/**/*.scss";
+
+// Import Drupal element overrides
+@import "common/**/*.scss";
+
+// Import your components here.
+@import "components/**/*.scss";

@@ -1,0 +1,22 @@
+// Awards on product page. Not sure if the wrapper class needs to be tied to the
+// parent wrapper or individual awards, which are: #fluke-product-award-winner
+
+// #fluke-product-display-awards {
+//   display: inline-block;
+//   float: left;
+//   @extend %m-b-1;
+//   .fluke-icon-awards {
+//     font-size: 1.5rem;
+//   }
+//   a:hover {
+//     text-decoration: none;
+//   }
+//   .fluke-icon {
+//     &:after {
+//       content: "\00a0"; // Adds space between icon and word
+//     }
+//     &:hover {
+//       text-decoration: none;
+//     }
+//   }
+// }

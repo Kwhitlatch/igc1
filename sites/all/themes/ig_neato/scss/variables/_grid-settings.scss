@@ -1,0 +1,56 @@
+// Some visual grids for your development
+//
+// Toggle true/false on visual grid to turn on/off
+
+$visual-grid: false;
+$visual-grid-color: purple;
+$visual-grid-index: front;
+$visual-grid-opacity: 0.2;
+
+
+@import "../../../neato/bower_components/neat/app/assets/stylesheets/neat-helpers";
+
+ //Neat Overrides
+ $column: 75px;
+ $gutter: 30px;
+ $grid-columns: 12;
+ $max-width: 1260px;
+ //$max-width: 1480px;
+
+// This is used with the omega-reset mixin
+$fg-column: $column;
+$fg-gutter: $gutter;
+
+// Breakpoints
+// Think of this as "up to..."
+
+$screen-xs:                  526px;       // Phone / very small screen
+$screen-sm:                  768px;       // Small screen / tablet
+$screen-md:                  1033px;      // Medium screen / desktop
+$screen-lg:                  1280px;      // Large screen / wide desktop
+$screen-xl:                  1480px;      // Wide desktop / very wide desktop
+$screen-xxl:                 2100px;      // Above Wide desktop / Above very wide desktop
+
+// Some semantic names
+// The minimum width of any particular breakpoint
+$phone                   : $screen-xs;
+$tablet                  : min-width $screen-xs;
+$desk                    : min-width $screen-sm;
+
+$desk-lg                 : min-width $screen-md;
+$desk-wide               : min-width $screen-md;
+
+$desk-xl                 : min-width $screen-lg;
+$desk-xwide              : min-width $screen-lg;
+
+
+// Grids for your breakpoints
+$small-screen-down: new-breakpoint(max-width $screen-sm 4);
+$tablet-screen-up: new-breakpoint(min-width $screen-sm 12);
+//$medium-screen-up: new-breakpoint(min-width $screen-md 12);
+
+
+
+
+
+

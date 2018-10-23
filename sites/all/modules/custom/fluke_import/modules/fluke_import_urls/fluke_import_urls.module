@@ -1,0 +1,733 @@
+<?php
+
+/**
+ * implementation of hook_menu()
+ */
+function fluke_import_urls_menu() {
+
+  $items['admin/fluke/import/url-builder'] = array(
+    'title' => 'Import URL Builder',
+    'description' => 'Import URL Builder',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fluke_import_urls_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+);
+
+$items['admin/fluke/build/primary-nav/aliases'] = array(
+    'title' => 'Build primary nav aliases',
+    'description' => 'Build primary nav aliases',
+    'page callback' => 'fluke_import_urls_build_aliases',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+);
+
+  $items['admin/fluke/import/url-builder/done'] = array(
+    'title' => 'Import URL Builder - batch complete',
+    'description' => 'Import URL Builder - batch complete',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+);
+
+  return $items;
+
+}
+
+/**
+ * implementation of hook_form()
+ */
+function fluke_import_urls_form($form, $form_state) {
+
+  $form['upload-csv-file'] = array(
+    '#title' => t('Upload URLS CSV file'),
+    '#type' => 'managed_file',
+    '#required' => TRUE,
+    '#upload_location' => 'public://tmp/',
+    '#upload_validators' => array(
+      'file_validate_extensions' => array('csv'),
+    )
+  );
+
+  $form['btn-import'] = array(
+    '#value' => t('Import'),
+    '#type' => 'submit',
+  );
+
+  return $form;
+
+}
+
+/**
+ * implementation of hook_form_submit()
+ */
+function fluke_import_urls_form_submit($form, $form_state) {
+
+   $uri = db_query("SELECT uri FROM {file_managed} WHERE fid = :fid", array(
+    ':fid' => $form_state['values']['upload-csv-file'],
+  ))->fetchField();
+
+  $filename = $form_state['complete form']['upload-csv-file']['#file']->filename;
+
+  if (empty($uri)) {
+    drupal_set_message(t("File couldn't be uploaded"));
+  }
+  elseif (file_exists(drupal_realpath($uri))) {
+      // Open the csv
+      $handle = fopen(drupal_realpath($uri), "r");
+      // Go through each row in the csv and run a function on it. In this case we are parsing by '|' (pipe) characters.
+      // If you want commas are any other character, replace the pipe with it.
+      $i = 0;
+      $key_arr = array();
+      $output = array();
+      while (($data = fgetcsv($handle, 0, ',', '"')) !== FALSE) {
+        if ($i == 0) {
+          $key_arr = $data;
+          $keys = array();
+          foreach ($key_arr as $key => $value) {
+            $keys[] = preg_replace('/[^A-Za-z0-9\-]/', '', $value);
+          }
+        }
+        if ($i > 0) {
+          foreach ($data as $key => $value ) {
+            if ($key == 0 && strlen($value) < 1) {
+               break;
+            }
+            else {
+              $output[$i][$keys[$key]] = $value;
+            }
+          }
+        }
+        $i++;
+      }
+
+//   fluke_import_urls_create($output);
+
+// Added the following for batch
+
+   $batch = array(
+    'operations' => array(),
+    'finished' => 'fluke_import_urls_complete',
+    'title' => t('Batch update URL Builder'),
+    'init_message' => t('Update is starting...'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('Batch update URLs has encountered an error.')
+   );
+
+   foreach ($output as $url) {
+      $batch['operations'][] = array('fluke_import_urls_create_new', array($url));
+   }
+
+   batch_set($batch);
+   batch_process('admin/fluke/import/url-builder/done'); // The path to redirect to when done.
+
+// end of added for batch
+
+  }
+
+  return "Done";
+
+}
+
+
+function fluke_import_urls_create_new($url) {
+
+   $term = taxonomy_get_term_by_name($url['en-us'], 'url_builder');
+
+   if (sizeof($term) < 1) {
+      drupal_set_message(check_plain(t("No match found on this term:  Parent = " . $url['Parent'] . " Term: " . $url['en-us'])));
+      return;
+   }
+
+/* make sure we're looking at the right term - the spreadsheet has the terms parent
+   sometimes we have the same name used multiple places in URL builder.  This checks
+   the parent to see if the parent on the term matches the parent listed in the
+   spreadsheet */
+
+   $use_this_term = NULL;
+
+   if (sizeof($term) > 1) {
+      foreach ($term as $t) {
+         $parent = taxonomy_get_parents($t->tid);
+         foreach ($parent as $p) {
+           if (strtolower($p->name) == strtolower($url['Parent'])) {
+              $use_this_term = $t;
+           }
+         }
+      }
+    }
+    else {
+       foreach ($term as $t) {
+          $use_this_term = $t;
+       }
+    }
+
+/* if the term in the spreadsheet wasn't found in the URL builder
+   vocabulary then do nothing */
+   if (is_null($use_this_term)) {
+     drupal_set_message(check_plain(t("No match for term $t->tid")));
+     return;
+   }
+
+/* Now translate */
+
+    $translations = array();
+
+/*  use en-us */
+    $translations['en'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-au'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-ca'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-in'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-id'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-ie'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-my'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-ph'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-sg'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-th'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-tt'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-gb'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['en-vn'] = array(
+       'title' => $url['en-us'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use CS */
+    $translations['cs-cz'] = array(
+       'title' => $url['CS'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['CS']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use DE */
+    $translations['de-de'] = array(
+       'title' => $url['DE'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['DE']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+    $translations['de-ch'] = array(
+       'title' => $url['DE'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['DE']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+    $translations['de-at'] = array(
+       'title' => $url['DE'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['DE']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use ES */
+    $translations['es-es'] = array(
+       'title' => $url['ES'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use ES-LA */
+    $translations['es-la'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-ar'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-bo'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-cl'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-co'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-cr'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-do'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-ec'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-sv'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-gt'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-mx'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-pe'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-uy'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['es-ve'] = array(
+       'title' => $url['ES-LA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ES-LA']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use FI */
+    $translations['fi-fi'] = array(
+       'title' => $url['FI'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['FI']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use FR */
+    $translations['fr'] = array(
+       'title' => $url['FR'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['FR']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['fr-be'] = array(
+       'title' => $url['FR'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['FR']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['fr-fr'] = array(
+       'title' => $url['FR'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['FR']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['fr-ch'] = array(
+       'title' => $url['FR'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['FR']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['fr-ca'] = array(
+       'title' => $url['FR'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['FR']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use ID */
+    $translations['id-id'] = array(
+       'title' => $url['ID'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['ID']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* Use JA */
+    $translations['ja-jp'] = array(
+       'title' => $url['JA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use KO */
+    $translations['ko-kr'] = array(
+       'title' => $url['KO'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use NL */
+    $translations['nl-nl'] = array(
+       'title' => $url['NL'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['NL']))),
+       'Navitem' => $url['Navitem'],
+    );
+    $translations['nl-be'] = array(
+       'title' => $url['NL'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['NL']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use NO */
+    $translations['no-no'] = array(
+       'title' => $url['NO'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['NO']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use PT */
+    $translations['pt-pt'] = array(
+       'title' => $url['PT'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['PT']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use PT-BR */
+    $translations['pt-br'] = array(
+       'title' => $url['PT-BR'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['PT-BR']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use RU */
+    $translations['ru-ru'] = array(
+       'title' => $url['RU'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+
+/* use SV */
+    $translations['sv-se'] = array(
+       'title' => $url['SV'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['SV']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use TH */
+    $translations['th-th'] = array(
+       'title' => $url['TH'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use TR */
+    $translations['tr-tr'] = array(
+       'title' => $url['TR'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['TR']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use VI */
+    $translations['vi-vn'] = array(
+       'title' => $url['VI'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use ZH-TW */
+    $translations['zh-tw'] = array(
+       'title' => $url['ZH-TW'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use DA */
+    $translations['da-dk'] = array(
+       'title' => $url['DA'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['DA']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use PL */
+    $translations['pl-pl'] = array(
+       'title' => $url['PL'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['PL']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use IT */
+    $translations['it-it'] = array(
+       'title' => $url['IT'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['IT']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+/* use ZH-CN */
+    $translations['zh-cn'] = array(
+       'title' => $url['ZH-CN'],
+       'url'   => fluke_import_urls_special_char(strtolower(str_replace(" ", "-", $url['en-us']))),
+       'Navitem' => $url['Navitem'],
+    );
+
+   fluke_import_urls_populate($use_this_term, $translations);
+
+    return;
+
+}
+
+function fluke_import_urls_special_char($url_title) {
+
+    $url_title = str_replace('ä', 'ae', $url_title);
+    $url_title = str_replace('Ä', 'AE', $url_title);
+    $url_title = str_replace('é', 'e', $url_title);
+    $url_title = str_replace('ö', 'oe', $url_title);
+    $url_title = str_replace('Ö', 'OE', $url_title);
+    $url_title = str_replace('ü', 'ue', $url_title);
+    $url_title = str_replace('Ü', 'UE', $url_title);
+    $url_title = str_replace('ß', 's', $url_title);
+    $url_title = str_replace('Á', 'A', $url_title);
+    $url_title = str_replace('Â', 'A', $url_title);
+    $url_title = str_replace('Ã', 'A', $url_title);
+    $url_title = str_replace('Ä', 'A', $url_title);
+    $url_title = str_replace('Å', 'A', $url_title);
+    $url_title = str_replace('Æ', 'AE', $url_title);
+    $url_title = str_replace('Ç', 'C', $url_title);
+    $url_title = str_replace('É', 'E', $url_title);
+    $url_title = str_replace('Ê', 'E', $url_title);
+    $url_title = str_replace('Ë', 'E', $url_title);
+    $url_title = str_replace('Ë', 'E', $url_title);
+    $url_title = str_replace('Ì', 'I', $url_title);
+    $url_title = str_replace('Í', 'I', $url_title);
+    $url_title = str_replace('Î', 'I', $url_title);
+    $url_title = str_replace('Ï', 'I', $url_title);
+    $url_title = str_replace('Ð', 'D', $url_title);
+    $url_title = str_replace('Ñ', 'N', $url_title);
+    $url_title = str_replace('Ò', 'O', $url_title);
+    $url_title = str_replace('Ó', 'O', $url_title);
+    $url_title = str_replace('Ô', 'O', $url_title);
+    $url_title = str_replace('Õ', 'O', $url_title);
+    $url_title = str_replace('Ö', 'O', $url_title);
+    $url_title = str_replace('Ø', 'O', $url_title);
+    $url_title = str_replace('Ù', 'U', $url_title);
+    $url_title = str_replace('Ú', 'U', $url_title);
+    $url_title = str_replace('Û', 'U', $url_title);
+    $url_title = str_replace('Ü', 'U', $url_title);
+    $url_title = str_replace('Ý', 'Y', $url_title);
+    $url_title = str_replace('Þ', 'P', $url_title);
+    $url_title = str_replace('ß', 'B', $url_title);
+    $url_title = str_replace('à', 'a', $url_title);
+    $url_title = str_replace('á', 'a', $url_title);
+    $url_title = str_replace('â', 'a', $url_title);
+    $url_title = str_replace('ã', 'a', $url_title);
+    $url_title = str_replace('ä', 'a', $url_title);
+    $url_title = str_replace('å', 'a', $url_title);
+    $url_title = str_replace('æ', 'ae', $url_title);
+    $url_title = str_replace('ç', 'c', $url_title);
+    $url_title = str_replace('è', 'e', $url_title);
+    $url_title = str_replace('é', 'e', $url_title);
+    $url_title = str_replace('ê', 'e', $url_title);
+    $url_title = str_replace('ë', 'e', $url_title);
+    $url_title = str_replace('ì', 'i', $url_title);
+    $url_title = str_replace('í', 'i', $url_title);
+    $url_title = str_replace('î', 'i', $url_title);
+    $url_title = str_replace('ï', 'i', $url_title);
+    $url_title = str_replace('ð', 'o', $url_title);
+    $url_title = str_replace('ñ', 'n', $url_title);
+    $url_title = str_replace('ò', 'o', $url_title);
+    $url_title = str_replace('ó', 'o', $url_title);
+    $url_title = str_replace('ô', 'o', $url_title);
+    $url_title = str_replace('õ', 'o', $url_title);
+    $url_title = str_replace('ö', 'o', $url_title);
+    $url_title = str_replace('ø', 'o', $url_title);
+    $url_title = str_replace('ù', 'u', $url_title);
+    $url_title = str_replace('ú', 'u', $url_title);
+    $url_title = str_replace('û', 'u', $url_title);
+    $url_title = str_replace('ü', 'u', $url_title);
+    $url_title = str_replace('ý', 'y', $url_title);
+    $url_title = str_replace('þ', 'p', $url_title);
+    $url_title = str_replace('ÿ', 'y', $url_title);
+
+    return $url_title;
+
+}
+
+
+function fluke_import_urls_populate($term, $translations) {
+
+   $handler = entity_translation_get_handler('taxonomy_term', $term);
+
+   foreach ($translations as $key => $translate) {
+
+      $translation = array(
+        'translate' => 0,
+        'status' => 1,
+        'language' => $key, // here is the language you're translating to
+        'source' => 'en-us', // here is the source language
+      );
+
+      $values = array();
+
+      if (isset($translate['title']) && strlen($translate['title']) > 1) {
+          $values['field_content_title']  = array(
+            $key => array(
+              '0' => array(
+                'value' => $translate['title'],
+               )
+             )
+           );
+      }
+
+      if (isset($translate['url']) && strlen($translate['url']) > 1) {
+          $values['field_url_title']  = array(
+            $key => array(
+              '0' => array(
+                'value' => $translate['url'],
+               )
+             )
+           );
+      }
+
+      if (isset($translate['Navitem']) &&  strtolower($translate['Navitem']) == 'x') {
+          $values['field_include_on_primary_navigat']  = array(
+            $key => array(
+              '0' => array(
+                'value' => 1,
+               )
+             )
+           );
+      }
+
+     $handler->setTranslation($translation, $values);
+     $status = taxonomy_term_save($term);
+
+   }
+}
+
+
+function fluke_import_urls_complete($success, $results, $operations) {
+  if ($success) {
+    $message = count($results) . ' processed.';
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = 'An error occurred while processing ' . $error_operation[0] . ' with arguments :' . print_r($error_operation[0], TRUE);
+  }
+  drupal_set_message(check_plain(t($message)));
+  drupal_set_message(check_plain((l(t('Run Batch Again'), 'admin/fluke/import/url-builder'))));
+}
+
+
+
+function fluke_import_urls_build_aliases() {
+
+   $url_builder_vocab = taxonomy_vocabulary_machine_name_load('url_builder');
+   $term_tree = taxonomy_get_tree($url_builder_vocab->vid, $parent = 0, $max_depth = 10, $load_entities = FALSE);
+
+   //dpm($term_tree, "Term tree is");
+
+   $count = 0;
+
+   foreach ($term_tree as $t) {
+
+      $term = taxonomy_term_load($t->tid);
+      $parents = array_reverse($parent = taxonomy_get_parents_all($t->tid));
+      //dpm($term, "Term is");
+      $path = $term->field_url_title['en-us'][0]['value'];
+      $alias = drupal_get_path_alias($path, 'en-us');
+      $full_url = NULL;
+      foreach ($parents as $parent) {
+          if ($parent->field_url_title['en-us'][0]['value'] !== "fluke-ig") {
+              $full_url .= $parent->field_url_title['en-us'][0]['value'] . "/";
+          }
+      }
+
+      $translated_term = taxonomy_term_view($term, $view_mode = 'full', $langcode = NULL);
+      $count++;
+      if ($count > 10) {
+        break;
+      }
+   }
+
+   return "DONE";
+
+/*
+   $batch = array(
+    'operations' => array(),
+    'finished' => 'fluke_import_urls_build_aliases_complete',
+    'title' => t('Batch update URL Aliases'),
+    'init_message' => t('Update is starting...'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('Batch update URLs has encountered an error.')
+   );
+
+   foreach ($output as $url) {
+      $batch['operations'][] = array('fluke_import_urls_create_new', array($url));
+   }
+
+   batch_set($batch);
+   batch_process('admin/fluke/import/url-builder/done'); // The path to redirect to when done.
+
+*/
+}
+
+function fluke_import_urls_build_alias($term) {
+
+
+}
+
+
+
+function fluke_import_urls_build_aliases_complete($success, $results, $operations) {
+  if ($success) {
+    $message = count($results) . ' processed.';
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = 'An error occurred while processing ' . $error_operation[0] . ' with arguments :' . print_r($error_operation[0], TRUE);
+  }
+  drupal_set_message(check_plain(t($message)));
+  drupal_set_message(check_plain(l(t('Run Batch Again'), 'admin/fluke/import/url-builder')));
+}
+
+
+
+
+

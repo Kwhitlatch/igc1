@@ -1,0 +1,15 @@
+// Product display red alert box in the features section.
+// This is similar to _fluke-product-display-replaced-by.scss
+
+#fluke-product-display-alerts {
+  @include span-columns(12);
+  @include flash($error-color);
+  font-size: 1.5em;
+  border-left: 4px solid darken($error-color, 60%);
+  padding: 1.5rem 2rem;
+  .fluke-product-display-alert {
+    @include icon(before, exclamation-triangle) {
+      padding-right: 1rem;
+    }
+  }
+}

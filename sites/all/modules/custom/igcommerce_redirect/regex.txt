@@ -1,0 +1,30 @@
+---------------
+Working Regexes
+---------------
+
+locale-pid - Updating the line with upper case HTTP so that the next regex does not match.
+%s/^\(http\)\(:\/\/.*?locale=\w*&pid=\d*\)\(.*\),\(.*\),/HTTP\2,\4,/cg
+
+pid-locale
+%s/^\(http\)\(:\/\/.*?pid=\d*&locale=\w*\)\(.*\),\(.*\),/HTTP\2,\4,/cg
+
+locale
+%s/^\(http\)\(:\/\/.*?locale=\w*\)\(.*\),\(.*\),/HTTP\2,\4,/cg
+
+pid
+%s/^\(http\)\(:\/\/.*?pid=\p*\)\(.*\),\(.*\),/HTTP\2,\4,/cg
+
+Eloqua
+%s/^\(http\)\(:\/\/.*\)\(?elq.*\),\(\d*\s\w*\),\(\d*\s\w*\)/HTTP\2,\4,\5/cg
+%s/^\(http\)\(:\/\/.*\)\(?elq.*\),\(\.*\),\(.*\)/HTTP\2,\4,\5/cg
+
+Category-parent
+%s/^\(http\)\(:\/\/.*?category=\p*&parent=\p*\)\(.*\),\(.*\),/HTTP\2,\4,/cg
+
+Category
+%s/^\(http\)\(:\/\/.*?category=\p*\)\(.*\),\(.*\),/HTTP\2,\4,/cg
+
+Next
+%s/^\(http:\/\/.*\)\(?.*=.*\),\(\d*\s\w*\),\(\d*\s\w*\)/\1,\3,\4/cg
+%s/^\("http:\/\/.*\)\(?\p*\),\(.*\),\(.*\)/\1,\3,\4/cg
+%s/^\(http:\/\/.*\)\(?\p*\),/\1\2,/cg
