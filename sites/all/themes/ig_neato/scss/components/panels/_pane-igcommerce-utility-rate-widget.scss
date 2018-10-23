@@ -1,0 +1,34 @@
+// I don't know what this is for, so I commented it out 3-16-18. -rrN 
+// Best guess says this is for an earlier iteration of the 
+// "Was this Helpful" button on webcards.  That functionality was officially 
+// canceled 2-2018.
+
+// .rate-widget-yesno .first, .rate-widget-yesno .last {
+//   white-space: nowrap;
+//   overflow: hidden;
+//   text-overflow: ellipsis;
+//   width: 8rem; }
+// .rate-widget-yesno .rate-yesno-btn {
+//   border: none;
+//   @include button($color-primary, 1rem 3rem);
+//   color: $black !important;
+// }
+// .rate-widget-yesno .last .rate-yesno-btn {
+//   border: none;
+//   @include button($gray-dark , 1rem 3rem);
+//   color: $white !important;
+// }
+// .rate-widget-yesno ul li {
+//   margin: 0; }
+// .rate-widget-yesno .rate-info {
+//   font-size: $font-size-h5;
+//   color: $black;
+//   font-family: $headings-font-family;
+//   font-weight: 700;
+// // Position rate info over buttons. Based on clickability version
+// //  background: $white;
+// //  height: 75px;
+// //  width: 250px;
+// //  position: absolute;
+// //  margin-top: -75px; 
+// }

@@ -1,0 +1,21 @@
+// Styling for Bazaar Voice reviews. 
+// The bv section was formerly styled by overrwriting styles added dynamically
+// by the bvapi.js script in clickability. 
+// We now do the bulk of the theming through the bv
+// console at https://config.portal.bazaarvoice.com/siteManager
+
+#fluke-product-display-reviews {
+  ol.bv-content-list-Comments > .bv-secondary-content-comment {
+    padding-left: 15px !important;
+  }
+  // The lazyloader module interferes with images found in reviews, because it
+  // hides all images by default, and the bv.js script adds the images back in 
+  // at an odd time. to circumvent this, we need to inherit display with !important 
+  // Example product: /en-us/product/accessories/test-leads/fluke-tl175
+  img[data-src] { 
+    display: inherit !important;
+  }
+}
+
+
+

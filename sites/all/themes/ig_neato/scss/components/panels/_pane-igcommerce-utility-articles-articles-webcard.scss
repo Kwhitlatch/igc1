@@ -1,0 +1,123 @@
+// Webcard layout syles, found on solutions/industries pages.
+
+// Clickable overlay to close web-card when clicking outside modal
+#myModal a.close-overlay {
+  @include position(fixed, (0) (0) null null);
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  &::after,
+  &::before {
+    display:none;
+  }
+}
+.article-webcard {
+  // Bottom padding to prevent copyright from being to close to modal end. 
+  .modal-content {
+    padding-bottom: $spacing-2;
+  }
+  // Close button - Extended from _modals.scss
+  a.close-button {
+    @extend .modal-close;
+  }
+  // Overriden some values to make work in .article-webcard
+  #overlay-close-wrapper a.close-button {
+    @include position(absolute, (-35px) (0) null null);
+    background: transparent;
+    &::after,
+    &::before {
+      @include size(0.25em 1.75em);
+      background: $white;
+    }
+    &:hover::after,
+    &:hover::before {
+      background: darken($white, 10%);
+    }
+  }
+  //Removed default grey border on modal-header.
+  .modal-header {
+    border-bottom: none;
+    padding: 0; // Overrides the bs modal styles, so the image sits flush with top of card
+  }
+  .view-share-block-solr {
+    display: inline-block;
+  }
+  .assistance {
+    @include media($desk-lg) {
+    float: right;
+    display: inline-block;
+  }
+  }
+  .modal-body {
+    /* Left aligns lists in content */
+    ol, ul {
+      padding-left: 1.5rem;
+      margin: 0 0 1rem;
+    }
+    padding: 0 1.5rem;
+    margin-top: 4.5rem;
+    @include media($desk) {
+      padding: 0 10rem;
+    }    
+  }
+  // Extra space below header section. Allow header image to span full width.
+  figure.card-header{
+    padding: 0;
+    margin: 0;
+    // Fill header img 100%
+    figcaption {
+      padding: 0 3em 0 1em;
+      @include media($desk){
+        padding: 0 10rem;
+      }    
+      font-size: $font-size-sm;
+    }
+    img {
+      // object-fit may be required for video?
+      //object-fit: cover;
+      width: 100%;
+      height: auto;
+      /* Graphics requested max height be removed so they can add images with different ratios for webcard banners -rrn 3-23-17 */
+      //max-height: 270px; //Prevents prevents images not the correct aspect ratio from being too large.
+    }
+  }
+  
+  // These are the recommended produts and resources.
+  aside {
+    // Keeps the titles consitent with that of subsections on product pages.
+    h3 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .toc-article-related-resource-wrapper {
+      @extend %tile-story-simple;
+      padding: 15px;
+      min-height: initial;
+      @include media($desk) {
+        min-height: 220px;
+      }
+      h5 {
+        font-family: $base-font-family;
+      }
+    }
+  }
+  
+  // Extra space above footer section.
+  aside,
+  footer {
+    clear: both;
+    margin-top: $spacing-3;
+    display: inline-block;
+    width: 100%; //Prevents single related items from contracting.
+  }
+
+  // Related Items and CTA found in card-footer
+  //---------------------
+  .button-primary {
+    @include span-columns(12);
+    margin-top: $spacing-1;
+    @include media($desk-lg) {
+      @include span-columns(6); 
+    }   
+  }
+}

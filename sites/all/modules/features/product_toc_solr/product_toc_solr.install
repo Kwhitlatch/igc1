@@ -1,0 +1,8 @@
+<?php 
+
+/**
+ * Recreate product_toc_solr feature - update panels pages
+ */
+function product_toc_solr_install_7001() {
+  features_revert(array('product_toc_solr'));
+}

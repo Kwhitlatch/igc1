@@ -1,0 +1,144 @@
+//Also Check out the components/toggle.scss to get the toggle part of this
+.flukestrap-layouts-sidebar{
+  background: $gray-e;
+  // Workaround to display filters titles that are semantically correct h2s, with the style of h3 based on comps.
+  .pane-facetapi h2{
+    @extend h3;
+    margin: 0;
+    @include media($screen-md) {
+      margin: 1.5rem 0 0;
+    }
+  }
+  //Left Sidebar Filters
+  .pane-facetapi{
+    margin-bottom: 2.25rem;
+  }
+  // Checkboxes that are not a custom collapse. EX: Software downloads
+  .pane-title{
+    margin: 0 0 0.25em;
+  }
+  .item-list ul li{
+    list-style: none;
+    margin: ($spacing-1 / 2) 0;
+    input[type="checkbox"]{
+      margin-right: 13px;
+    }
+  }
+  .active-trail.active {
+    font-weight: bold;
+  }
+  button.collapse-toggle {
+    //The left nav used to collapse to a dropdown box on mobile. THis was removed
+    // after active-trail was implemented on the main nav.
+    // I suspect this will be coming back at a later date to support filters, 
+    // So i lefte the supporting html unchanged. you can brign this styling 
+    // back to bring the button back.  1-16-18 -rrn
+    display: block;
+    color: $text-color;
+    width: 100%;
+    text-align: left;
+    background-color: $white;
+    padding: 1.6rem;
+    @include media($screen-md){
+      display: none;
+    }
+  }
+  .panel-group{
+    display: none;
+    @include media($screen-md){
+      display: block;
+    }
+  }
+  .pane-content,
+  .custom-collapse {
+    .panel-group {
+      .panel {
+        display: block;
+        border-bottom: none;
+        // Adds a little space after first and last side nav items
+        &:first-of-type .panel-heading {
+          h4 {
+            padding-top:20px;
+          }
+          .plus-minus {
+            padding-top: 12px;
+          }
+        }
+        &:last-of-type {
+          padding-bottom: 10px;
+        }
+        //colors the background of open nav items with children
+        .expanded-wrapper {
+          h4 {
+            background-color: $gray-c;
+          }
+          + .panel-collapse .child-menu-item {
+            background-color: $gray-c;
+          }
+        }
+        // General panel-heading styling
+        .panel-heading{
+          position: relative;
+          h4 {
+            margin-bottom: 0;
+            font-weight: 400;
+            line-height: 1.3;
+            padding: .7rem 4rem .7rem 2rem;
+            a {
+              font-family: $font-family-sans-serif;
+              color: $gray-21;
+            }
+          }
+          @extend %adds-toggle-plus;
+          a[data-parent='#accordion'],
+          a[data-parent='#accordion-left'] { //Prevents W3C error for duplicate accordians on a page
+            padding: 0;
+            // This expands the plus minus to cover the parent link, so it's
+            // not clickable.  This is a last-minute revision. If we 
+            // ever rebuild this navigation, it should not be done this way.
+            height: 34px;
+            width: 100%;
+          }
+        }
+        .child-menu-item {
+          padding: .7rem 2rem;
+        }
+        .panel-collapse{
+          display: none;
+        }
+      }
+    }
+  }
+  // Add additional margin to the bottom of the left nav for pages that contain both nav and search facets. 
+  // Had to move this pading to the search facet, because it was making the left nav dropdown too big on mobile -rrn 2-9-17
+  // On the upside, this keeps the facets at the right height on search pages.
+  // .pane-igcommerce-utility-articles-articles-toc-nav{
+  //   margin-bottom: $spacing-2;
+  // }
+  .pane-facetapi {
+    margin-top: $spacing-2;
+  }
+}
+//
+//
+//.section-side-navbar ul {
+//  font-family: "Roboto Slab", "Arial Black", serif;
+//  font-size: 17px;
+//  padding-left: 0px;
+//  list-style: none;
+//}
+//.section-side-navbar ul li {
+//  border: 0;
+//  border-bottom: 1px solid #ccc;
+//  padding: 15px 0;
+//}
+//.section-side-navbar ul li:last-child {
+//  border-bottom: none;
+//}
+//.section-side-navbar a {
+//  color: #222;
+//}
+//.section-side-navbar a:hover {
+//  text-decoration: none;
+//  color: #003b78;
+//}

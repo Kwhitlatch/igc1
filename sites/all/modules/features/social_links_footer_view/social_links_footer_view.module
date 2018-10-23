@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Social Links Footer View feature.
+ */
+
+include_once 'social_links_footer_view.features.inc';

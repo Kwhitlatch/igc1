@@ -1,0 +1,18 @@
+diff --git a/modules/image/image.module b/modules/image/image.module
+index b7d6cdd..d2e7630 100644
+--- a/modules/image/image.module
++++ b/modules/image/image.module
+@@ -1177,11 +1177,11 @@ function image_effect_definition_load($effect, $style_name = NULL) {
+   if (isset($style_name)) {
+     $style = image_style_load($style_name, NULL);
+     if ($style['storage'] == IMAGE_STORAGE_DEFAULT) {
+-      return FALSE;
++      return array();
+     }
+   }
+ 
+-  return isset($definitions[$effect]) ? $definitions[$effect] : FALSE;
++  return isset($definitions[$effect]) ? $definitions[$effect] : array();
+ }
+ 
+ /**

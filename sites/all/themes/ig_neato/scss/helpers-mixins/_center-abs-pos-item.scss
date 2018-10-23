@@ -1,0 +1,6 @@
+@mixin center-item($item-width: 1200px){
+  position: absolute;
+  max-width: $item-width;
+  left: 50%;
+  margin-left: -($item-width / 2);
+}

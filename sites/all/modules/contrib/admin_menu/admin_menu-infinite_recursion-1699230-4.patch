@@ -1,0 +1,21 @@
+diff --git a/admin_menu.inc b/admin_menu.inc
+index 2eab789..210b5fc 100644
+--- a/admin_menu.inc
++++ b/admin_menu.inc
+@@ -236,8 +236,14 @@ function admin_menu_merge_tree(array &$tree, array $tree_dynamic, array $expand_
+           foreach ($replacements as $placeholder => $value) {
+             $new_expand_map[$placeholder] = array($value);
+           }
+-          admin_menu_merge_tree($item, $tree_dynamic, array($new_expand_map));
+-          $tree[$key]['below'] += $item;
++
++          // When trying to render an item that is exactly the same as the tree
++          // we are getting into an infinite loop. So do not execute that.
++          $diff = array_diff_assoc($tree, $item);
++          if (!empty($diff)) {
++            admin_menu_merge_tree($item, $tree_dynamic, array($new_expand_map));
++            $tree[$key]['below'] += $item;
++          }
+         }
+       }
+     }

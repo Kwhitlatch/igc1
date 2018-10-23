@@ -1,0 +1,74 @@
+<?php
+/**
+ * @file
+ * Code for the Search API multisite demo feature.
+ */
+
+include_once 'search_api_multisite_demo.features.inc';
+
+
+/**
+ * Implements hook_permission().
+ */
+function search_api_multisite_demo_permission() {
+  return array(
+    'access search api multisite search' => array(
+      'title' => t('Access Search API multisite search'),
+      'description' => t('Access the views page defined by the Search API multisite search demo module.'),
+    ),
+  );
+}
+
+/**
+ * Generate a unique site hash.
+ */
+function search_api_multisite_demo_hash() {
+  if (!($hash = variable_get('search_api_multisite_demo_hash', FALSE))) {
+    global $base_url;
+    // Set a random 6 digit base-36 number as the hash.
+    $hash = substr(base_convert(sha1(uniqid($base_url, TRUE)), 16, 36), 0, 6);
+    variable_set('search_api_multisite_demo_hash', $hash);
+  }
+
+  return $hash;
+}
+
+/**
+ * Implements hook_search_api_alter_callback_info().
+ */
+function search_api_multisite_demo_search_api_alter_callback_info() {
+  $callbacks['site_index'] = array(
+    'name' => t('Index Site Hash'),
+    'description' => t('Include a field for indexing a hash of the site. Also include the hash in the id of the item to be indexed.'),
+    'class' => 'SearchApiSiteAddHash',
+    'weight' => 101,
+  );
+
+  return $callbacks;
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function search_api_multisite_demo_views_data_alter(&$data) {
+  foreach (search_api_index_load_multiple(FALSE) as $index) {
+    // Fill in base data.
+    $key = 'search_api_index_' . $index->machine_name;
+    if (isset($data[$key]['search_api_multisite_demo_hash'])) {
+      $data[$key]['search_api_multisite_demo_hash']['filter']['handler'] = 'SearchApiSiteViewsHandler';
+    }
+  }
+}
+
+/**
+ * Implements hook_search_api_index_items_alter().
+ *
+ * We do not know the index id in the allCallback object so we need to jump in
+ * here and add the value for the id.
+ */
+function search_api_multisite_demo_search_api_index_items_alter(array &$items, SearchApiIndex $index) {
+  foreach ($items as $id => $item) {
+    $hash = search_api_multisite_demo_hash();
+    $item->search_api_multisite_demo_id = "{$index->machine_name}-{$id}-{$hash}";
+  }
+}

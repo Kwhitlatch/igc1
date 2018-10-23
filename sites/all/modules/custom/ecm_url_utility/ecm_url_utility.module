@@ -1,0 +1,225 @@
+<?php
+
+function ecm_url_utility_node_validate($node, $form, &$form_state) {
+
+    global $language;
+
+// If there isn't a display title then assign one using the fallback process
+    if (!isset($form_state['values']['field_content_title'][$language->language]) ||
+         strlen($form_state['values']['field_content_title'][$language->language][0]['value']) < 1) {
+            drupal_set_message("Display title was missing, assigned default using fallback");
+            $form_state['values']['field_content_title'][$language->language][0]['value'] = ecm_url_utility_fallback($language->language, $form_state['build_info']['args'][0]->field_content_title);
+    }
+
+// Now assign the URL title if one has not been entered, using fallback if necessary
+    if (isset($form_state['values']['field_url_title']) &&
+        isset($form_state['values']['field_url_title'][$language->language][0]['value']) &&
+        strlen($form_state['values']['field_url_title'][$language->language][0]['value']) > 0) {
+
+         if (strpos($form_state['values']['field_url_title'][$language->language][0]['value'], " ")) {
+            form_set_error('field_url_title', "URL titles cannot have spaces");
+         }
+         else if(preg_match('/[^a-zA-Z0-9_-]+/i', $form_state['values']['field_url_title'][$language->language][0]['value'])) {
+            form_set_error('field_url_title', "URL titles cannot contain special characters, Only A-Z, -, _, and 0-9 are valid");
+         }
+
+    }
+
+    if ((!isset($form_state['values']['field_url_title'][$language->language]) ||
+          strlen($form_state['values']['field_url_title'][$language->language][0]['value']) < 1)) {
+
+          if ( isset($form_state['values']['field_content_title'])  &&
+               isset($form_state['values']['field_content_title'][$language->language][0]['value']) &&
+              strlen($form_state['values']['field_content_title'][$language->language][0]['value'])  > 0 ) {
+                  $url_title = str_replace(" ", "-", $form_state['values']['field_content_title'][$language->language][0]['value']);
+                  $form_state['values']['field_url_title'][$language->language][0]['value'] = ecm_url_utility_char_replace($language->language, strtolower($url_title));
+                  drupal_set_message("URL title was auto populated from the display title");
+          }
+          else if ( isset($form_state['values']['field_content_title']) ) {
+               $url_title_base = ecm_url_utility_fallback($language->language, $form_state['values']['field_content_title']);
+               $url_title = str_replace(" ", "-", $url_title_base);
+               $url_title = ecm_url_utility_char_replace($language->language, $url_title);
+               $form_state['values']['field_url_title'][$language->language][0]['value'] = strtolower($url_title);
+               drupal_set_message("URL title was auto populated from display title using language fallback");
+          }
+          else {
+             form_set_error('field_content_title', "You must specify a display title");
+          }
+  }
+
+}
+
+
+/***
+ *
+ *  This function examines a field and determines whether the value exists for the specified language, if not
+ *  it then looks for content in the parent language of that child language - for example, if the language is
+ *  de-ch it looks in de-de.  If there isn't a value in the parent language it then looks in  en-us and assigns
+ *  that value.  If it doesn't exist in en-us then it returns a null value.
+ *
+ */
+function ecm_url_utility_fallback($entity_language, $content_title) {
+
+// define the language clusters by parent
+    $en_langs = array('en-au', 'es-es', 'fi-fi', 'fr-fr', 'id-id', 'it-it', 'ja-jp', 'ko-kr', 'nl-nl', 'no-no',
+        'pl-pl', 'pt-br', 'pt-pt', 'ru-ru', 'sv-se', 'th-th', 'tr-tr', 'vi-vn', 'zh-cn', 'cs-cz',
+        'da-dk', 'de-de', 'en', 'en-ca', 'en-gb', 'en-id', 'en-ie', 'en-in', 'en-my', 'en-ph',
+        'en-sg', 'en-th', 'en-tt', 'en-vn', 'es-mx', 'zh-tw');
+    $es_langs = array('es-ar', 'es-bo', 'es-cl', 'es-co', 'es-cr', 'es-do', 'es-ec', 'es-gt', 'es-pe',
+        'es-sv', 'es-uy', 'es-ve');
+    $de_langs = array('de-at', 'de-ch');
+    $cn_langs = array('cn');
+    $nl_langs = array('nl-be');
+    $fr_langs = array('fr', 'fr-be', 'fr-ca', 'fr-ch');
+
+    $value_to_return = NULL;
+
+    $return_value = '';
+
+    // always us en-us display titles for url titles for the following languages
+    if (in_array($entity_language, array('ja-jp', 'ko-kr', 'ru-ru', 'th-th', 'zh-tw', 'zh-cn', 'cn', 'vi-vn'))) {
+       return ecm_url_utility_char_replace('en-us', $content_title['en-us'][0]['value']);
+    }
+
+// now check for the value based on which cluster the language passed in belongs to
+    if  (in_array($entity_language, $en_langs)) {
+        $return_value = ecm_url_utility_assign_values('en-us', $content_title);
+    }
+    elseif (in_array($entity_language, $es_langs)) {
+        $return_value = ecm_url_utility_assign_values('es-es', $content_title);
+    }
+    elseif (in_array($entity_language, $de_langs)) {
+        $return_value = ecm_url_utility_assign_values('de-de', $content_title);
+    }
+    elseif (in_array($entity_language, $cn_langs)) {
+        $return_value = ecm_url_utility_assign_values('zh-cn', $content_title);
+    }
+    elseif (in_array($entity_language, $nl_langs)) {
+        $return_value = ecm_url_utility_assign_values('nl-nl', $content_title);
+    }
+    elseif (in_array($entity_language, $fr_langs)) {
+        $return_value = ecm_url_utility_assign_values('fr-fr', $content_title);
+    }
+    else { // catch all others
+        if (isset($content_title['en-us']) &&
+            strlen($content_title['en-us'][0]['value']) > 0) {
+              $return_value = $content_title['en-us'][0]['value'];
+        }
+        else {
+            $return_value = NULL;
+        }
+    }
+
+    return $return_value;
+
+}
+
+
+function ecm_url_utility_assign_values($entity_language, $content_title) {
+
+    $return_value = NULL;
+
+    if (isset($content_title[$entity_language]) &&
+        strlen($content_title[$entity_language][0]['value']) > 0) {
+        $return_value = $content_title[$entity_language][0]['value'];
+    }
+    elseif (isset($content_title['en-us'][0]['value']) &&
+        strlen($content_title['en-us'][0]['value']) > 0) {
+        $return_value = $content_title['en-us'][0]['value'];
+    }
+    return $return_value;
+}
+
+
+function ecm_url_utility_char_replace($entity_language, $url_title) {
+
+   if (in_array($entity_language, array('de-de', 'de-at', 'de-ch'))) {
+      $url_title = str_replace('ä', 'ae', $url_title);
+      $url_title = str_replace('Ä', 'ae', $url_title);
+      $url_title = str_replace('é', 'e', $url_title);
+      $url_title = str_replace('ö', 'oe', $url_title);
+      $url_title = str_replace('Ö', 'oe', $url_title);
+      $url_title = str_replace('ü', 'ue', $url_title);
+      $url_title = str_replace('Ü', 'ue', $url_title);
+      $url_title = str_replace('ß', 's', $url_title);
+   }
+   else {
+      $url_title = str_replace('Á', 'a', $url_title);
+      $url_title = str_replace('á', 'a', $url_title);
+      $url_title = str_replace('à', 'a', $url_title);
+      $url_title = str_replace('Â', 'a', $url_title);
+      $url_title = str_replace('â', 'a', $url_title);
+      $url_title = str_replace('Å', 'a', $url_title);
+      $url_title = str_replace('å', 'a', $url_title);
+      $url_title = str_replace('Ä', 'a', $url_title);
+      $url_title = str_replace('ä', 'a', $url_title);
+      $url_title = str_replace('Ã', 'a', $url_title);
+      $url_title = str_replace('ã', 'a', $url_title);
+      $url_title = str_replace('ą', 'a', $url_title);
+      $url_title = str_replace('Æ', 'ae', $url_title);
+      $url_title = str_replace('æ', 'ae', $url_title);
+      $url_title = str_replace("'", '-', $url_title);
+      $url_title = str_replace('ß', 'b', $url_title);
+      $url_title = str_replace('c', 'c', $url_title);
+      $url_title = str_replace('č', 'c', $url_title);
+      $url_title = str_replace('Ç', 'c', $url_title);
+      $url_title = str_replace('ç', 'c', $url_title);
+      $url_title = str_replace('Ð', 'd', $url_title);
+      $url_title = str_replace('ð', 'o', $url_title);
+      $url_title = str_replace('É', 'e', $url_title);
+      $url_title = str_replace('é', 'e', $url_title);
+      $url_title = str_replace('È', 'e', $url_title);
+      $url_title = str_replace('è', 'e', $url_title);
+      $url_title = str_replace('Ê', 'e', $url_title);
+      $url_title = str_replace('ê', 'e', $url_title);
+      $url_title = str_replace('ě', 'e', $url_title);
+      $url_title = str_replace('Ë', 'e', $url_title);
+      $url_title = str_replace('ë', 'e', $url_title);
+      $url_title = str_replace('ę', 'e', $url_title);
+      $url_title = str_replace('ğ', 'g', $url_title);
+      $url_title = str_replace('Í', 'i', $url_title);
+      $url_title = str_replace('í', 'i', $url_title);
+      $url_title = str_replace('í', 'i', $url_title);
+      $url_title = str_replace('Ì', 'i', $url_title);
+      $url_title = str_replace('ì', 'i', $url_title);
+      $url_title = str_replace('Î', 'i', $url_title);
+      $url_title = str_replace('î', 'i', $url_title);
+      $url_title = str_replace('Ï', 'i', $url_title);
+      $url_title = str_replace('ï', 'i', $url_title);
+      $url_title = str_replace('ı', 'i', $url_title);
+      $url_title = str_replace('ł', 'i', $url_title);
+      $url_title = str_replace('ń', 'n', $url_title);
+      $url_title = str_replace('Ñ', 'n', $url_title);
+      $url_title = str_replace('ñ', 'n', $url_title);
+      $url_title = str_replace('Ó', 'o', $url_title);
+      $url_title = str_replace('ó', 'o', $url_title);
+      $url_title = str_replace('Ò', 'o', $url_title);
+      $url_title = str_replace('ò', 'o', $url_title);
+      $url_title = str_replace('Ô', 'o', $url_title);
+      $url_title = str_replace('ô', 'o', $url_title);
+      $url_title = str_replace('Ö', 'o', $url_title);
+      $url_title = str_replace('ö', 'o', $url_title);
+      $url_title = str_replace('Õ', 'o', $url_title);
+      $url_title = str_replace('õ', 'o', $url_title);
+      $url_title = str_replace('Ø', 'o', $url_title);
+      $url_title = str_replace('ø', 'o', $url_title);
+      $url_title = str_replace('Þ', 'p', $url_title);
+      $url_title = str_replace('þ', 'p', $url_title);
+      $url_title = str_replace('ř', 'r', $url_title);
+      $url_title = str_replace('ş', 's', $url_title);
+      $url_title = str_replace('ť', 't', $url_title);
+      $url_title = str_replace('Ú', 'u', $url_title);
+      $url_title = str_replace('ú', 'u', $url_title);
+      $url_title = str_replace('Ù', 'u', $url_title);
+      $url_title = str_replace('ù', 'u', $url_title);
+      $url_title = str_replace('Û', 'u', $url_title);
+      $url_title = str_replace('û', 'u', $url_title);
+      $url_title = str_replace('ů', 'u', $url_title);
+    }
+
+    //dpm($url_title, "returning");
+
+     return $url_title;
+
+ }
+

@@ -1,0 +1,72 @@
+.page-support-instrument-security{
+  //Adjust the position of the submit buttons for manual select and missing model
+  input#dwd_manual, input#edit-mm-submit {
+    margin-top: 0;
+    @include media($tablet){
+      margin-top: 4.5rem;
+    } 
+  }
+  .form-item-manual-to-dwd{
+    @include span-columns(12);
+    @include media($tablet){
+      @include span-columns(8);
+    } 
+    //Chosen select box to mimic input style
+    a.chosen-single{ //Full width dropdown menu under select manual
+      background-color: $white;
+      box-sizing: border-box;
+      font-size: 1.6rem;
+      padding: 0.5em;
+      width: 100%;
+      box-shadow: none;
+      border: 1px solid $gray-lighter;
+      color: $gray-medium;
+      height: 42px;
+    }
+    //Match select box height
+    .chosen-drop{
+      border: 1px solid $gray-lighter;
+      border-top: none;
+      width: 100%;
+      background-color: $white;
+    }
+  }
+  .form-item-missing-model, .form-item-missing-model-email{
+  @include span-columns(12);
+    margin-top: 0;
+    margin-bottom: 0;
+    @include media($tablet){
+      @include span-columns(4);
+      margin-top: 1em;
+      margin-bottom: 1em;
+    } 
+    input.form-text{
+      width: 100%;
+    }
+  }
+  .utility-support-separator{
+    @include span-columns(12);
+    padding: $spacing-1 0;
+    @extend h4;
+    font-weight: 600;
+  }
+}
+
+//Temporary Warranty page hack
+//TODO: Get better content on the warranty page.
+.page-support-warranties #collapseTwo{
+  p:first-of-type {
+    img {
+      width: 90px;
+      margin-left: 25px;
+
+    }
+  }
+  p:last-of-type{
+    img{
+      width: 70px;
+      margin-left: 25px;
+      margin-right: 7px;
+    }
+  }
+}

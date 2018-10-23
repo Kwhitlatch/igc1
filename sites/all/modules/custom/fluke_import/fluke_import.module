@@ -1,0 +1,280 @@
+<?php
+
+/**
+ * implementation of hook_menu()
+ */
+function fluke_import_menu() {
+  $items['admin/fluke/import'] = array(
+    'title' => 'Fluke import',
+    'description' => t('Import content using this menu'),
+    'page callback' => 'fluke_import_settings',
+    //'page arguments' => array('fluke_services_settings'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/fluke/import/article-translations'] = array(
+    'title' => t('Fluke article translations'),
+    'description' => 'Import content using this menu',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fluke_import_content_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+
+
+  return $items;
+}
+
+function fluke_import_settings(){
+  $links ='';
+  $linksArr = array(
+    'admin/fluke/import/article-translations' => t('Fluke article translations'),
+  );
+
+  foreach($linksArr as $url => $title){
+    $links .= l($title, $url). '<br />';
+  }
+  return $links;
+}
+/**
+ * implementation of hook_form()
+ */
+function fluke_import_content_form($form, $form_state){
+  $form['upload-csv-file'] = array(
+    '#title' => t('Upload file'),
+    '#type' => 'managed_file',
+    '#required' => TRUE,
+    '#upload_location' => 'public://tmp/',
+    '#upload_validators' => array(
+      'file_validate_extensions' => array('csv'),
+    )
+  );
+
+  $form['btn-import'] = array(
+    '#value' => t('Import'),
+    '#type' => 'submit',
+  );
+
+  return $form;
+
+}
+
+/**
+ * implementation of hook_form_submit()
+ */
+function fluke_import_content_form_submit($form, $form_state){
+
+  $removeFromFileName = array('content_','.csv');
+
+  $uri = db_query("SELECT uri FROM {file_managed} WHERE fid = :fid", array(
+    ':fid' => $form_state['values']['upload-csv-file'],
+  ))->fetchField();
+  //echo $uri;
+
+  $filename = $form_state['complete form']['upload-csv-file']['#file']->filename;
+  $contentType = str_replace($removeFromFileName, '', $filename);
+  $content ='';
+  if(!empty($uri)) {
+    if(file_exists(drupal_realpath($uri))) {
+      // Open the csv
+      $handle = fopen(drupal_realpath($uri), "r");
+      // Go through each row in the csv and run a function on it. In this case we are parsing by '|' (pipe) characters.
+      // If you want commas are any other character, replace the pipe with it.
+      $i = 0;
+      $keyArr = array();
+      $output = array();
+      while (($data = fgetcsv($handle, 0, ',', '"')) !== FALSE) {
+        if($i == 0){
+          $keyArr = $data;
+          $keys = array();
+          foreach ($keyArr as $key => $value) {
+            $keys[] = preg_replace('/[^A-Za-z0-9\-]/', '', $value);
+          }
+        }
+        if($i > 0){
+          foreach($data as $key => $value ) {
+            if ($key == 0 && strlen($value) < 1) {
+               break;
+            } else {
+              $output[$i][$keys[$key]] = $value;
+            }
+          }
+        }
+        $i++;
+      }
+      dpm($output);
+      return;
+      _fluke_create_content($output,$contentType);
+    }
+  }
+  return "Done";
+}
+
+function _fluke_create_content($data,$type) {
+  global $user;
+  //source language
+  $langLocale = 'en-us';
+  //target language -- Don't think this is being used. it's the language column in the csv
+  //$langTarget = 'es-es';
+
+  foreach($data as $details){
+    //check if CID exist in target language locale
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+       ->entityCondition('bundle', $type)
+       ->fieldCondition('field_cid', 'value', $details['cid'], '=')
+       ->addMetaData('account', user_load(1));
+
+    $result = $query->execute();
+
+    if ($result)
+
+      $node = NULL;
+
+      foreach($result['node'] as $n) {
+        $node = node_load($n->nid);
+      }
+
+      if(is_object($node)){
+        $translation = array(
+          'translate' => 0,
+          'status' => 1,
+          'language' => $details['language'], // here is the language you're translating to
+          'source' => 'en-us', // here is the source language
+        );
+
+        $handler = entity_translation_get_handler('node', $node);
+
+        $values = array(
+
+/*  This is the only area where you should need to add/update/remove code to add/update
+ *  or remove a field.   The structure must be exact
+
+
+       'content_title' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['displayTitle'],
+               )
+             )
+           ),
+
+*   replacing 'content_title' with the name of the field on the content item
+*   The $details['displayTitle'] should be updated to reflect the actual column
+*   title in the CSV.  It must match case, spelling, etc.   NO SPACES!
+*   There must be a comma after the last closing ")". */
+
+          'title_field' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['title'],
+               )
+             )
+           ),
+          'field_content_title' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['displayTitle'],
+               )
+             )
+           ),
+          'field_url_title' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['displayTitle'],
+               )
+             )
+           ),
+           'body' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['content'],
+               )
+             )
+           ),
+           'field_subtitle' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['subtitle'],
+               )
+             )
+           ),
+          'field_summary' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['summary'],
+               )
+             )
+           ),
+          'field_article_footer' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['foot'],
+               )
+             )
+           ),
+
+          'field_short_description_summary' => array (
+            $details['language'] => array(
+              '0' => array(
+                /* Articles use meta Title but products use meta Description.
+                   Easier to change the column header in csv */
+                /* 'value' => $details['metaTitle'], */
+                'value' => $details['metaDesc'],
+               )
+             )
+           ),
+          'field_summary' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['summary'],
+               )
+             )
+           ),
+          'field_features' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['features'],
+               )
+             )
+           ),
+          'field_overview' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['overview'],
+               )
+             )
+           ),
+          'field_specs' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['techSpecs'],
+               )
+             )
+           ),
+          'field_caption' => array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['caption'],
+               )
+             )
+           ),
+
+
+
+/*  End of where you should make changes. */
+
+        );
+
+        $handler->setTranslation($translation, $values);
+
+        entity_get_controller('node')->resetCache(array($node->nid));
+        field_attach_update('node', $node);
+
+        drupal_set_message("Node: " . $details['title'] . ' was translated into ' . $details['language']);
+
+      } else{
+
+        drupal_set_message("The node with CID of: " . $details['cid'] . ' did not exist in en-us, no translation performed');      }
+  }
+}

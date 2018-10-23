@@ -1,0 +1,28 @@
+/*Probably shouldn't do this this way, but it was easeri than changing the whole theme.*/
+
+.page-admin-appearance-styleguide{
+  .main-container{
+    @include outer-container();
+
+    #styleguide-header{
+      @extend %adds-toggle-plus;
+      padding-left: 2em;
+      a[data-parent='#accordion'],
+      a[data-parent='#accordion-left']{ //Prevents W3C error for duplicate accordians on a page
+        top: -12px;
+        left: -18px;
+      }
+
+      .item-list{
+        float: none;
+        clear: both;
+        position: relative;
+        
+        .panel-collapse{
+          display: none;
+
+        }
+      }
+    }
+  }
+}

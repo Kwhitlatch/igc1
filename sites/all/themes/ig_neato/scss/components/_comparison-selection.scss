@@ -1,0 +1,102 @@
+#igc-compare-bottom-bar{
+  position:fixed;
+  height: 200px;
+  bottom: 0;
+  background-color: #3c3c3c; // @todo: Need to get the actual color
+  width:100%;
+  z-index: 1000;
+  #igc-compare-inner{
+    @include outer-container;
+    .igc-compare-selected, .igc-compare-controls{
+      height: 190px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+    .igc-compare-selected{
+      @include span-columns(9);
+      .compare-selected-item{
+        img {
+          padding: 0 80px;
+        }
+
+        @include span-columns(4);
+
+        .compare-item-remove{
+          text-align: center;
+
+          a {
+            color: red;
+            &:hover {
+              color: orange;
+            }
+          }
+        }
+        .compare-item-title{
+          text-align: center;
+          a {
+            color: white;
+            &:hover{
+              color: orange;
+            }
+          }
+        }
+
+      }
+    }
+    .igc-compare-controls{
+      @include span-columns(3);
+      position: relative;
+      height: 100%;
+
+      button#igc-goto-compare-page{
+        padding: 1.1rem 1rem;
+      }
+
+      .igc-compare-controls-inner{
+        position: relative;
+        margin-top: 60px;
+      }
+
+      #compare-numbers{
+        font-weight: bold;
+      }
+      #igc-goto-compare-page{
+        max-width: 120px;
+      }
+
+      .igc-compare-clear-all-wrapper{
+        margin: 1rem;
+        a{
+          color: white;
+          &:hover{
+            color: lightgray;
+          }
+        }
+      }
+    }
+  }
+}
+
+div.compare-item label{
+  background-color: white;
+  display: inline-block;
+  padding: 8px;
+  width: 100%;
+}
+
+@include media($small-screen-down) {
+  #igc-compare-bottom-bar{
+    #igc-compare-inner .igc-compare-selected{
+      .compare-selected-item {
+        @include span-columns(2);
+        font-size-adjust: .7;
+        img {
+          padding: 0;
+        }
+        .compare-item-title {
+
+        }
+      }
+    }
+  }
+}

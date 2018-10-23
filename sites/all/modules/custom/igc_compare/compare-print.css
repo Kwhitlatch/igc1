@@ -1,0 +1,10 @@
+
+a.compare-remove-link,
+.pricespider,
+#compare-form-wrapper .utility-block{
+    display: none;
+}
+
+a[href]::after {
+    content: none;
+}

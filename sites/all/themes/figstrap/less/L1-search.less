@@ -1,0 +1,153 @@
+/**
+ * @file L1-search.less
+ * Styles pages of the UI pattern LI
+ *
+ * UI Templates can be found here: https://wiki.danahertm.com/display/flukewebdev/Templates
+ */
+
+//** Styles specific to page-search class
+.page-search {
+
+  //** Remove breadcrumb on search result pages
+  .breadcrumb {
+    display: none;
+  }
+
+  //** Facet Menu item styles based on Product Filters
+  .facetapi-checkbox {
+    .custom-collapse .panel-body;
+  }
+
+//** Search page over-ride for custome collapse h4 padding. 
+  .custom-collapse h4 {
+    padding: 3px 0 2px 0;
+  }
+
+//** Search page over-ride for custome collapse + padding. 
+  .custom-collapse .plus-minus {
+    padding: 7px 15px 12px;
+  }
+
+//** Search page over-ride to fix double padding on child-menue-item 
+.child-menu-item {
+  padding: 0;
+}
+
+  //** Facet Checkbox Styles
+  input[type=checkbox] {
+    margin: 0 .75em 0 -40px;
+    vertical-align: middle;
+  }
+
+  //** Facet Leaf padding to match filters
+  ul li.leaf{
+    padding-bottom: 10px;
+  }
+
+  //** Facet Leaf padding to match filters -Last Child to remove extra padding
+  ul li.leaf:last-child {
+    padding-bottom: 0px;
+  }
+  //** Makes the Filter + icon smaller.
+  .pane-facet{
+    h2 {
+      font-size: 13px; // Makes the Filter + icon smaller.
+    }
+  }
+
+  //** Styles for the information found below search results - usually date or
+  //** type of asset/product.
+  .search-subtitle{
+    font-weight: bold;
+    margin-top:20px;
+  }
+
+  @media (min-width: 320px){
+  //** Custom size and positioning for Search Primary Button.
+  #solr-search-panel .btn-primary {
+      display: block;
+      float: left;
+      font-size: 17px;
+      margin: 0 0 40px;
+      padding: 13px 0;
+      width: 100%;
+}
+  
+  //** Grey search field on solr search results pages
+  #solr-search-panel .form-control {
+      background-color: #efefef; //TODO: Cross over color
+      display: block;
+      float: left;
+      font-size: 17px;
+      height: 50px;
+      margin: 0 0 12px;
+      width: 100%;
+    }
+  }
+  //** Mobile Search Buttons
+  @media (min-width: @screen-sm-min){
+    //** Small screen - Custom size and positioning for Search Primary Button.
+  #solr-search-panel .btn-primary {
+    display: block;
+    float: left;
+    font-size: 17px;
+    margin: 0 0 40px 25px;
+    padding: 13px 0;
+    width: 35%;
+  }
+  #solr-search-panel .form-control {
+    background-color: #efefef;//TODO: Cross over color
+    display: block;
+    float: left;
+    font-size: 17px;
+    height: 50px;
+    margin: 0 0 40px 0;
+    width: 60%;
+  }
+    }
+    //** Removes padding and border from first row, which is the banner.
+    .flukestrap-layouts-header .views-row:nth-of-type(1) {
+      padding: 0;
+  }
+  
+  //** Adds padding and border to search results
+  .views-row{
+    border-bottom: @fluke-lines-and-pipes 1px solid;
+    padding: 10px 0 20px;
+  }
+  
+  //** Load 30 More Items Search results page
+  .pager {
+  .btn;
+  .btn-default;
+    width: 100%;
+    max-width: 365px;
+  } 
+  
+  //** Removing page a background styles
+  .pager a {
+    padding: 0 14px;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    color: @fluke-white;
+  } 
+  
+  //** Removing page a:hover background styles
+  .pager a:hover {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    color: @fluke-white;
+  } 
+  
+  //Margin below search box on search result pages
+  .pane-search-box{
+    margin-bottom: 20px;
+  }
+  
+  //padding below search results on search result pages
+  .view-header{
+    margin-bottom: 35px;
+  }
+}

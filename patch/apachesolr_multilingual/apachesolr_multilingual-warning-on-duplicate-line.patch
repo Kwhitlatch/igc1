@@ -1,0 +1,15 @@
+diff --git a/sites/all/modules/patched/apachesolr_multilingual/apachesolr_multilingual.module b/sites/all/modules/patched/apachesolr_multilingual/apachesolr_multilingual.module
+index 80b36e1..3bdea48 100644
+--- a/sites/all/modules/patched/apachesolr_multilingual/apachesolr_multilingual.module
++++ b/sites/all/modules/patched/apachesolr_multilingual/apachesolr_multilingual.module
+@@ -695,7 +695,9 @@ function apachesolr_multilingual_apachesolr_query_alter($query) {
+     }
+     // Add defaults for required settings to not yet saved multilingual custom settings.
+     apachesolr_multilingual_search_page_settings_add_defaults($custom_settings);
+-    $filter_languages = &drupal_static('apachesolr_multilingual_filter_languages_' . $context['page_id']);
++
++    // FLUKE: the following line produces a warning, variable is overwritten immediately after.  Commenting out.
++    //$filter_languages = &drupal_static('apachesolr_multilingual_filter_languages_' . $context['page_id']);
+     $filter_languages = apachesolr_multilingual_get_language_filters_by_query($query);
+     $languages = apachesolr_multilingual_language_list();
+     if (empty($filter_languages) && $custom_settings['apachesolr_multilingual_auto_language_filter'] &&

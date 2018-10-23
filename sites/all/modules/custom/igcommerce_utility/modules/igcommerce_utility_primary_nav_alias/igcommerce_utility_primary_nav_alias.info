@@ -1,0 +1,6 @@
+name = IG Commerce Create Alias for Primary nav
+description = Utility module for setting up the localization aliases for URL Builder.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = pathauto

@@ -1,0 +1,539 @@
+/**
+ * @file 00-general-styleing.less
+ * Styling that affects all pages.
+ *
+ * Any styles that affect multiple types of pages should go here.
+ *
+ * TOC
+ * - General Styleing
+ * - Administration Menus
+ * - Type
+ * - mmenu
+ * - column 5ths
+ * - Images
+ * - Quick Tabs
+ * - Header
+ * - Footer
+ * - Blockquote
+ * - Filters and checkboxes
+ * - Forms
+ * - Breadcrumbs
+ * - Back To Top Module
+ */
+
+
+/**
+* - General Styleing
+* ----------------------------------------------------------------------------
+*/ 
+html {
+  /* Required for sticky footer */
+  //position: relative;
+  /* Required for sticky footer */
+  //min-height: 100%;
+}
+
+body {
+  /* Margin bottom by footer height */
+//margin-bottom: 200px;
+// Required for Sticky footer, but breaks scrolling on iOS Devices
+// http://drupal.org/node/1870076
+position: initial;    
+}
+
+//.main-container {height:100%; min-height: 100%;}
+
+/* Hack to hide Drupal H1 that can be found above the navigation */
+.page-header{
+  display: none;
+}
+
+/* this usually affects the &reg; in the product names */
+sup {  
+  font-size: 50%;
+}
+
+/* Overrides the default bootstrap borders */
+
+.btn a,
+.btn {
+  // color: @fluke-white;
+  // border: none;
+  // padding: 9px 12px;
+  // font-size:15px;
+  // margin-top:20px;
+  white-space: normal; // This allows the button text to wrap
+  &:hover,
+  &:focus {
+    text-decoration: none;
+  }
+}
+
+// This is a parametric mixin from figstrap/bootstrap/less/mixins/buttons.less
+// It creates a full-fledged button with a blue theme.
+.btn-blue {
+ .button-variant(@fluke-white; @fluke-blue-link; transparent);
+}
+
+.flukestrap-layouts-sidebar{
+
+}
+
+/* TODO: This overrides the pink background of unpublished nodes DELETE AFTER DEMO */
+.node-unpublished {
+  background-color: #fcf8e3;
+}
+
+.placebo {
+  .progress {
+    margin-bottom: 0;
+    height: 200px;
+    @media (min-width: @screen-md-min) {
+      height: 300px;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 100%;
+    }
+  }
+}
+
+/** 
+ *This adds the +&- open and closed indicators for the side nav, it's commonly
+ * found on template "pascal".
+ */
+ li > span.nav-indicator:before {
+  content: "-";
+}
+li.collapsed > span.nav-indicator:before {
+  content: "+";
+}
+
+/* Updated the OL styles based on visual design */
+ol{
+  padding-left: @font-size-h4; /* 15px */
+}
+ol li{
+  padding-left: @font-size-h1; /* 27px */
+  margin-bottom: @font-size-h3; /* 17px */
+}
+
+/**
+ * - Administration Menus
+* ----------------------------------------------------------------------------
+*/ 
+
+/* Pushes the admin alert messages below the nav menu.
+ * The class .flukestrap-layouts-header covers the layouts that have banners,
+ * the other classes are layout specific. 
+ */
+ .flukestrap-layouts-header,
+ .todd,
+ .ryan,
+ .celia {
+  .panels-ipe-region:nth-of-type(1) {
+    .panels-ipe-placeholder{
+      margin-top: 125px;
+    }
+  }
+}
+.admin-banner-bumper {
+  @media (min-width: @screen-md-min) {
+    margin-top: 150px;
+  }
+}
+/* Pushes admin alert messages below the nav bar */
+.messages:nth-of-type(1) {
+  margin-top:125px;
+}
+
+
+/**
+* - mmenu
+*
+* The mmenu module provides a full scss setup. You can find them in the
+* sass folder in this theme.
+* ----------------------------------------------------------------------------
+*/
+
+
+
+/**
+* - Type
+* ----------------------------------------------------------------------------
+*/
+a {
+  transition: color .25s ease-in-out;
+  -moz-transition: color .25s ease-in-out;
+  -webkit-transition: color .25s ease-in-out;
+  transition: background .25s ease-in-out;
+  -moz-transition: background .25s ease-in-out;
+  -webkit-transition: background .25s ease-in-out;
+}
+
+
+/* p:last-child  overides styling set in overrides.less 
+ * override.less is used for integrating bootstrap into Drupal
+ */
+ p:last-child,
+ p
+ { 
+   margin-bottom: @line-height-computed; 
+ }
+
+ h1, .h1,
+ h2, .h2,
+ h3, .h3 {
+  margin-top: @line-height-computed / 2;
+}
+
+.page-header {
+  border-bottom: 0;
+}
+
+/* Subtitle found on top of pages - Paragraph style + bold */
+.field-name-field-subtitle{
+  font-weight: 700;
+  margin: 0 0 9.5px;
+}
+/**
+ * - column 5ths
+ *
+ * full width 5 columns layout with Twitter Bootstrap
+ * This is used in fluke_utility.module for dropdown navs.
+ * http://stackoverflow.com/questions/10387740/five-equal-columns-in-twitter-bootstrap
+ * ----------------------------------------------------------------------------
+ */
+
+ .col-xs-5ths,
+ .col-sm-5ths,
+ .col-md-5ths,
+ .col-lg-5ths {
+  position: relative;
+  min-height: 1px;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+.col-xs-5ths {
+  width: 20%;
+  float: left;
+}
+
+@media (min-width: 768px) {
+  .col-sm-5ths {
+    width: 20%;
+    float: left;
+  }
+}
+
+@media (min-width: 992px) {
+  .col-md-5ths {
+    width: 20%;
+    float: left;
+  }
+}
+
+@media (min-width: 1200px) {
+  .col-lg-5ths {
+    width: 20%;
+    float: left;
+  }
+}
+/**
+* - Images
+* ----------------------------------------------------------------------------
+*/
+/* This ensures the bootstrap helper classes work with HTML5 <picture> tags */
+.center-block picture img {
+  .center-block;
+}
+.img-responsive picture img {
+  .img-responsive;
+}
+
+/* Applies to all images that are responsively mapped through the picture module */
+img.lazyloaded {
+  .img-responsive;
+}
+
+/* All figcaption should have the same styling as .small */
+figcaption {
+  .small;
+}
+
+/* Space between figurecaption and social media on articles */
+.figure-wrapper {
+  padding-bottom: 50px;
+}
+
+/* TODO: This overrides default panopoly image styling, it was added to fix
+the full page width banners. If you can figure out where this tag is coming 
+from, you can remove it and then strike this css */
+img.panopoly-image-full {
+  margin-bottom: 0 !important;
+}
+
+ /**
+  * - Quick Tabs
+  * ----------------------------------------------------------------------------
+  * 
+  * Tabs appear on the Product TOC pages
+  * The styling selected through the UI must be "no style"
+  */
+  .quicktabs-tabs.quicktabs-style-nostyle {
+    padding-left: 0;
+    width: 100%;
+    li {
+      margin: 0;
+      .text-center;
+      border-bottom: 2px solid @fluke-lines-and-pipes;
+      display: inline-block;
+      padding: 0;
+      width: 32%;
+      &.active {
+        border-bottom: 2px solid @fluke-yellow;
+      }
+    }
+  }
+
+
+/**
+ * - Footer
+ * ----------------------------------------------------------------------------
+ */
+
+/* there is a known issue where the sticky footer breaks scrolling on 
+   iOS devices - still need to write a js fix. The body style 
+   in question is in content.less
+   http://drupal.org/node/1870076 */
+   .footer {
+    width: 100%;
+    border-top: none;
+    /* This overrides default styling that came with the bootstrap sub-theme in overrides.less */
+    margin-top: 0;
+    /* Affects the sign up for email button in footer */
+    .btn {
+      margin-top: .25em;
+    }
+  }
+  #copyright {
+    color: @fluke-gray;
+    margin-bottom: 0;
+    padding-top: 105px 0 0 0;
+  }
+  .slogan {
+    color: @fluke-white;
+    font-family: @headings-font-family;
+    font-weight: 300;
+    font-style: italic;
+    padding-top: 10px;
+    .p-b-2;
+    #fluke-slogan {
+      font-weight: 700;
+      font-family: @font-family-sans-serif;
+      font-style: normal;
+    }
+  }
+
+  #white-footer {
+    .p-b-2;
+    .p-t-2;
+
+    background-color: @fluke-button-hover;
+    .block {
+      &:first-child h2.block-title {
+      margin-top: 9.5px; // Overrides a global style in overrides.less
+    }
+  }
+  h2 {
+    font-size: ceil((@font-size-base * 1.3)); // ~17px
+    font-weight: 300;
+    font-family: @font-family-sans-serif;
+    color: @fluke-white;
+  }
+  .nav > li > a {
+    color: @fluke-gray-links;
+    padding: 5px 0;
+    &:hover {
+      background-color: transparent;
+      text-decoration: none;
+      color: white;
+    }
+    // The newsletter signup in the footer is an anchor styled as a button
+    // But it's inside a navbar, so the anchor styles override the .btn styles.
+    &.btn-blue {
+      color: @fluke-white;
+      &:hover {
+        background-color: @fluke-blue-hover;
+      }
+    }
+  }
+  // Social media block in white footer
+  #block-views-social-links-block-1 {
+    .views-row {
+      float: right;
+      @media (min-width: @screen-sm-min) {
+        &:nth-of-type(2n + 3)
+        {
+          clear: both;
+        }
+      }
+    }
+  }
+  span.fluke-icon {
+    background-color: @fluke-gray-links;
+    color: @fluke-white;
+    display: inline-block;
+    font-size: 1.7em;
+    height: 40px;
+    margin-right: 10px;
+    margin-top: 10px;
+    padding-top: 9px;
+    text-align: center;
+    transform: translateZ(0);
+    transition-property: transform;
+    transition: .1s;
+    width: 40px;
+    &:hover {
+      transform: scale(1.1);
+      z-index: 2;
+    }
+  }
+  .fluke-icon-facebook:hover {
+    background-color: @facebook;
+  }
+  .fluke-icon-linkedin:hover {
+    background-color: @linkedin;
+  }
+  .fluke-icon-twitter:hover  {
+    background-color: @twitter;
+  }
+  .fluke-icon-google-plus:hover {
+    background-color: @google-plus;
+  }
+  .fluke-icon-youtube:hover {
+    background-color: @youtube;
+  }
+  .fluke-icon-instagram:hover {
+    // This uses a radial gradient, so you must use background vs. background-color
+    background: @instagram;
+  }
+}
+
+#black-footer {
+  .navbar-nav li {
+    a {
+      @media (min-width: @screen-md-min) {
+        padding: 10px 30px 10px 0;
+      }
+      color: @fluke-gray;
+      &:hover {
+        color: @fluke-yellow;
+      }
+    }
+  }
+}
+
+/**
+ * - Blockquote
+ * ----------------------------------------------------------------------------
+ */
+
+ blockquote {
+  border-bottom: 1px solid @fluke-sidebar-background;
+  border-left: 0 solid @fluke-sidebar-background;
+  border-top: 1px solid @fluke-sidebar-background;
+  font-family: @headings-font-family;
+  font-size: 15px;
+  font-weight: 300;
+  margin: 0 0 19px;
+  padding: 30px 100px;
+}
+blockquote:before {
+  color: @fluke-yellow;
+  content: open-quote;
+  font-size: 4;
+  line-height: 0.1;
+  margin-right: 0.25;
+  vertical-align: -0.4;
+}
+blockquote:after {
+  color: @fluke-yellow;
+  content: close-quote;
+  font-size: 4;
+  line-height: 0.1;
+  margin-right: 0.25;
+  vertical-align: -0.4;
+}
+
+/**
+ * - Filters and checkboxes
+ *
+ * The filter checkbox styling was moved to P1-product-category.less
+ * If other checkbox styling is used on other pages, please bring it back here.
+ * ----------------------------------------------------------------------------
+ */
+ /*TODO: This tag no longer works, need new styling hooK */
+ /* Hides the product filters on mobile and tablet */ 
+ .flukestrap-layouts-sidebar form.ctools-auto-submit-full-form {
+   display: none;
+   @media (min-width: @screen-md-min) {
+     display: block;
+   }
+ }
+
+/**
+* - Forms
+* ----------------------------------------------------------------------------
+*/ 
+
+
+/**
+ * - Breadcrumbs
+ *
+ * These breadcrumbs appear on product pages. The module "easy breadcrumb"
+ * generates them. You can't use font-awesome Icons as the link seperator
+ * so we had to add them via css. The design calls for the last seperator 
+ * caret to be red, but that is not possible using css, so javascript still
+ * needs to be written for that. -RRN 3-8-16
+ * ----------------------------------------------------------------------------
+ */
+ .pane-easy-breadcrumb {
+  margin-bottom: 25px; /* Adds space above-title/below-breadcrumb */
+}
+.easy-breadcrumb {
+  .h4;
+  font-family: @font-family-sans-serif;
+  .easy-breadcrumb_segment-title {
+    font-family: @headings-font-family;   /* Styles the title of the page that we are on */
+  }
+  .easy-breadcrumb_segment-separator {
+    font-family: FontAwesome;
+    &:after {
+      content: "\00a0\00a0\f0da\00a0\00a0"; /* &nbsp; &nbsp; fa-caret-right &nbsp; &nbsp; */
+    }
+  }
+}
+
+
+/**
+ * - Back To Top Module
+ * ----------------------------------------------------------------------------
+ */ 
+#backtotop {
+  border-radius: 0;
+  border: none;
+  bottom: 30px;
+  color: @fluke-white;
+  font-size: 38px;
+  height: 50px;
+  opacity: .4;
+  padding: 5px 9px;
+  right: 30px;
+  width: 50px;
+  &:hover {
+    opacity: 1;
+    background: @fluke-yellow;
+  }
+} 

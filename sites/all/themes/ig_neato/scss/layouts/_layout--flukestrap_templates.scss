@@ -1,0 +1,26 @@
+// flukestrap-aron
+// -------------------------
+.aron {
+  .container {
+    @include outer-container;
+  }
+  .aron-contentmain {
+    @include span-columns(12);
+    @include media($screen-md) {
+     @include span-columns(8);
+     @include shift(2);
+   }
+ }
+}
+
+// flukestrap-Darwin
+// -------------------------
+.flukestrap-darwin {
+  // Keeps the banners full width
+  .flukestrap-layouts-header,
+  .pane-igcommerce-utility-articles-articles-toc-banner,
+  .pane-igcommerce-utility-articles-articles-solr-banner {
+    @include outer-container(100%);
+    line-height: 0;
+  }
+}

@@ -1,0 +1,59 @@
+<?php
+/**
+ * Module file for fluke_purge moduule.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function fluke_purge_menu() {
+  $items = [];
+  
+  $items['fluke_purge_pantheon_cache'] = [
+    'title' => t('Clear Pantheon Cache'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'fluke_purge_clear_pantheon_tag',
+    'access callback' => TRUE,
+  ];
+  
+  return $items;
+}
+
+/**
+ * Receive URLs to be purged from ECM form, and pass keys to Pantheon function
+ * to be cleared.
+ */
+
+function fluke_purge_clear_pantheon_tag() {
+  // Set this to NULL initialy so we can use isset() to make sure we got content
+  // from ECM.
+  $contents = NULL;
+  // Get the contents of the passed POST values.
+  $contents = file_get_contents("php://input");
+  if (isset($contents)) {
+    // Split values out.
+    $urls = json_decode($contents);
+  
+    $cache_keys = [];
+    foreach ($urls as $url) {
+      // Generate the md5 hash for the URL.
+      $key_value = md5($url);
+      $cache_keys[] = $key_value;
+      watchdog('fluke_purge', 'Pantheon cache clear sent at :time with value :keys', array(
+        ':time' => date('Y-m-d H:i', time()),
+        ':keys' => $key_value
+      ));
+    }
+
+    // Call Pantheon function to clear cache. This function only exists
+    // on the Pantheon servers. It has no return values, so per Josh at Pantheon,
+    // we can only assume that it actually worked.
+    pantheon_clear_edge_keys($cache_keys);
+
+    $message = 'success';
+  }
+  else {
+    $message = 'fail';
+  }
+  return drupal_json_output($message);
+}

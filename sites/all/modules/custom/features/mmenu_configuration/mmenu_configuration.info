@@ -1,0 +1,10 @@
+name = MMenu Configuration
+description = Feature containing mmenu configuration for migration between environments
+core = 7.x
+package = Fluke Features
+dependencies[] = ctools
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = mmenu_item_mmenu_left
+features[variable][] = mmenu_item_mmenu_right

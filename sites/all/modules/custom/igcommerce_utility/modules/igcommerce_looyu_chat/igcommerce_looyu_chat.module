@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * Implements template_preprocess_html().
+ *
+ *  Looyu doesn't have a chat script that can be loaded asynchronously, so we 
+ *  can not insert the script via Tealium.  Steven Song is our contact in 
+ * China that has 
+ */
+function igcommerce_looyu_chat_preprocess_html(&$variables) {
+  global $language;
+  
+  // We want to add the Looyu scripts to the live china site only.
+  if ($language->language == 'cn') {
+    drupal_add_js('https://gate.soperson.com/20003086/10087676.js',  
+    array(
+      'type' => 'external',
+      'scope' => 'footer',
+      'weight' => 11,
+    ));
+  }
+}
+
+

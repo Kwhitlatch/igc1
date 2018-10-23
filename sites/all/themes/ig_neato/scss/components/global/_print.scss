@@ -1,0 +1,217 @@
+/*! Source: https://github.com/h5bp/html5-boilerplate/blob/master/src/css/main.css */
+/* Additional customization added for Fluke templates */
+
+// ==========================================================================
+// Print styles.
+// Inlined to avoid the additional HTTP request: h5bp.com/r
+// ==========================================================================
+
+@media print {
+  *,
+  *:before,
+  *:after {
+    background: transparent !important;
+    color: #000 !important; // Black prints faster: h5bp.com/s
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+  abbr[title]:after {
+    content: " (" attr(title) ")";
+  }
+  // Don't show links that are fragment identifiers,
+  // or use the `javascript:` pseudo protocol
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after {
+    content: "";
+  }
+  pre,
+  blockquote {
+    border: 1px solid #999;
+    page-break-inside: avoid;
+  }
+  thead {
+    display: table-header-group; // h5bp.com/t
+  }
+  tr,
+  img {
+    page-break-inside: avoid;
+  }
+  img {
+    max-width: 100% !important;
+  }
+  p,
+  h2,
+  h3 {
+    orphans: 3;
+    widows: 3;
+  }
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+  // Bootstrap specific changes start
+  // Bootstrap components
+  .btn,
+  .dropup > .btn {
+    > .caret {
+      border-top-color: #000 !important;
+    }
+  }
+  .label {
+    border: 1px solid #000;
+  }
+  .table {
+    border-collapse: collapse !important;
+    td,
+    th {
+      background-color: #fff !important;
+    }
+  }
+  .table-bordered {
+    th,
+    td {
+      border: 1px solid #ddd !important;
+    }
+  }
+  // Bootstrap specific changes end
+  
+  // Globally hiddens stuff, like the Mobile menu, side menu, footer, social media etc.
+  .search-opener, // search icon in navbar
+  .language-picker, // language picker icon in navbar
+  #mmenu,
+  footer,
+  iframe,
+  .view-share-block-solr.view-id-share_block_solr, // Share icons on webcards and blog articles
+  .flukestrap-toc .flukestrap-layouts-sidebar,
+  .flukestrap-layouts-sidebar .custom-collapse,
+  #backtotop, // Back to top button 
+  .zoomContainer, // zoomed image and Frame around image zoomer on products
+  .pane-igcommerce-utility-articles-articles-solr-recent-article, // Recent articles on blog posts
+  .pane-igcommerce-utility-articles-articles-solr-recommended-product // Recommended products on blog posts
+  {
+    display: none !important;
+  }
+  .main-container {
+    margin-top: 0 !important; // Kills the top padding, because the logo is displayed inline.
+  }
+
+  // Hides navbar except for logo
+  #navbar.navbar.stickynav-active,
+  #navbar.navbar.stickynav-processed.stickynav-active,
+  #navbar {
+    margin-top: 0;
+    margin-bottom: 15px;
+    position: relative;
+    a.navbar-btn {
+      // Removes the '/en-us' link that wraps the logo
+      &[title]:after {
+        content: "";
+      }
+      img {
+        display: block !important;
+        position: absolute;
+        transform: none;
+        top: 0;
+        left: 0;
+      }
+    }
+  }  
+  
+  // Webcards exclusively. 
+  // /en-us/learn/best-practices/pressure-calibration/pressure-transmitter-calibration-at-the-bench
+  .pane-igcommerce-utility-articles-articles-solr-web-card-popup-article #myModal {
+    display: block !important;
+    height: 100% !important;
+    margin-top: 100px !important;
+    overflow: visible !important;
+    position: relative !important;
+    width: 100% !important;
+    p {
+        page-break-inside: avoid !important;
+      }
+    .modal-content {
+      border: none;
+    }
+    aside, // hides related products and recommended resources
+    .webcard-cta, // CTAs buttons at the bottom of webcardss
+    {
+      display: none !important;
+    }
+  }
+
+  // Product displays
+  // /en-us/product/electrical-testing/digital-multimeters/fluke-87v
+  #fluke-product-display {
+    #ig-product-flexslider .slides img {
+      border: black 3px solid;
+      width: 100%;
+    }
+    #overview-tab,
+    #specs-tab,
+    #models-tab,
+    #accordion-access-tab {
+      display: block !important;
+      opacity: 1 !important;
+      width: 100%;
+      section h2 {
+        font-size: 2.3rem;
+        font-weight: 700 !important;
+      }
+    }
+    // Models - opens all accordions and breaks them out into cards.
+    .product-model {
+      border: 3px black solid !important;
+      float: left !important;
+      margin: 10px;
+      padding: 10px;
+      page-break-inside: avoid !important;
+      width: 45% !important;
+      &:nth-of-type(odd) {
+        clear: both !important;
+      }
+      .fluke-icon:before {
+        display: none !important; // hides the +/- on the models
+      }
+      .model-details {
+        display: block !important; // opens all the model accordions
+      }
+    }
+    // Hides the readmore button
+    #keyfeature_content {
+      height: 100% !important;
+    }
+    #fluke-product-display-breadcrumbs, // Breadcrumbs
+    #fluke-product-display-reviews-stars #WAR, // "Write a review" button
+    .event-features, // Key features readmore button
+    #fluke-product-display-manuals, // Link to the manuals
+    #fluke-product-display-ctas, // CTA Buttons
+    #fluke-product-display-content-tabs > .tab-wrapper, // Tab navigation
+    .flex-control-nav, // Overview slideshow thumbs
+    aside, // Top pick accessories and related products
+    {
+      display: none !important;
+    }
+  }
+  
+  // Support & Blog pages
+  // /en-us/support/calibration-services
+  // /en-us/learn/blog/thermal-imaging/how-scientist-use-thermal-imaging-to-forecast-changes
+  .pane-igcommerce-utility-articles-article-support-pages,
+  .pane-igcommerce-utility-articles-articles-solr-desc {
+    // unfurl any accordions in the articles
+    #accordion .panel-collapse {
+      display: block !important;
+    }
+    // Kills the accordion +/-
+    .collapsed:after {
+      display: none !important;
+    }
+  }
+} // end print wrapper

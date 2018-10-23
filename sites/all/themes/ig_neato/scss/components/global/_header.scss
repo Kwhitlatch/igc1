@@ -1,0 +1,30 @@
+header#navbar{
+  @extend %inverse;
+  @include clearfix;
+  width: 100%;
+  z-index: 5;
+
+  .container{
+    @include outer-container;
+  }
+  a.name{
+    @include hide-text;
+    display: block;
+  }
+}
+
+
+
+
+
+
+/* If li position is left static, Internet
+Explorer disables hyperlinks in the list
+in all but the final column.
+
+This rule will be processed only by
+Internet Explorer because only IE believes
+that there’s a level above HTML: */
+* html #block-igcommerce-utility-ig-primary-nav ul.dropdown-menu li {
+  position: relative;
+}

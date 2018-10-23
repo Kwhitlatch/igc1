@@ -1,0 +1,36 @@
+/**
+ * @file
+ * Custom css for Product Slideshow
+ */
+/*
+*/
+.read-more-less {
+    color: #477dca;
+    cursor: pointer;
+}
+.readmoredata {
+    display:none;
+}
+.page-product .main-container.admin-banner-bumper {
+    margin-top: 0;
+}
+.product-image {
+    width: 100%;
+}
+.pane-content > div {
+    float: left;
+    width: 100%;
+}
+.category {v
+    float: left;
+}
+.category.product-title {
+    font-weight: bold;
+}
+.panel-collapse.collapse.prod-manuals {
+    display: block;
+}
+li.remove {
+    float: left;
+    list-style: none;
+}

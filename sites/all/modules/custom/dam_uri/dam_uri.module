@@ -1,0 +1,957 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ */
+function dam_uri_menu() {
+    $items = array();
+
+    $items['dam_uri/page'] = array(
+        'page callback' => 'dam_uri_page',
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+    );
+    $items['dam_uri_search/%ctools_js'] = array(
+        'page callback' => 'dam_uri_search_callback',
+        'page arguments' => array(1),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+        'theme callback' => 'dam_uri_admin_theme_callback',
+    );
+    $items['dam_uri_upload/%ctools_js'] = array(
+        'page callback' => 'dam_uri_upload_callback',
+        'page arguments' => array(1),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+        'theme callback' => 'dam_uri_admin_theme_callback',
+    );
+    $items['dam_uri_search_filter/%ctools_js'] = array(
+        'page callback' => 'dam_uri_search_filter_callback',
+        'page arguments' => array(1),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+        'theme callback' => 'dam_uri_admin_theme_callback',
+    );
+    $items['dam_uri_upload_type/%ctools_js'] = array(
+        'page callback' => 'dam_uri_upload_type_callback',
+        'page arguments' => array(1),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+        'theme callback' => 'dam_uri_admin_theme_callback',
+    );
+    $items['dam-uri/solr-search/form'] = array(
+        'page callback' => 'dam_uri_solr_search_form',
+        'access arguments' => array('access content'),
+        //'page arguments' => array(3),
+        'type' => MENU_CALLBACK,
+    );
+    $items['dam-uri/solr-search/query'] = array(
+        'page callback' => 'dam_uri_solr_search_query',
+        'access arguments' => array('access content'),
+        //'page arguments' => array(3),
+        'type' => MENU_CALLBACK,
+    );
+    return $items;
+}
+
+function dam_uri_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
+
+/*
+   dpm(drupal_get_schema('field_data_field_another', TRUE), "Schema is");
+   //drupal_set_installed_schema_version('dam_uri', 7004);
+   dpm(drupal_get_installed_schema_version('dam_uri', TRUE, FALSE), "Installed version is");
+*/
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function dam_uri_field_info() {
+  return array(
+    'dam_uri' => array(
+      'label' => t('DAM URI'),
+      'description' => t('This field stores a DAM URI in the database.'),
+      'default_widget' => 'dam_uri_field',
+      'default_formatter' => 'dam_uri_default',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function dam_uri_field_widget_info() {
+  return array(
+    'dam_uri_field' => array(
+      'label' => t('DAM URI'),
+      'field types' => array('dam_uri'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function dam_uri_field_settings_form($field, $instance, $has_data) {
+
+  $settings = $field['settings'];
+  // Add your global settings fields here
+  $form = array();
+
+  $form['width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Width (example: 600px or 100%)'),
+    '#default_value' => !empty($settings['width']) ? $settings['width'] : NULL,
+  );
+
+  $form['height'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Height (example: 600px)'),
+    '#default_value' => !empty($settings['height']) ? $settings['height'] : NULL,
+  );
+
+  $form['classes'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Classes (used for styling)'),
+    '#default_value' => !empty($settings['classes']) ? $settings['classes'] : NULL,
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_field_instance_settings_form().
+ */
+function dam_uri_field_instance_settings_form($field, $instance) {
+  $settings = $instance['settings'];
+  // Add your instance settings fields here.
+  $form = array();
+  $width = '';
+  $height = '';
+  $classes = '';
+
+  if (!empty($settings)) {
+    $width = $settings['width'];
+    $height = $settings['height'];
+    $classes = $settings['classes'];
+  }
+
+  $form['width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Width (example: 600px or 100%)'),
+    '#default_value' => $width,
+  );
+
+  $form['height'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Height (example: 600px)'),
+    '#default_value' => $height,
+  );
+
+  $form['classes'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Classes (used for styling)'),
+    '#default_value' => $classes,
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function dam_uri_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  //drupal_add_js(drupal_get_path('module', 'dam_uri') . '/js/dam_search.js');
+  switch ($instance['widget']['type']) {
+    case 'dam_uri_field' :
+      $element['dam_uri'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Digital Asset'),
+        '#tree' => TRUE,
+      );
+      $element['dam_uri']['comment'] = array(
+        '#markup' => "<div>Click Search button to find an asset to insert below</div>",
+      );
+      $element['dam_uri']['search'] = array(
+        //'#type' => 'submit',
+        //'#value' => t('Search'),
+        '#markup' => "<div><button type='button' class='dam-uri-search'>Search</button></div>",
+
+        //'#limit_validation_errors' => array(),
+        //'#ajax' => array(
+          //'callback' => 'dam_uri_search_filter_callback'),
+          //'callback' => 'dam_uri_testing_name',
+          //'path' => '/dam_uri_search_filter/ajax' ),
+      );
+      $element['dam_uri']['id'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Asset ID'),
+        '#maxlength' => 255,
+        '#default_value' => isset($items[$delta]['id']) ? $items[$delta]['id'] : '',
+      );
+      $element['dam_uri']['url'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Asset URL'),
+        '#maxlength' => 255,
+        '#default_value' => isset($items[$delta]['url']) ? $items[$delta]['url'] : '',
+        '#required' => $element['#required'],
+      );
+      $element['dam_uri']['alt'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Title / Alt'),
+        '#maxlength' => 255,
+        '#default_value' => isset($items[$delta]['alt']) ? $items[$delta]['alt'] : '',
+      );
+      $element['dam_uri']['caption'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Caption'),
+        '#maxlength' => 255,
+        '#default_value' => isset($items[$delta]['caption']) ? $items[$delta]['caption'] : '',
+      );
+      $element['dam_uri']['thumbnail'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Thumbnail'),
+        '#maxlength' => 255,
+        '#default_value' => isset($items[$delta]['thumbnail']) ? $items[$delta]['thumbnail'] : '',
+      );
+      $element['dam_uri']['upload'] = array(
+        '#type' => 'button',
+        '#value' => t('Upload'),
+        '#limit_validation_errors' => array(),
+        '#ajax' => array(
+          'callback' => 'dam_uri_upload_type_callback' )
+      );
+      break;
+  }
+
+  //ctools_include('modal');
+  //ctools_modal_add_js();
+
+  return $element;
+}
+
+
+function solr_search_block_form($form, &$form_state) {
+    $form['search'] = array(
+        '#type' => 'textfield',
+        '#id' => 'edit-custom-search-block-id',
+        '#autocomplete_path' => 'solr-search/autocomplete',
+        '#attributes' => array('placeholder' => t('Search any thing'), 'class' => array("edit-custom-search-block"))
+    );
+
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Search',
+  );
+return $form;
+}
+
+
+/*
+ * Implementing hook_menu()
+ */
+function solr_search_menu() {
+    $items = array();
+
+    $items['solr-search/autocomplete'] = array(
+        'page callback' => 'search_autocomplete',
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK
+    );
+    return $items;
+}
+
+function dam_uri_solr_search_form() {
+    $items = array();
+    $languages = locale_language_list('name');
+    //return 'yes man';
+    $form_html = theme('dam_uri_search_form', array('items' => $items, 'languages' => $languages));
+    exit($form_html);
+}
+
+function dam_uri_solr_search_query() {
+    $asset_types = isset($_GET['asset_type']) ? $_GET['asset_type'] : array();
+    $keyword = $_GET['keywords'] ? $_GET['keywords'] : '';
+    $language = $_GET['language'] ? $_GET['language'] : '';
+    $bundle = '';
+    $query_string = '';
+    $data = '';
+    $items = array();
+    $found = FALSE;
+    $total = 0;
+    // Filter bundle type
+    if (isset($asset_types) && is_array($asset_types)) {
+        foreach ($asset_types as $asset_type) {
+            if (!empty($asset_type)) {
+                if (empty($bundle)) {
+                    $bundle .= "bundle:(" . $asset_type;
+                } else {
+                    $bundle .= " OR " . $asset_type;
+                }
+            }
+        }
+        $bundle .= ")";
+        if(strlen($bundle) > 2) {
+            $query_string .= ($bundle);
+        }
+    } else {
+        $query_string .= "bundle:(documents OR executables OR image OR manual OR video OR zip_files)";
+    }
+    // Add ss_field_content_url
+    if (isset($keyword) && !empty($keyword)) {
+        if(!empty($query_string)) {
+            $query_string .= ' AND ss_field_content_title:(*' . $keyword . '*  OR ' . $keyword . '*)';
+            //$query_string .= ' AND ss_field_content_title:("' . $keyword . '"~4)';
+        }
+        else {
+            $query_string .= 'ss_field_content_title:(*' . $keyword . '* OR ' . $keyword . '*)';
+            //$query_string .= 'ss_field_content_title:("' . $keyword . '"~4)';
+        }
+    }
+    // Add language
+    if (isset($language) && !empty($language) && trim($language) != 'None') {
+        if(!empty($query_string)) {
+            $query_string .= ' AND ss_language:*' . $language . '*';
+        }
+        else {
+            $query_string .= 'ss_language:*' . $language . '*';
+        }
+    }
+    if (!empty($query_string) && ($query_string != ")")) {
+        $options = array(
+            "bs_status" => TRUE,
+            "entity_type" => 'node'
+        );
+
+        $query = fluke_solr_get_connection();
+        $filters = fluke_solr_add_filters($query,
+            array(
+                'q' => $query_string,
+                'rows' => 300,
+                'filters' => $options,
+                //'fl' => 'entity_id,ss_toc_large_img_url,ss_toc_medium_img_url,ss_toc_small_img_url,ss_field_content_title ,sm_url_path_builder,path_alias,ss_language',
+            )
+        );
+        $data = fluke_solr_query($filters);
+        watchdog('dam_uri', 'Query: %subject.', array('%subject' => json_encode($data)), WATCHDOG_WARNING);
+        if ($data->response->numFound > 0) {
+            $found = TRUE;
+            $i = 0;
+            foreach ($data->response->docs as $docs => $asset) {
+
+                $items[$i]['title'] = $asset->ss_field_content_title;
+                $items[$i]['language'] = $asset->ss_language;
+                $items[$i]['id'] = $asset->entity_id;
+                $items[$i]['type'] = $asset->bundle;
+                $items[$i]['caption'] = isset($asset->ss_field_caption) > 2 ? $asset->ss_field_caption : "";
+                if ($asset->bundle == 'image' && isset($asset->sm_field_image_url)) {
+                    try {
+                        $items[$i]['asset_url'] = json_decode($asset->sm_field_image_url[0]);
+                    } catch (Exception $e) {
+                        $items[$i]['asset_url'] = '';
+                    }
+                } else {
+                    if(isset($asset->ss_field_content_url)) {
+                        $items[$i]['asset_url'] = $asset->ss_field_content_url;
+                    }
+                }
+                $i++;
+            }
+        }
+    }
+
+    $results_html = theme('dam_uri_search_results', array('found' => $found, 'items' => $items, 'total' => $data->response->numFound));
+    exit($results_html);
+}
+
+function search_autocomplete($keyword = '') {
+    global $base_url;
+
+    $search_spell = _get_search_label_spellcheck($keyword);
+
+    if (isset($search_spell) && !empty($search_spell)) {
+        //$search_spell_link = l(t($search_spell), $base_url.'/search/site/'.$search_spell);
+        $search_spell_link = l(t($search_spell), $base_url . '/search/site/' . $search_spell, array('attributes' => array('class' => array('search-custom-spellcheck')), 'html' => TRUE));
+    }
+
+    /**
+     * Helper function that suggests ways to complete partial words.
+     *
+     * For example, if $keys = "learn", this might return suggestions like:
+     *    learn, learning, learner, learnability.
+     * The suggested terms are returned in order of frequency (most frequent first).
+     *
+     */
+
+
+    $suggestions = array();
+    $suggestions = array_merge($suggestions, apachesolr_autocomplete_suggest_word_completion($keyword, 5));
+    if (apachesolr_autocomplete_variable_get_suggest_keywords() || apachesolr_autocomplete_variable_get_suggest_spellcheck()) {
+        $suggestions = array_merge($suggestions, apachesolr_autocomplete_suggest_additional_term($keyword, 5));
+    }
+    if ($suggestions) {
+        foreach ($suggestions as $key => $suggestion) {
+            $spell = substr($key, 1);
+            $search = _get_search_complete_keywords($spell);
+            if (!empty($search)) {
+                foreach ($search->response->docs as $sugg) {
+                    $node_id = $sugg->entity_id;
+                    if (!empty($node_id)) {
+                        $node_detail = node_load($node_id);
+                        $title = $node_detail->title;
+                        $matches[$title] = _get_search_autocomplete_list_display($sugg, $title);
+                    }
+                }
+            }
+        }
+    }
+
+    if (!empty($matches)) {
+        $url = $_GET['q'];
+        $url_explode = explode('/', $url);
+        $url_last = end($url_explode);
+        //    $matches['more'] = l('VIEW ALL PRODUCTS', "$base_url/search/site/$url_last", array('attributes' => array('class' => array('search-more-autocomplete'))));
+    }
+    else {
+        if (!empty($search_spell_link)) {
+            $spellcheck_html = '<div class="custom-spellcheck-autocomplete">Finding for"' . $search_spell_link . '"?</div>';
+            $matches[$keyword] = $spellcheck_html;
+        }
+        $matches[""] = "NO RESULT FOUND";
+    }
+    drupal_json_output($matches);
+}
+
+
+function _get_search_label_spellcheck($keys) {
+    if ($keys) {
+        $keys = preg_replace('/[^A-Za-z\-]/', '', $keys);
+// Ask Solr to return facets from the 'spell' field to use as suggestions.
+        $params = apachesolr_autocomplete_basic_params($suggestions_to_return);
+        if (!empty($keys)) {
+            //Helper function to get suggestions from Solr.
+            $result = apachesolr_autocomplete_suggest($keys, $params, $keys);
+        }
+        if (!empty($result) && isset($result['response']->spellcheck)) {
+            foreach ($result['response']->spellcheck->suggestions as $key => $check) {
+                $spell[$key] = $check->suggestion[0];
+            }
+        };
+        return $spell[$key];
+    }
+}
+
+
+function _get_search_complete_keywords($keyword) {
+    if (!empty($keyword)) {
+        $solr = apachesolr_get_solr();
+        $query = apachesolr_drupal_query("custom", array('q' => $keyword));
+        $query->addParam('rows', '1000'); // How many rows of result to display default it is 10.
+        $query->addParam('qf', 'label'); // Only search in title
+        //The bundle which you want to search
+        $query->addFilter("bundle", "article");
+        $query->setSolrsort('sort_label', 'asc');
+        $resp_search = fluke_solr_query($query);
+        return $resp_search;
+    }
+}
+
+function _get_search_autocomplete_list_display($sugg, $title) {
+    global $base_url;
+    if (!empty($sugg)) {
+        $nid = $sugg->entity_id;
+    }
+    $n_link = $base_url . '/node/' . $nid;
+    $title_link = l(t($title), $n_link, array('attributes' => array('class' => array('search-title-autocomplete'), 'title' => $title)));
+    $data = '<div class ="search-custom-autocomplete product-' . $nid . '"><span class="search-title">' . $title_link .
+        '</span></div>';
+
+    return $data;
+}
+
+/**
+ * Implements hook_field_presave().
+ */
+function dam_uri_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  foreach ($items as $delta => $item) {
+    if (isset($item['dam_uri']['id'])) {
+      $items[$delta]['id'] = $item['dam_uri']['id'];
+    }
+    if (isset($item['dam_uri']['url'])) {
+      $items[$delta]['url'] = $item['dam_uri']['url'];
+    }
+    if (isset($item['dam_uri']['caption'])) {
+      $items[$delta]['caption'] = $item['dam_uri']['caption'];
+    }
+    if (isset($item['dam_uri']['alt'])) {
+      $items[$delta]['alt'] = $item['dam_uri']['alt'];
+    }
+    if (isset($item['dam_uri']['thumbnail'])) {
+      $items[$delta]['thumbnail'] = $item['dam_uri']['thumbnail'];
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function dam_uri_field_is_empty($item, $field) {
+  if (empty($item['dam_uri']['url']) && empty($item['url'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_field_validate().
+ */
+function dam_uri_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  // Loop through field items in the case of multiple values.
+  foreach ($items as $delta => $item) {
+    if (isset($item['url']) && $item['url'] != '') {
+     /* if (!valid_dam_uri($item['url'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => t('Invalid DAM URI.'),
+        );
+      } */
+    }
+  }
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function dam_uri_field_formatter_info() {
+  //setup the different ways the dam asset will be displayed
+  $dam_formatter = array();
+
+  $dam_formatter = array(
+    'dam_uri_default' => array(
+      'label' => t('DAM Link'),
+      'description' => t('Display the DAM asset as a link.'),
+      'field types' => array('dam_uri'),
+      'settings' => array(
+        'classes' => '',
+      ),
+    ),
+    'dam_uri_image' => array(
+      'label' => t('DAM Image'),
+      'description' => t('Display the DAM asset as an image.'),
+      'field types' => array('dam_uri'),
+      'settings' => array(
+        'classes' => '',
+      ),
+    ),
+    'dam_uri_slideshow' => array(
+      'label' => t('DAM Slideshow'),
+      'description' => t('Display the DAM asset as a slideshow.'),
+      'field types' => array('dam_uri'),
+      'settings' => array(
+        'width' => '640px',
+        'height' => '480px',
+        'classes' => '',
+      ),
+    ),
+    'dam_uri_video' => array(
+      'label' => t('DAM Video'),
+      'description' => t('Display the DAM asset as a video.'),
+      'field types' => array('dam_uri'),
+      'settings' => array(
+        'width' => '640px',
+        'height' => '480px',
+        'classes' => '',
+      ),
+    ),
+  );
+  return $dam_formatter;
+}
+
+function dam_uri_theme() {
+
+  $module_path = drupal_get_path('module', 'dam_uri');
+  return array(
+      'dam_uri_image' => array(
+          // these variables will appear in the functions as the first and second arguments
+          'arguments' => array(
+              'src' => NULL,
+              'alt' => NULL,
+          ),
+      ),
+      'dam_uri_link' => array(
+          'arguments' => array(
+              'src' => NULL,
+              'alt' => NULL,
+          ),
+      ),
+      'dam_uri_slideshow' => array(
+          'arguments' => array(
+              'src' => NULL,
+              'alt' => NULL,
+          ),
+      ),
+      'dam_uri_video' => array(
+          'arguments' => array(
+              'src' => NULL,
+              'alt' => NULL,
+          ),
+      ),
+      'dam_uri_search_form' => array(
+          'template' => 'dam_uri_search_form',
+          'variables' => array('variables' => NULL),
+          'path' => $module_path . '/templates',
+      ),
+      'dam_uri_search_results' => array(
+          'template' => 'dam_uri_search_results',
+          'variables' => array('found' => FALSE, 'items' => array(), 'variables' => NULL, 'total' => 0),
+          'path' => $module_path . '/templates',
+      ),
+  );
+}
+function theme_dam_uri_image($variables) {
+  $url = isset($variables['path']) ? $variables['path'] : $variables['url'];
+  $alt = isset($variables['alt']) ? $variables['alt'] : '';
+  $title = isset($variables['caption']) ? $variables['caption'] : '';
+  $classes = isset($variables['classes']) ? $variables['classes'] : '';
+  $width = "100%";
+  $height = "auto";
+
+  return '<img src="' . $url . '" alt="' . $alt . '" title="' . $title . '" class="img-responsive '
+    . $classes . '" height="' . $height . '" width="' . $width . '" />';
+}
+
+function theme_dam_uri_link($variables) {
+  $alt = isset($variables['alt']) ? $variables['alt'] : '';
+  $classes = isset($variables['classes']) ? $variables['classes'] : '';
+
+  return '<a class="' . $classes . ' href="' . $variables['url'] . '">' . $alt . '</a>';
+}
+
+function theme_dam_uri_slideshow($variables) {
+  if (strpos($variables['mime'], "video") !== FALSE) {
+    $url = $variables['thumbnail'];
+
+    $vid = isset($variables['path']) ? ' vid-url="' . $variables['path'] . '" vid-height= "' . $variables['height']
+      . '" vid-width="' . $variables['width'] . '"'  : ' vid-url="' . $variables['url'] . '" vid-height= "' . $variables['height']
+      . '" vid-width="' . $variables['width'] . '"';
+    $title = isset($variables['alt']) ? $variables['alt'] : '';
+    $classes = isset($variables['classes']) ? $variables['classes'] : '';
+  }
+  else {
+    $url = isset($variables['path']) ? $variables['path'] : $variables['url'];
+    $title = isset($variables['caption']) ? $variables['caption'] : '';
+    $vid = '';
+    $classes = 'img-responsive ' . isset($variables['classes']) ? $variables['classes'] : '';
+  }
+  $alt = isset($variables['alt']) ? $variables['alt'] : '';
+  $title = isset($variables['caption']) ? $variables['caption'] : '';
+  $width = "100%";
+  $height = "auto";
+
+  return '<img src="' . $url . '" alt="' . $alt . '" title="' . $title . '" class="' . $classes
+    . '" height="' . $height . '" width="' . $width . '" ' . $vid . ' />';
+}
+
+function theme_dam_uri_video($variables) {
+  isset($variables['classes']) ? $variables['classes'] : '';
+
+  return  '<object class="' . $variables['classes'] . ' width="' . $variables['width'] . '" height="'
+    . $variables['height'] . '" data="' . $variables['url'] . '"></object>';
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function dam_uri_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $element = array();
+
+  if ($display['type'] == 'dam_uri_video' || $display['type'] == 'dam_uri_slideshow') {
+    $element['width'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Width (example: 600px or 100%)'),
+      '#size' => 10,
+      '#default_value' => $settings['width'],
+    );
+    $element['height'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Height (example: 600px)'),
+      '#size' => 10,
+      '#default_value' => $settings['height'],
+    );
+  }
+  $element['classes'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Classes (used for styling)'),
+    '#size' => 10,
+    '#default_value' => $settings['classes'],
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function dam_uri_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $instance['display'][$view_mode]['settings'];
+  $summary = '';
+
+  // Summary for the video style.
+  if ($display['type'] == 'dam_uri_video' || $display['type'] == 'dam_uri_slideshow') {
+    $summary = t('Asset width: @width | height: @height | classes: @classes',
+      array('@width' => $settings['width'], '@height' => $settings['height'], '@classes' => $settings['classes']));
+  }
+  else {
+    $summary = t('Classes: @classes', array('@classes' => $settings['classes']));;
+  }
+  return $summary;
+}
+
+/**
+ * Returns a list of standard YouTube video sizes.
+ */
+function dam_uri_size_options() {
+  return array(
+    '420x315' => '450px by 315px',
+    '480x360' => '480px by 360px',
+    '640x480' => '640px by 480px',
+    '960x720' => '960px by 720px',
+    'responsive' => 'responsive (full-width of container)',
+    'custom' => 'custom',
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function dam_uri_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    //displays the asset as a link
+    case 'dam_uri_default' :
+      foreach ($items as $delta => $item) {
+        if (isset($item['url'])) {
+          $title = $item['alt'] ? $item['alt'] : $item['caption'];
+          $item['classes'] = $display['settings']['classes'] ? $display['settings']['classes'] : '';
+          $element[$delta]['#markup'] = theme('dam_uri_link', $item);
+        }
+      }
+      break;
+    case 'dam_uri_image' :
+      foreach ($items as $delta => $item) {
+        if (isset($item['url'])) {
+        /*$dam_image = array();
+          $dam_image['path'] = $item['url'];
+          $dam_image['alt'] = $item['alt'] ? $item['alt'] : $item['caption'];
+
+          $dam_size = getimagesize($item['url']);
+          $dam_image['width'] = $dam_size[0];
+          $dam_image['height'] = $dam_size[1];*/
+
+          $item['classes'] = $display['settings']['classes'] ? $display['settings']['classes'] : '';
+          $element[$delta]['#markup'] = theme('dam_uri_image', $item);
+        }
+      }
+      break;
+    case 'dam_uri_slideshow' :
+      foreach ($items as $delta => $item) {
+        if (isset($item['url'])) {
+          $slide_mimetype = file_get_mimetype($item['url']);
+          $item['mime'] = $slide_mimetype;
+          $item['width'] = $display['settings']['width'] ? $display['settings']['width'] : '600px';
+          $item['height'] = $display['settings']['height'] ? $display['settings']['height'] : '480px';
+          $item['classes'] = $display['settings']['classes'] ? $display['settings']['classes'] : '';
+          $element[$delta]['#markup'] = theme('dam_uri_slideshow', $item);
+        }
+      }
+      break;
+    case 'dam_uri_video' :
+      foreach ($items as $delta => $item) {
+        if (isset($item['url'])) {
+          $item['width'] = $display['settings']['width'] ? $display['settings']['width'] : '600px';
+          $item['height'] = $display['settings']['height'] ? $display['settings']['height'] : '480px';
+          $item['classes'] = $display['settings']['classes'] ? $display['settings']['classes'] : '';
+          $element[$delta]['#markup'] = theme('dam_uri_video', $item);
+        }
+      }
+      break;
+  }
+  return $element;
+}
+
+/***
+ * Fluke custom blocks
+ ***/
+/*function dam_uri_block_info() {
+  //testing blocks
+  $blocks['metadata_test'] = array(
+    'info' => t('MetaData Test'),
+  );
+
+  return $blocks;
+}
+
+function dam_uri_block_view($delta = "") {
+  //testing blocks
+  switch ( $delta ) {
+    case 'metadata_test':
+      $block['subject'] = "MetaData";
+      $block['content'] = dam_api_get_metadata();
+      break;
+    default:
+      $block = array();
+      break;
+  }
+  return $block;
+}*/
+
+function dam_uri_admin_theme_callback() {
+  // use the admin theme for the modals
+  return variable_get('admin_theme');
+}
+
+/**
+ * Helper function to make a link.
+ */
+function _dam_uri_make_link($link_text = '') {
+  // Set a default value if no text in supplied.
+  if (empty($link_text)) {
+    $link_text = 'Magical Modal';
+  }
+  return '<div id="magical-modal-link">' . l($link_text, 'dam_uri_search/nojs', array('attributes' => array('class' => 'ctools-use-modal'))) . '</div>';
+}
+
+/**
+ * An example page.
+ */
+function dam_uri_page() {
+  // Load the modal library and add the modal javascript.
+  ctools_include('modal');
+  ctools_modal_add_js();
+  return _dam_uri_make_link('Magical modal');
+}
+
+
+/**
+ * Ajax menu callback.
+ */
+function dam_uri_upload_callback($ajax) {
+  if ($ajax) {
+    ctools_include('ajax');
+    ctools_include('modal');
+
+    $form_state = array(
+      'ajax' => TRUE,
+      'title' => t('Upload Asset'),
+    );
+
+    // Use ctools to generate ajax instructions for the browser to create
+    // a form in a modal popup.
+    $output = ctools_modal_form_wrapper('dam_form_upload_form', $form_state);
+
+    // If the form has been submitted, there may be additional instructions
+    // such as dismissing the modal popup.
+    if (!empty($form_state['ajax_commands'])) {
+      $output = $form_state['ajax_commands'];
+    }
+
+    // Return the ajax instructions to the browser via ajax_render().
+    print ajax_render($output);
+    drupal_exit();
+  }
+  else {
+    return drupal_get_form('dam_form_upload_form');
+  }
+}
+
+function dam_uri_search_callback($ajax) {
+  if ($ajax) {
+    ctools_include('ajax');
+    ctools_include('modal');
+
+    $form_state = array(
+      'ajax' => TRUE,
+      'title' => t('Search Assets'),
+    );
+
+    // Use ctools to generate ajax instructions for the browser to create
+    // a form in a modal popup.
+    $output = ctools_modal_form_wrapper('dam_form_search_form', $form_state);
+
+    // If the form has been submitted, there may be additional instructions
+    // such as dismissing the modal popup.
+    if (!empty($form_state['ajax_commands'])) {
+      $output = $form_state['ajax_commands'];
+    }
+
+    // Return the ajax instructions to the browser via ajax_render().
+    print ajax_render($output);
+    drupal_exit();
+  }
+  else {
+    return drupal_get_form('dam_form_search_form');
+  }
+}
+
+function dam_uri_upload_type_callback($ajax) {
+  if ($ajax) {
+    ctools_include('ajax');
+    ctools_include('modal');
+
+    $form_state = array(
+      'ajax' => TRUE,
+      'title' => t('Asset Type'),
+    );
+
+    // Use ctools to generate ajax instructions for the browser to create
+    // a form in a modal popup.
+    $output = ctools_modal_form_wrapper('dam_form_upload_type_form', $form_state);
+
+    // If the form has been submitted, there may be additional instructions
+    // such as dismissing the modal popup.
+    if (!empty($form_state['ajax_commands'])) {
+      $output = $form_state['ajax_commands'];
+    }
+
+    // Return the ajax instructions to the browser via ajax_render().
+    print ajax_render($output);
+    drupal_exit();
+  }
+  else {
+    return drupal_get_form('dam_form_upload_type_form');
+  }
+}
+
+function dam_uri_search_filter_callback($ajax) {
+  if ($ajax) {
+    ctools_include('ajax');
+    ctools_include('modal');
+
+    $form_state = array(
+      'ajax' => TRUE,
+      'title' => t('Search Filters'),
+    );
+
+    // Use ctools to generate ajax instructions for the browser to create
+    // a form in a modal popup.
+    $output = ctools_modal_form_wrapper('dam_form_search_filter_form', $form_state);
+
+    // If the form has been submitted, there may be additional instructions
+    // such as dismissing the modal popup.
+    if (!empty($form_state['ajax_commands'])) {
+      $output = $form_state['ajax_commands'];
+    }
+
+    // Return the ajax instructions to the browser via ajax_render().
+    print ajax_render($output);
+    drupal_exit();
+  }
+  else {
+    return drupal_get_form('dam_form_search_filter_form');
+  }
+}
+
+

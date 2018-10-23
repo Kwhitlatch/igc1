@@ -1,0 +1,102 @@
+name = FIGstrap
+description = Bootstrap Sub-theme built for Fluke IG. Uses the Bootstrap Framework LESS source files and must be compiled (not for beginners).
+core = 7.x
+base theme = bootstrap
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Regions
+;;;;;;;;;;;;;;;;;;;;;
+regions[shopping-cart]     = 'Shopping Cart'
+regions[navigation]     = 'Navigation'
+regions[search-box]     = 'Search Box'
+regions[mobile_navigation]     = 'Mobile Navigation'
+regions[header]         = 'Top Bar'
+regions[highlighted]    = 'Highlighted'
+regions[help]           = 'Help'
+regions[content]        = 'Content'
+regions[sidebar_first]  = 'Primary'
+regions[sidebar_second] = 'Secondary'
+regions[white-footer]   = 'White Footer'
+regions[footer]         = 'Footer'
+regions[page_top]       = 'Page top'
+regions[page_bottom]    = 'Page bottom'
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Stylesheets
+;;;;;;;;;;;;;;;;;;;;;
+
+stylesheets[all][] = css/style.css
+stylesheets[all][] = css/mm-basic-fluke.css
+; stylesheets[print][] = css/print.css
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Scripts
+;;;;;;;;;;;;;;;;;;;;;
+
+scripts[] = 'bootstrap/js/affix.js'
+scripts[] = 'bootstrap/js/alert.js'
+scripts[] = 'bootstrap/js/button.js'
+scripts[] = 'bootstrap/js/carousel.js'
+scripts[] = 'bootstrap/js/collapse.js'
+scripts[] = 'bootstrap/js/dropdown.js'
+scripts[] = 'bootstrap/js/modal.js'
+scripts[] = 'bootstrap/js/tooltip.js'
+scripts[] = 'bootstrap/js/popover.js'
+scripts[] = 'bootstrap/js/scrollspy.js'
+scripts[] = 'bootstrap/js/tab.js'
+scripts[] = 'bootstrap/js/transition.js'
+scripts[] = 'js/flukestrap-utility.js'
+; scripts[] = 'js/bootstrap-tabcollapse.js'
+; bootstrap-tabcollapse.js is a small bootstrap plugin that switches bootstrap 
+; tabs component to collapse component for small screens.
+; https://github.com/flatlogic/bootstrap-tabcollapse
+
+
+; Disable BootstrapCDN so the compiled LESS source files can be used.
+settings[bootstrap_cdn] = ''
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Breakpoints
+;;;;;;;;;;;;;;;;;;;;;
+
+; These breakpoints are set for flukestrap in the file 
+; \sites\all\themes\flukestrap\less\variable-overrides.less
+; These were added to the .info file to create breakpoints for the 
+; breakpoints module - https://www.drupal.org/project/breakpoints
+; You can learn more about the module config here: https://vimeo.com/92537789
+; We are using picture module 2.x, so breakpoints must be ordered
+; from largest to smallest
+; https://www.drupal.org/documentation/modules/picture
+; RRN 12-2-2015
+
+; Older versions of flukestrap used these simplified breakpoints.
+; In figstrap we've expanded these for better control, and to better 
+; match the ranges defined in the parent theme bootstrap.info
+; breakpoints[desktop_large] = (min-width: 1280px)
+; breakpoints[desktop_medium] = (min-width: 1033px)
+; breakpoints[tablet] = (min-width: 768px)
+; breakpoints[mobile] = (min-width: 0px)
+
+breakpoints[screen-lg-min] = (min-width: 1280px)
+breakpoints[screen-md-max] = (max-width: 1279px)
+breakpoints[screen-md-min] = (min-width: 1033px)
+breakpoints[screen-sm-max] = (max-width: 1032px)
+breakpoints[screen-sm-min] = (min-width: 768px)
+breakpoints[screen-xs-max] = (max-width: 767px)
+; Multipiers
+multipliers[screen-xs-max][] = 1.5x
+multipliers[screen-xs-max][] = 2x
+multipliers[screen-sm-min][] = 1.5x
+multipliers[screen-sm-min][] = 2x
+multipliers[screen-sm-max][] = 1.5x
+multipliers[screen-sm-max][] = 2x
+multipliers[screen-md-min][] = 1.5x
+multipliers[screen-md-min][] = 2x
+multipliers[screen-md-max][] = 1.5x
+multipliers[screen-md-max][] = 2x
+multipliers[screen-lg-min][] = 1.5x
+multipliers[screen-lg-min][] = 2x

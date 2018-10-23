@@ -1,0 +1,6 @@
+name = IG Commerce Utility - Product TOCs
+description = Utility module for IG commerce focused on Product TOCs only.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = igcommerce_utility

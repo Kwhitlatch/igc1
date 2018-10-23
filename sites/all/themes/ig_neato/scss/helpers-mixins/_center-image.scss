@@ -1,0 +1,26 @@
+%center-image{
+  //position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  img{
+    height: 100%;
+    max-width: none;
+    width: auto;
+    min-width: 100%;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    -moz-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+
+    @include media($desk-lg){
+      max-width: none;
+      width: auto;
+
+    }
+  }
+}

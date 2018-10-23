@@ -1,0 +1,20 @@
+/* Used to make embedded youtube videos responsive. Occassionally used in webcards.
+ * based on the code found here: https://www.ostraining.com/blog/coding/responsive-videos/
+ * Here's what the html structure needs to look like to use this:
+ * <div class="video-responsive">
+ *  <iframe width="420" height="315" src="http://www.youtube.com/embed/6xisazZX9bA" frameborder="0" allowfullscreen></iframe>
+ * </div>
+ */
+.video-responsive {
+  overflow:hidden;
+  padding-bottom:56.25%;
+  position:relative;
+  height:0;
+  iframe {
+    left:0;
+    top:0;
+    height:100%;
+    width:100%;
+    position:absolute;
+  }
+}

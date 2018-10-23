@@ -1,0 +1,240 @@
+/**
+ * Variable Overrides.
+ *
+ * Modify this file to override the Bootstrap Framework variables. You can copy
+ * these variables directly from ../bootstrap/less/variables.less to this file.
+ */
+
+// Set the proper directory for the Bootstrap Glyphicon font.
+@icon-font-path: '../bootstrap/fonts/';
+
+// Set Rockwell Font Family for Beha-Amprobe
+@font-face {font-family: 'RockwellStd-Bold';src: url('../bootstrap/fonts/2D85BA_0_0.eot');src: url('../bootstrap/fonts/2D85BA_0_0.eot?#iefix') format('embedded-opentype'),url('../bootstrap/fonts/2D85BA_0_0.woff2') format('woff2'),url('../bootstrap/fonts/2D85BA_0_0.woff') format('woff'),url('../bootstrap/fonts/2D85BA_0_0.ttf') format('truetype');}
+@font-face {font-family: 'RockwellStd';src: url('../bootstrap/fonts/2D85BA_1_0.eot');src: url('../bootstrap/fonts/2D85BA_1_0.eot?#iefix') format('embedded-opentype'),url('../bootstrap/fonts/2D85BA_1_0.woff2') format('woff2'),url('../bootstrap/fonts/2D85BA_1_0.woff') format('woff'),url('../bootstrap/fonts/2D85BA_1_0.ttf') format('truetype');} 
+@font-face {font-family: 'RockwellStd-Light';src: url('../bootstrap/fonts/2D85BA_2_0.eot');src: url('../bootstrap/fonts/2D85BA_2_0.eot?#iefix') format('embedded-opentype'),url('../bootstrap/fonts/2D85BA_2_0.woff2') format('woff2'),url('../bootstrap/fonts/2D85BA_2_0.woff') format('woff'),url('../bootstrap/fonts/2D85BA_2_0.ttf') format('truetype');}
+
+// Set Fluke Icon Font Family for Beha-Amprobe
+@font-face {font-family: 'fluke';src: url('../bootstrap/fonts/fluke.eot');src: url('../bootstrap/fonts/fluke.eot?#iefix') format('embedded-opentype'),url('../bootstrap/fonts/fluke.woff') format('woff'),url('../bootstrap/fonts/fluke.ttf') format('truetype');}
+
+// Set Fluke Certificaion Font Family for Beha-Amprobe
+@font-face {
+	font-family:'regulation-certification';
+	src:url("http://media.fluke.com/binary/regulation-certification.eot");
+	src:url("http://media.fluke.com/binary/regulation-certification.eot?#iefix") format("embedded-opentype"), url("http://media.fluke.com/binary/regulation-certification.woff") format("woff"), url("http://media.fluke.com/binary/regulation-certification.ttf") format("truetype"), url("http://media.fluke.com/binary/regulation-certification.svg#regulation-certification") format("svg");
+	font-weight:normal;
+	font-style:normal
+}
+
+[data-icon]:before {
+	font-family:'regulation-certification';
+	content:attr(data-icon);
+	speak:none;
+	font-weight:normal;
+	font-variant:normal;
+	text-transform:none;
+	line-height:1;
+	-webkit-font-smoothing:antialiased
+}
+
+//== Colors
+//
+//== Fluke Brand Colors
+
+
+//== shades of gray
+@beha-white:           #fff; 
+@beha-black:           #000; 
+@beha-box-shadows:     #f7f7f7; 
+@beha-background:      #fff;
+@beha-sidebar-background:      #ddd;
+@beha-lines-and-pipes: #ccc;
+@beha-gray-links:      #a7a7a7;
+@beha-menu-item:       #6f6f6f;
+@beha-button-hover:    #333;
+@beha-body-text:       #333;
+@beha-head-foot:       #333;
+@beha-sidebar:         #efefef;
+
+//== colors
+@beha-red:             #ed3223 ; //main palette yellow - primary brand color
+@beha-red-hover:       darken(@beha-red, 10%); //darker yellow
+@beha-blue-link:       #1b3e94; //blue
+@beha-blue-hover:      darken(@beha-blue-link, 10%); //darker blue
+
+//== social media colors
+@youtube:               #ff3333; //youtube red
+@google-plus:           #dd4c39; //google+ dark red
+@facebook:              #3b5998; //facebook blue
+@linkedin:              #4875b4; //linkedin blue
+@twitter:               #33ccff; //twitter blue
+@reddit:                #ff5700; //reddit orange red
+
+//## OVERRIDDEN Gray and brand colors for use across Bootstrap.
+@beha-gray:             lighten(@gray-base, 40.1%); // #666
+@brand-primary:         @beha-red;
+
+
+//== Scaffolding
+//
+//## Settings for some of the most global styles.
+
+//** Background color for `<body>`.
+@body-bg:               @beha-background;
+
+//** Global text color on `<body>`.
+@text-color:            @beha-body-text;
+
+//** Global textual link color.
+@link-color:            @beha-blue-link;
+
+
+//** Link hover color.
+@link-hover-color:      @beha-blue-hover;
+
+//** Link hover decoration.
+@link-hover-decoration: none;
+
+
+//== Typography
+//
+//## Font, line-height, and color for body text, headings, and more.
+
+@font-family-sans-serif:   "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+
+@font-size-base:          13px;
+
+@font-size-h1:            floor((@font-size-base * 2.1)); // ~27px
+@font-size-h2:            floor((@font-size-base * 1.8)); // ~23px
+@font-size-h3:            ceil((@font-size-base * 1.3)); // ~17px
+@font-size-h4:            ceil((@font-size-base * 1.1)); // ~15px
+@font-size-h5:            @font-size-base;
+@font-size-h6:            ceil((@font-size-base * 0.85)); // ~12px
+
+//** Unit-less `line-height` for use in components like buttons.
+@line-height-base:        1.5; // 13/19.5
+@headings-font-family:    "RockwellStd-Bold", "Arial Black", serif;
+@headings-font-weight:    inherit;
+@headings-line-height:    1.3;
+
+@subheadings-font-family:    "RockwellStd", "Arial Black", serif;
+@subheadings-font-weight:    300;
+@subheadings-line-height:    1.3;
+
+@border-radius-base:        0px;
+@border-radius-large:       0px;
+@border-radius-small:       0px;
+
+
+@btn-default-color:              @beha-white;
+@btn-default-bg:                 @beha-blue-link;
+// Red Button.
+
+@btn-primary-color:              @beha-white;
+@btn-primary-bg:                 @beha-red;
+// Black Button.
+@btn-info-bg:                    @beha-black;
+@btn-info-color:              	 @beha-white;             
+
+//== Media queries breakpoints
+//
+//## Define the breakpoints at which your layout will change, adapting to different screen sizes.
+
+// Small screen / tablet
+@screen-sm:                  768px;
+
+// Medium screen / desktop
+@screen-md:                  1033px;
+
+// Large screen / wide desktop
+@screen-lg:                  1280px;
+
+//== Container sizes
+//
+//## Define the maximum width of `.container` for different screen sizes.
+
+// Small screen / tablet
+@container-tablet:             100%;
+
+// Medium screen / desktop
+@container-desktop:            (972px + @grid-gutter-width);
+
+// Large screen / wide desktop
+@container-large-desktop:      (1230px + @grid-gutter-width);
+
+//== Navbar
+//
+//##
+
+//=== Inverted navbar
+// Reset inverted navbar basics
+@navbar-inverse-color:                      @beha-gray;
+@navbar-inverse-bg:                         @beha-head-foot;
+@navbar-inverse-border:                     @beha-body-text;
+
+// Inverted navbar links
+@navbar-inverse-link-color:                 @beha-gray;
+@navbar-inverse-link-hover-color:           @beha-white;
+@navbar-inverse-link-hover-bg:              transparent;
+@navbar-inverse-link-active-color:          @beha-white;
+@navbar-inverse-link-active-bg:             transparent;
+@navbar-inverse-link-disabled-color:        #444;
+@navbar-inverse-link-disabled-bg:           transparent;
+
+// Inverted navbar brand label
+@navbar-inverse-brand-color:                @navbar-inverse-link-color;
+@navbar-inverse-brand-hover-color:          #fff;
+@navbar-inverse-brand-hover-bg:             transparent;
+
+// Inverted navbar toggle
+@navbar-inverse-toggle-hover-bg:            #333;
+@navbar-inverse-toggle-icon-bar-bg:         #fff;
+@navbar-inverse-toggle-border-color:        #333;
+
+
+
+//== Navs
+//
+//#
+
+//=== Shared nav styles
+@nav-link-hover-bg:                         @beha-white;
+
+//== Pills
+@nav-pills-active-link-hover-bg:            darken(@beha-background, 10%);
+@nav-pills-active-link-hover-color:         @beha-red;
+
+//== Form states and alerts
+//
+//## Define colors for form feedback states and, by default, alerts.
+
+// This overrides the default alert-info styling, it is used in the 
+// "Only avaliable in UK" alert on the product page.
+@state-info-text:                @text-color;
+@state-info-bg:                  @beha-sidebar;
+@state-info-border:              transparent;
+
+//== Modals
+//
+//##
+
+//** Modal backdrop opacity
+@modal-backdrop-opacity:      .8;
+
+@modal-lg:                    772px;
+@modal-md:                    772px;
+@modal-sm:                    300px; // not overridden, just here for easy reference
+
+
+//== Wells
+//
+//##
+
+@well-bg:                     @beha-sidebar-background;
+
+
+//== Type
+//
+//##
+
+//** Horizontal line color.
+@hr-border:                   @beha-lines-and-pipes;

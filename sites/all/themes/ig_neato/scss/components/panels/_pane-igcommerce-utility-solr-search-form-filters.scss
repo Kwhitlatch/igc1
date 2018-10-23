@@ -1,0 +1,32 @@
+//Used for pages: /search/page
+//Used for pages: /training/training-library
+//Used for pages: /support/manuals
+div.utility-form-filters div#accordion{
+  //Filter button blue instead of yellow
+  h4{
+      font-family: $font-family-sans-serif;
+      color: $gray-21;
+      padding-top: 7px; 
+  }
+  .plus-minus{
+  	padding-top: 0; 
+  }
+}
+
+
+.remove-filter-container{
+  @extend %m-a-1;
+}
+#edit-remove-filters{
+  @extend %button-secondary;
+}
+
+//Manual remove filters needed some extra margin due to only 1 filter group
+#igcommerce-utility-manuals-form-filter{ 
+  h3{
+    padding-bottom:1rem; //Additional padding due to no accordians with 1 group
+  }
+  #edit-remove-filters{
+    margin-top: 3.25rem;
+  }
+}

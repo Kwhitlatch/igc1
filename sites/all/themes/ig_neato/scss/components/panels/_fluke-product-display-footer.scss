@@ -1,0 +1,16 @@
+// This used to be tied to div[class*='pane-igcommerce-utility-products-product-disclaimer']
+// during product display refactor, my best guess is this should be tied to the
+// product footer - rrn 5-16-17
+#fluke-product-display-footer {
+  @include span-columns(12);
+  p {
+    font-size: 1rem;
+    &:first-of-type {
+      padding-top: 2rem;
+      // The following padding was removed at Libbys request 2-7-16 -rrn
+      // @include media($screen-sm) {
+      //   padding-top: 7rem;
+      // }
+    }
+  }
+} 

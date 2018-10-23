@@ -1,0 +1,46 @@
+//Used for page: /support/press-releases
+
+.pane-igcommerce-utility-articles-article-awards-listings {
+.awards-items-date {
+    font-weight: 700;
+    margin-bottom: 0;
+    padding: 1rem 0;
+     &:after {
+      content: '\f067'; //plus
+      float: right;
+      font-family: fluke-icon-font;
+      font-size: $font-size-base;
+    }
+    &.expanded {
+      &:after {
+        content: '\f068'; //minus
+      }
+    }
+  }
+  .awards-items {
+  @include span-columns(12);
+   border-bottom: 1px solid $gray-c;
+   &:last-of-type {
+    border: none;
+   }
+   .awards-item{
+    @include span-columns(12);
+    padding-bottom: 3rem;
+   }
+   .awards-image{
+    @include span-columns(12);
+    @include media($tablet) {
+      @include span-columns(4);
+      }
+   }
+   .awards-detail{
+    @include span-columns(12);
+    @include media($tablet) {
+      @include span-columns(8);
+      }
+   }
+  }
+  .awards-items-content {
+    padding: 1rem;
+  }
+}

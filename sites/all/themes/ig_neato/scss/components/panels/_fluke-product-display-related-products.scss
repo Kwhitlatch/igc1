@@ -1,0 +1,34 @@
+// Related Products section. Most of the flexslider styling lives in
+// _fluke-product-display-slideshow.scss
+
+#fluke-product-display-related-products {
+  position: relative;
+  .fluke-product-display-related-product-desc {
+    display: none;
+    @include media($screen-sm) {
+      display: block;
+    }
+  }
+  .fluke-product-display-related-products-count {
+    margin-bottom: 12px;
+    @include media($screen-sm) {
+      position: absolute;
+      right: 0;
+      top: 45px;
+    }
+  }
+  .fluke-product-display-related-product-link {
+    &:hover {
+      text-decoration: none;
+    }
+    h3 {
+      @extend %h4;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    p {
+      color: $text-color;
+    }
+  }
+}

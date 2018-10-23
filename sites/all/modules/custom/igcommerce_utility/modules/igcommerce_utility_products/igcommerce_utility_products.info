@@ -1,0 +1,7 @@
+name = IG Commerce Utility - Products
+description = Utility module for IG commerce focused on Products only.
+core = "7.x"
+package = IG Commerce
+
+fi
+dependencies[] = igcommerce_utility

@@ -1,0 +1,37 @@
+.expireddata .views-field-title{
+	text-decoration: line-through !important;
+}
+.expiry_indicator {
+  width: 20px !important;
+}
+table.alias_table th:first-child {
+  text-align: center;
+}
+.collapsibleimg{
+  margin: 0 auto;
+}
+.errormsg span{
+  color:red;
+}
+.hide {
+  display: none !important;
+}
+table td {
+    padding: 3px !important;
+	border-left: 1px solid #bebfb9 !important;
+}
+table td, table th {
+	text-align: center;
+}
+.odd-row {
+    background: #e0e0e0 none repeat scroll 0 0 !important;
+}
+.status_icon {
+	width: 15px !important;
+}
+.alias_content_left {
+	text-align: left;
+}
+.View-links > img {
+    width: 16px;
+}

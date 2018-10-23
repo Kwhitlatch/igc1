@@ -1,0 +1,821 @@
+<?php
+
+/*
+ * Handle Event related functionality.
+ */
+
+include_once 'igcommerce_event.features.inc';
+
+/*
+ * hook_permission().Handle the Event permission.
+ */
+function igcommerce_event_permission() {
+  return array(
+    'administer igcommerce event' => array(
+      'title' => t('Administer IGcommerce Event'),
+      'description' => t('Permission for handing event functionlity.'),
+    ),
+  );
+}
+
+/*
+ * hook_block_info(). Implementing Block for event listing pages.
+ */
+function igcommerce_event_block_info() {
+  $blocks = array();
+
+  // Block for showing Event list page.
+  $blocks['igcommerce_event_listing'] = array(
+    //@todo: this block may need to be factored out, check if it is used anywhere
+    'info' => t('Event Solr - Event Listing Block'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['tradeshows_and_seminars_title_description'] = array(
+    'info' => t('Tradeshows and Seminars - Title and Description'),
+    'cache' => DRUPAL_CACHE_PER_PAGE
+  );
+  $blocks['tradeshows_and_seminars_body'] = [
+    'info' => t('Tradeshows and Seminars - Tabs & Listings'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  ];
+
+  $blocks['webinars'] = [
+    'info' => t('Webinars'),
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  ];
+
+  return $blocks;
+}
+
+/*
+ * hook_block_view(). Implements block view defined in block_info.
+ */
+function igcommerce_event_block_view($delta = NULL) {
+  switch ($delta) {
+    case 'igcommerce_event_listing' :
+      $blocks['subject'] = "";
+      $blocks['content'] = igcommerce_event_listing_page();
+      break;
+
+    case 'webinars' :
+      $blocks['subject'] = "";
+      $blocks['content'] = igcommerce_event_webinars();
+      break;
+
+    case 'tradeshows_and_seminars_title_description':
+      $blocks['subject'] = "";
+      $blocks['content'] = igcommerce_event_title_description('Tradeshows and Seminars', TRUE);
+      break;
+    case 'tradeshows_and_seminars_body' :
+      $blocks['subject'] = "";
+      $blocks['content'] = igcommerce_event_tradeshow_body();
+      break;
+    default:
+      $blocks = array();
+      break;
+  }
+
+  return $blocks;
+}
+
+function igcommerce_event_types_taxonomy($reset = FALSE, $lang = NULL) {
+  if($lang === NULL) {
+    global $language;
+    $lang = $language->language;
+  }
+
+  $return = &drupal_static(__FUNCTION__);
+
+  if (empty($return) || $reset === TRUE) {
+
+    $filters = array(
+      "entity_type" => 'taxonomy_term',
+      "ss_language" => $lang,
+      "bundle" => "event_type"
+    );
+
+    $query = fluke_solr_get_connection();
+    $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+    $data = fluke_solr_query($filters);
+
+    $return = [];
+    foreach ($data->response->docs as $doc) {
+      $return[$doc->label] = !empty($doc->sm_field_content_title[0]) ? $doc->sm_field_content_title[0] : '';
+    }
+  }
+
+  return $return;
+}
+
+function igcommerce_event_webinars() {
+  $event_types = igcommerce_event_types_taxonomy();
+
+  $content = [];
+  $content['title']['#markup'] = igcommerce_event_title_description('Webinars', FALSE);
+
+  $form1 = drupal_get_form('igcommerce_event_webinars_live_form');
+
+  $form2 = drupal_get_form('igcommerce_event_webinars_od_form');
+
+  $tabs = [
+    [
+      'title' => $event_types['On-demand webinars'],
+      'contents' => $form2
+    ],
+    [
+      'title' => $event_types['Live webinars'],
+      'contents' => $form1,
+    ]
+
+  ];
+
+  drupal_add_js(drupal_get_path('module', 'igcommerce_event') . '/js/moment-with-locales.min.js');
+  drupal_add_js(drupal_get_path('module', 'igcommerce_event') . '/js/moment-timezone-with-data.min.js');
+  drupal_add_js(drupal_get_path('module', 'igcommerce_event') . '/js/ig_commerce_event.js');
+
+  $qt = quicktabs_build_quicktabs('webinars', ['style' => 'no-style'], $tabs);
+  igcommerce_utility_fix_qt_links($qt);
+  $content['tabs'] = $qt;
+  
+  return $content;
+}
+
+function igcommerce_event_webinars_live_form($form, &$form_state) {
+
+  $event_types = igcommerce_event_types_taxonomy();
+
+  $live_query = igcommerce_event_by_type('Live webinars', TRUE, TRUE);
+
+  $results = ig_commerce_events_webinars_common($live_query, 'live', $form, $form_state);
+
+  $rows = [];
+
+  if (count($results->response->docs)) {
+    foreach ($results->response->docs as $doc) {
+
+      $date = !empty($doc->tm_event_date[0]) ? $doc->tm_event_date[0] : '';
+
+      if (!empty($date)) {
+
+        $date = new DateObject($date, 'pdt');
+
+        $date = '<span class="ig-tzdate unprocessed">' . date_format_date($date, 'custom', DATE_ISO8601) . '</span>';
+      }
+
+      $cta = '';
+      // MIG4374 - I don't think tm_event_website_url is used for these, instead we are pulling from the CTA Left Coll Field Collection.
+      // This is the same as the on-demand webinars. Commenting out old code for now until we can confirm this isn't used.
+      //if (!empty($doc->tm_event_website_url[0])  && !empty($doc->tm_event_website_title[0])) {
+      //  $link = $doc->tm_event_website_url[0];
+      //  $text = $doc->tm_event_website_title[0];
+      //  $cta .= "<p><a href='$link' class='btn btn-blue event-cta'>$text</a></p>";
+      
+      //}
+      // If Live Webinar has data in the CTA Buttons field collection
+      if (!empty($doc->sm_cta_left_coll[0]) && $cta_left_coll = json_decode($doc->sm_cta_left_coll[0])) {
+        $link = $cta_left_coll->url;
+        $cta = "<a href='$link' class='button'>$cta_left_coll->label</a>";
+      }
+      // Else if there is data in the Contact fields found on the Event content type
+      elseif (!empty($doc->tm_contact_email[0]) && !empty($doc->tm_event_email[0]) ) {
+        $email = $doc->tm_event_email[0];
+        $contact = $doc->tm_contact_email[0];
+        $cta .= "<p><a class='email-link' href='mailto:$email'>$contact</a></p>";
+
+        if (!empty($doc->tm_contact_phone_number[0])) {
+          $phone = $doc->tm_contact_phone_number[0];
+          $cta .= "<p>$phone</p>";
+        }
+      }
+
+      $classes = [];
+      $categories = '';
+
+      if(!empty($doc->sm_event_webinar_category_name)) {
+        foreach ($doc->sm_event_webinar_category_name as $category) {
+          $categories .= t($category) . '<br/>';
+          $classes[] = drupal_html_class($category);
+        }
+      }
+
+
+      $data = [
+        'date' => $date,
+        'type' => $categories,
+        'name' =>  !empty($doc->tm_field_content_title[0]) ? $doc->tm_field_content_title[0] : '',
+        'cta' => $cta,
+      ];
+
+
+
+      $rows[] = ['data' => $data, 'class' => $classes];
+    }
+
+    $header = [
+      'date' => t('Date'),
+      'type' => t('Webinar Type'),
+      'name' => t('Webinar Name'),
+      'cta' => t('Register'),
+
+    ];
+
+    $form['table']['#markup'] = theme('table', ['header' => $header, 'rows' => $rows]);
+
+  }
+  else {
+    $form['table']['#markup'] = '<p>' . t('No Events Scheduled, check back soon.') . '</p>';
+  }
+
+  return $form;
+}
+
+function igcommerce_event_webinars_od_form($form, &$form_state) {
+  $event_types = igcommerce_event_types_taxonomy();
+
+  $od_query = igcommerce_event_by_type('On-demand webinars', FALSE, TRUE);
+
+
+  $results = ig_commerce_events_webinars_common($od_query, 'od', $form, $form_state);
+
+  $rows = [];
+
+  if (count($results->response->docs)) {
+    foreach ($results->response->docs as $doc) {
+
+      if (!empty($doc->tm_event_website_url[0])) {
+        $link = $doc->tm_event_website_url[0];
+        $cta = "<a href='$link' class='button'>$cta_left_coll->label</a>";
+      }
+      elseif (!empty($doc->sm_cta_left_coll[0]) && $cta_left_coll = json_decode($doc->sm_cta_left_coll[0])) {
+        $link = $cta_left_coll->url;
+        $cta = "<a href='$link' class='button'>$cta_left_coll->label</a>";
+      }
+      else {
+        $cta = '';
+      }
+
+      $classes = [];
+      $categories = '';
+      if(!empty($doc->sm_event_webinar_category_name)) {
+        foreach ($doc->sm_event_webinar_category_name as $category) {
+          $categories .= t($category) . '<br/>';
+          $classes[] = drupal_html_class($category);
+        }
+      }
+
+      $data = [
+        'type' => $categories,
+        'title' => !empty($doc->tm_field_content_title[0]) ? $doc->tm_field_content_title[0] : '',
+        'cta' => $cta,
+      ];
+
+      $rows[] = ['data' => $data, 'class' => $classes];
+    }
+
+    $header = [
+      'type' => t('Webinar Type'),
+      'title' => t('Webinar Name'),
+      'cta' => t('Related Video')
+    ];
+
+    $form['table']['#markup'] = theme('table', ['header' => $header, 'rows' => $rows]);
+
+  }
+  else {
+    $form['table']['#markup'] = '<p>' . t('No Events Scheduled, check back soon.') . '</p>';
+  }
+
+  return $form;
+}
+
+function ig_commerce_events_webinars_common($query, $tab_name, &$form, $form_state) {
+  global $language;
+  
+  //facets & query
+  $query->addParam('facet', 'true');
+
+  $query->addParam('facet.field', 'sm_event_webinar_category_name');
+
+  $data = fluke_solr_query($query);
+
+  if (empty($data->response->docs)) {
+    return $data;
+  }
+  
+  if (!empty($language->fallback)) {
+    // Remove any duplicates
+    foreach ($data->response->docs as $key => $doc) {
+      $locales[$doc->ss_language][$doc->entity_id] = $key;
+    }
+    foreach ($locales[$language->fallback] as $nid => $key) {
+      if (!empty($locales[$language->language][$nid])) {
+        // Unset the duplicate
+        unset($data->response->docs[$key]);
+      }
+    }
+  }
+  
+  $facet_counts = $data->facet_counts->facet_fields->sm_event_webinar_category_name;
+
+  // Only present options that will produce results
+  $options = [];
+  if (empty($form_state['options'])) {
+    foreach ($facet_counts as $category => $count) {
+      if ($count > 0) {
+        $options[drupal_html_class($category)] = t($category);
+      }
+    }
+
+    asort($options);
+
+    $form_state['options'] = $options;
+  }
+  else {
+    $options = $form_state['options'];
+  }
+
+  $form['category_' . $tab_name] = [
+    '#type' => 'select',
+    '#options' => [0 => t('Filter by category')] + $options,
+    '#chosen' => FALSE, //@TODO: disabled mainly for debugging purposes
+  ];
+
+  $form['table'] = [
+    '#prefix' => '<div id="' . $tab_name . '-webinar-table-wrapper">',
+    '#suffix' => '</div>'
+  ];
+  
+  $form['#attributes']['class'][] = 'pane-igcommerce-event-webinars';
+
+  return $data;
+}
+
+/**
+ * Ajax callback for the webinar form
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ */
+function igcommerce_event_webinar_callback_live($form, $form_state) {
+  return $form['table'];
+}
+
+function igcommerce_event_webinar_callback_od($form, $form_state) {
+  return $form['table'];
+}
+
+/**
+ * Block function for title and description
+ *
+ *
+ */
+function igcommerce_event_title_description($term, $show_desription = FALSE) {
+  global $language;
+
+  $filters = array(
+    "label" => $term,
+    "ss_language" => $language->language,
+    "bundle" => "url_builder"
+  );
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, array('filters' => $filters));
+  $response = fluke_solr_query($filters);
+
+  if (empty($response->response->docs[0])) {
+    return;
+  }
+
+  $doc = $response->response->docs[0];
+
+  igcommerce_utility_head_elements($doc, TRUE);
+
+  if (!empty($doc->ss_url_builder_h1_title)) {
+    $title = $doc->ss_url_builder_h1_title;
+  } elseif (isset($doc->ss_url_builder_term_h1_title) && !empty($doc->ss_url_builder_term_h1_title)) {
+    $title = $doc->ss_url_builder_term_h1_title;
+  }
+  else {
+    $title = !empty($doc->sm_field_content_title[0]) ? $doc->sm_field_content_title[0] : '';
+  }
+  $description = !empty($doc->sm_description[0]) ? $doc->sm_description[0] : '';
+
+  $content = '<h1>' . $title . '</h1>';
+
+  if ($show_desription) {
+    $content .= $description;
+  }
+
+  return $content;
+}
+
+/*
+ * A callback function Event listing page
+ */
+function igcommerce_event_listing_page() {
+  $output = NULL;
+
+  module_load_include('inc', 'igcommerce_event', 'includes/igcommerce_event.event_list');
+  $output .= igcommerce_event_listing_page_details();
+
+  return $output;
+}
+
+/*
+ * Query builder for solr query.
+ */
+
+function igcommerce_event_solr_query($keyword, $parameter, $filter, $sort) {
+
+  // Use Apache Solr module features, without enable it.
+  module_load_include('inc', 'apachesolr', 'apachesolr.interface');
+  module_load_include('php', 'apachesolr', 'Drupal_Apache_Solr_Service');
+  module_load_include('module', 'apachesolr');
+
+  $solr = apachesolr_get_solr();
+  $query = apachesolr_drupal_query("custom", array('q' => $keyword), $sort);
+  $value = '';
+
+  //FL parametes to retun in the output
+  foreach ($parameter as $result) {
+    foreach ($result as $key => $value) {
+      $query->addParam($key, $value);
+    }
+  }
+
+  //sort condition.
+  if (isset($sort)) {
+    $query->addParam('sort', $sort);
+  }
+
+  // Filter Parameters.
+  foreach ($filter as $result) {
+    if (is_array($result)) {
+      foreach ($result as $key => $value) {
+        $query->addFilter($key, $value); // print($value);
+      }
+    }
+  }
+
+  $data = $query->search();
+
+  return $data;
+}
+
+/**
+ * Base query for events
+ *
+ * @param string $type : the sm_event_type_name to retrieve
+ * @param bool $date : whether to filter and sort by date
+ * @param bool $return_query
+ * @return mixed
+ */
+function igcommerce_event_by_type($type = '', $date = TRUE, $return_query = FALSE) {
+  $query = fluke_solr_get_connection();
+  global $language;
+  static $langcode;
+  
+  if (!$langcode) {
+    $langcode = $language->language;
+    
+    // No fallbacks per MIG-3906
+    /*
+    if ($type != 'Tradeshows') {
+      if ($fallback = fluke_solr_fallback_get_fallback_language($langcode, FALSE)) {
+        $langcode = '(' . $langcode . ' OR ' . $fallback . ')';
+        $language->fallback = $fallback;
+      }
+    }
+    */
+  }
+  
+  $options = [
+    'filters' => [
+      'bundle' => 'event',
+      'entity_type' => 'node',
+      'ss_language' => $langcode,
+      'bs_status' => TRUE,
+    ],
+    'rows' => 50
+  ];
+
+  if ($date) {
+    $datetime = apachesolr_date_iso(time());
+    //$options['filters']['dm_event_date'] = '[NOW TO *]'; //MIG4439 Removed this filter - it was dropping events from TOC based on start date
+    $options['sort'] = 'ds_event_date asc';
+  }
+  
+  if ($type == 'On-demand webinars') {
+    $options['sort'] = 'ss_field_content_title_sort asc';
+  }
+
+  if (!empty($type)) {
+    $options['filters']['ss_event_type_name'] = '"' . $type . '"';
+  }
+
+  fluke_solr_add_filters($query, $options);
+
+  if ($return_query) {
+    return $query;
+  }
+  else {
+    $data = fluke_solr_query($query);
+    return $data;
+  }
+}
+
+/*
+ * hook_form_alter(). To hide feature field of event.
+ */
+function igcommerce_event_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'event_node_form') {
+    // Hide feature field.
+    $form['field_event_feature']['#access'] = 0;
+    // Disable the currency indicator.
+    $form['field_event_currency_indicator']['#disabled'] = TRUE;
+  }
+}
+
+/*
+ * hook_facet_items_alter(). For adding facet count if link active.
+ */
+function igcommerce_event_facet_items_alter(&$build, &$settings) {
+  if ($settings->facet == "im_field_event_application" ||
+    $settings->facet == "im_field_event_industry" ||
+    $settings->facet == "im_field_event_product_category" ||
+    $settings->facet == "im_field_events_type" ||
+    $settings->facet == "im_field_term_year" ||
+    $settings->facet == "im_field_product_category" ||
+    $settings->facet == "im_field_country_term"
+  ) {
+
+    foreach ($build as $key => $item) {
+      // Setting count if link is active.
+      if (!empty($item['#item_children'])) {
+        foreach ($item['#item_children'] as $tax_key => $tax_val) {
+          if (!empty($tax_val['#active'])) {
+            $build[$key]['#item_children'][$tax_key]["#markup"] = $build[$key]['#item_children'][$tax_key]["#markup"] . " (" . $build[$key]['#item_children'][$tax_key]["#count"] . ")";
+          }
+        }
+
+        //
+        if (!empty($item['#active'])) {
+          $build[$key]["#markup"] = $item["#markup"] . " (" . $item["#count"] . ")";
+        }
+      }
+      elseif (!empty($item['#active'])) {
+        $build[$key]["#markup"] = $item["#markup"] . " (" . $item["#count"] . ")";
+      }
+    }
+  }
+}
+
+function igcommerce_event_tradeshow_body() {
+  
+  global $language;
+  $lang = $language->language;
+
+  // China gets their tab order switched.
+  if ($lang == 'cn') {
+    $tabs = [
+      [
+        'title' => t('Tradeshows'),
+        'contents' => drupal_get_form('igcommerce_event_tradeshow_tab'),
+      ],
+      [
+        'title' => t('Hands on workshops'),
+        'contents' => drupal_get_form('igcommerce_event_workshop_tab'),
+      ]
+    ];
+  } else {
+    $tabs = [
+      [
+        'title' => t('Hands on workshops'),
+        'contents' => drupal_get_form('igcommerce_event_workshop_tab'),
+      ],
+      [
+        'title' => t('Tradeshows'),
+        'contents' => drupal_get_form('igcommerce_event_tradeshow_tab'),
+      ],
+    ];
+  }
+  
+  drupal_add_js(drupal_get_path('module', 'igcommerce_event') . '/js/moment-with-locales.min.js');
+  drupal_add_js(drupal_get_path('module', 'igcommerce_event') . '/js/moment-timezone-with-data.min.js');
+  drupal_add_js(drupal_get_path('module', 'igcommerce_event') . '/js/ig_commerce_event.js');
+  
+
+  $qt = quicktabs_build_quicktabs('ts_and_seminars', ['style' => 'no-style'], $tabs);
+  igcommerce_utility_fix_qt_links($qt);
+  return $qt;
+}
+
+function igcommerce_event_workshop_tab($form, &$form_state) {
+
+  $od_query = igcommerce_event_by_type('Seminar/Workshop', FALSE, TRUE);
+  
+  ig_commerce_events_webinars_common($od_query, 'ws', $form, $form_state);
+  
+  $content = '';
+
+  $data = igcommerce_event_by_type('Seminar/Workshop');
+
+  $docs = $data->response->docs;
+  if (count($docs)) {
+    $rows = [];
+
+    foreach ($docs as $doc) {
+      //Set variables to compare current date to expiration date found in tm_event_date_end
+      $current_date = apachesolr_date_iso(time());
+      $current_end =  $end_date = !empty($doc->tm_event_date_end[0]) ? $doc->tm_event_date_end[0] : '';
+      $current_end = date(DATE_ISO8601, strtotime($current_end));
+
+      //If the current date is past what is found in our expiration date, do not show the event
+      if ($current_end > $current_date) { 
+
+
+      $venue_text = !empty($doc->tm_event_venue[0]) ? $doc->tm_event_venue[0] . "<br/>" : ''; //Venue text to be used with Seminar tab location
+      $location_text = !empty($doc->tm_event_location[0]) ? $doc->tm_event_location[0] : ''; // Location will sit under venue, if venue exists
+      $workshop_name =!empty($doc->tm_article_display_title[0]) ? $doc->tm_article_display_title[0] : ''; // Workshop display title
+      $workshop_category = !empty($doc->sm_event_webinar_category_name[0]) ? $doc->sm_event_webinar_category_name[0] : ''; // Workshop event type
+      $sponsor_text = !empty($doc->tm_event_sponsor[0]) ? "<br/>". t('Sponsor') . ": " . $doc->tm_event_sponsor[0] : ''; // Sponsor - will not show if empty
+      $workshop_name_and_cat = $workshop_name . "<br/>" .$workshop_category; // Default workshop name is "Display title | Category". 
+
+      //If Display title and category are the same, only display the category.
+      if (strtolower($doc->tm_article_display_title[0]) == strtolower($doc->sm_event_webinar_category_name[0])){ 
+         $workshop_name_and_cat = $workshop_category;
+      }
+
+      $row['Location'] = $venue_text . $location_text; //Location is now Venue + Address
+      
+      // This is the old way of showing the date, but keep in as backup
+      $date = !empty($doc->tm_event_date[0]) ? $doc->tm_event_date[0] : '';
+      if (!empty($date)) {
+        $date = new DateObject($date);
+
+        $date = date_format_date($date, 'long');
+        
+        if (!empty($doc->tm_event_date_end[0])) {
+          $end = new DateObject($doc->tm_event_date_end[0]);
+          $end = date_format_date($end, 'long');
+          $date .= ' - ' . $end;
+        }
+      }
+
+      // This is the new way to show the date...it's a textfield value so that each region can freely choose the format
+      if (!empty($doc->ts_event_date_display)) {
+        $date = $doc->ts_event_date_display;
+      }
+      $row['Date'] = $date;
+      $row['Workshop Type'] = $workshop_name_and_cat . $sponsor_text;
+      $row['Cost'] = !empty($doc->tm_pricing_information[0]) ? $doc->tm_pricing_information[0] : '';
+      $row['Register'] = igcommerce_event_cta($doc);
+
+      $classes = array();
+      if(!empty($doc->sm_event_webinar_category_name)) {
+        foreach ($doc->sm_event_webinar_category_name as $category) {
+          $classes[] = drupal_html_class($category);
+        }
+      }
+      
+      $rows[] = array('data' => $row, 'class' => $classes);
+    }
+    }
+    // End Expiration filter
+    $header = [
+      t('Location'),
+      t('Date'),
+      t('Workshop name and category'),
+      t('Cost'),
+      t('Register'),
+    ];
+
+    $content .= theme('table', ['header' => $header, 'rows' => $rows]);
+  }
+  else {
+    // no results behavior
+    $content .= '<p>' . t('No Events Scheduled, check back soon.') . '</p>';
+  }
+
+  $form['results']['#markup'] = $content;
+  
+  return $form;
+}
+
+function igcommerce_event_cta($doc) {
+  $return = '';
+
+  if (!empty($doc->tm_contact_email[0])) {
+    $contact_name = $doc->tm_contact_email[0];
+    if (!empty($doc->tm_event_email[0])  && valid_email_address($doc->tm_event_email[0])) {
+      $email = $doc->tm_event_email[0];
+      $contact_name = "<a href='mailto:$email' class='mailto-workshop event-register'>" . t($contact_name) . "</a>";
+    }
+    
+    $return .= '<p class="register-info">' . $contact_name . '</p>';
+  }
+  if (!empty($doc->tm_contact_phone_number[0])) {
+    $return .= "<p class='register-info'>{$doc->tm_contact_phone_number[0]}</p>";
+  }
+
+  if (!empty($doc->sm_cta_left_coll[0])) {
+    $cta = json_decode($doc->sm_cta_left_coll[0]);
+    if (!empty($cta->label) && !empty($cta->url)) {
+      $return .= "<div>";
+      $label = t($cta->label);
+      $url = $cta->url;
+      $return .= "<a href='$url' class='btn btn-blue event-cta button event-register'>$label</a></div>";
+    }
+  }
+
+  return $return;
+}
+
+function igcommerce_event_tradeshow_tab($form, &$form_state) {
+  $od_query = igcommerce_event_by_type('Tradeshows', FALSE, TRUE);
+  
+  $form = array();
+  
+  ig_commerce_events_webinars_common($od_query, 'ts', $form, $form_state);
+  
+  $content = '';
+
+  $data = igcommerce_event_by_type('Tradeshows');
+
+  $docs = $data->response->docs;
+  if (count($docs)) {
+    $rows = [];
+
+    foreach ($docs as $doc) {
+      //Set variables to compare current date to expiration date found in tm_event_date_end
+      $current_date = apachesolr_date_iso(time());
+      $current_end =  $end_date = !empty($doc->tm_event_date_end[0]) ? $doc->tm_event_date_end[0] : '';
+      $current_end = date(DATE_ISO8601, strtotime($current_end));
+      //If the current date is past what is found in our expiration date, do not show the event
+      if ($current_end > $current_date) { 
+      $date = !empty($doc->tm_event_date[0]) ? $doc->tm_event_date[0] : '';
+
+      // This is the old way of showing the date...keep in as backup
+      if (!empty($date)) {
+
+        $date = new DateObject($date);
+
+        $date = date_format_date($date, 'long');
+        
+        if (!empty($doc->tm_event_date_end[0])) {
+          $end = new DateObject($doc->tm_event_date_end[0]);
+          $end = date_format_date($end, 'long');
+          $date .= ' - ' . $end;
+        }
+      }
+      
+      // This is the new way to show the date...it's a textfield value so that each region can freely choose the format
+      if (!empty($doc->ts_event_date_display)) {
+        $date = $doc->ts_event_date_display;
+      }
+
+      $row['Date'] = $date;
+      
+      $title = !empty($doc->tm_event_website_title[0]) ? $doc->tm_event_website_title[0] : '';
+      
+      if ($url = !empty($doc->tm_event_website_url[0]) ? $doc->tm_event_website_url[0] : FALSE) {
+        $link = l($title, $url, array('attributes' => array('class' => array())));
+      } else {
+        $link = $title;
+      }
+
+      $row['Tradeshow'] = $link;
+      $row['Venue'] = !empty($doc->tm_event_venue[0]) ? $doc->tm_event_venue[0] : '';
+      $row['Location'] = !empty($doc->tm_event_location[0]) ? $doc->tm_event_location[0] : '';
+      //$row['Industry'] = !empty($doc->sm_industry_name[0]) ? $doc->sm_industry_name[0] : '';;
+
+      $classes = array();
+      if(!empty($doc->sm_event_webinar_category_name)) {
+        foreach ($doc->sm_event_webinar_category_name as $category) {
+          $classes[] = drupal_html_class($category);
+        }
+      }
+      $rows[] = ['data' => $row, 'class' => $classes];
+    }
+    }
+    // End Expiration filter
+    $header = [
+      t('Date'),
+      t('Tradeshow'),
+      t('Venue'),
+      t('Location'),
+      //t('Industry'),
+    ];
+
+    $content .= theme('table', ['header' => $header, 'rows' => $rows]);
+  }
+  else {
+    // no results behavior
+    $content .= '<p>' . t('No Events Scheduled, check back soon.') . '</p>';
+  }
+
+  $form['results']['#markup'] = $content;
+
+  return $form;
+}

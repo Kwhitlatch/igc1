@@ -1,0 +1,6 @@
+// Top pick accessories section. Most of the flexslider styling lives in
+// _fluke-product-display-slideshow.scss
+#fluke-product-display-top-pick-slider {
+  // without this, the slider arrows will float up to the product slideshow.
+  position: relative;
+}

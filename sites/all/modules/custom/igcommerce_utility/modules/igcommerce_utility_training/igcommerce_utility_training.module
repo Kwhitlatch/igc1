@@ -1,0 +1,1346 @@
+<?php
+
+/**
+ * @file
+ *
+ * This module deals with creating facets for fetching industry and applications facets from ECM to display into
+ * Training pages.
+ */
+
+/**
+ * Implements hook__facetapi_facet_info
+ */
+function igcommerce_utility_training_facetapi_facet_info(array $searcher_info) {
+  $facets = array();
+  // Facets are usually associated with the type of content stored in the index.
+  if (isset($searcher_info['types']['node'])) {
+    //created custom facet : Application Taxonomy term from ECM
+    $facets['im_field_application_ecm'] = array(
+    'name' => 'im_field_application_ecm',
+    'label' => t('Applications (ECM)'),
+    'description' => t('Getting Application terms from ECM.'),
+    'field' => 'im_field_application',
+    'query types' => array('term'),
+    'dependency plugins' => array('role'),
+    'default widget' => 'links',
+    'allowed operators' => array(FACETAPI_OPERATOR_AND => TRUE, FACETAPI_OPERATOR_OR => TRUE),
+    'facet missing allowed' => FALSE,
+    'facet mincount allowed' => TRUE,
+    'map callback' => 'igcommerce_utility_training_map_im_field_application_ecm',
+    'max callback' => FALSE,
+    'default sorts' => array(
+      array('active', SORT_DESC),
+      array('count', SORT_DESC),
+      array('display', SORT_ASC),
+      ),
+    );
+
+    //created custom facet : Industry Taxonomy term from ECM
+    $facets['im_field_industry_ecm'] = array(
+    'name' => 'im_field_industry_ecm',
+    'label' => t('Industry (ECM)'),
+    'description' => t('Getting Industry terms from ECM.'),
+    'field' => 'im_field_industry',
+    'query types' => array('term'),
+    'dependency plugins' => array('role'),
+    'default widget' => 'links',
+    'allowed operators' => array(FACETAPI_OPERATOR_AND => TRUE, FACETAPI_OPERATOR_OR => TRUE),
+    'facet missing allowed' => FALSE,
+    'facet mincount allowed' => TRUE,
+    'map callback' => 'igcommerce_utility_training_map_im_field_industry_ecm',
+    'max callback' => FALSE,
+    'default sorts' => array(
+      array('active', SORT_DESC),
+      array('count', SORT_DESC),
+      array('display', SORT_ASC),
+      ),
+    );
+
+    //created custom facet : Industry Taxonomy term from ECM
+    $facets['im_field_asset_category_dam'] = array(
+    'name' => 'im_field_asset_category_dam',
+    'label' => t('Asset Category (DAM)'),
+    'description' => t('Getting Asset categories from DAM.'),
+    'field' => 'im_field_asset_category',
+    'query types' => array('term'),
+    'dependency plugins' => array('role'),
+    'default widget' => 'links',
+    'allowed operators' => array(FACETAPI_OPERATOR_AND => TRUE, FACETAPI_OPERATOR_OR => TRUE),
+    'facet missing allowed' => FALSE,
+    'facet mincount allowed' => TRUE,
+    'map callback' => 'igcommerce_utility_training_map_im_field_asset_category_dam',
+    'max callback' => FALSE,
+    'default sorts' => array(
+      array('active', SORT_DESC),
+      array('count', SORT_DESC),
+      array('display', SORT_ASC),
+      ),
+    );
+  }
+  return $facets;
+}
+
+function igcommerce_utility_training_map_im_field_application_ecm(array $values) {
+  $mapping = _get_mapping_for_fields($values, 'application', FALSE);
+  return $mapping;
+}
+
+function igcommerce_utility_training_map_im_field_industry_ecm(array $values) {
+  $mapping = _get_mapping_for_fields($values, 'industry', FALSE);
+  return $mapping;
+}
+
+function igcommerce_utility_training_map_im_field_asset_category_dam(array $values) {
+  $mapping = _get_mapping_for_fields($values, 'asset_category', TRUE);
+  return $mapping;
+}
+
+/**
+ * Helper function for getting mapping labels for asset categories from DAM
+ *
+ * @param  Integer $values Node ids after filter.
+ * @param  String $field_name Field name to fetch.
+ * @param  Boolean $dam_ready Flag if we want locale from DAM only.
+ *
+ * @return array The mapping for fields.
+ */
+function _get_mapping_for_fields($values, $field_name, $dam_ready) {
+  global $language;
+  $keyword =  NUll;
+  $parameter = array();
+  $filter = array();
+  $map = array();
+
+  $lang = $language->language;
+  $all_languages = array();
+  $all_lang_result = array();
+
+  // If we are getting data from DAM fiels then we need to break locales because
+  // in DAM we dont have en-us, we have EN and DE kind of locales.
+  if ($dam_ready) {
+    $language_to_get = explode('-', $lang);
+    $all_languages = array_unique($language_to_get);
+    $all_languages[] = 'en';
+    $lang_filter = implode(' OR ', $all_languages);
+  }
+  else { // If its a NON DAM part like ECM we need to consider requested locale as well as en-us locale
+         // for fallback when we dont have other localefilter labels.
+    $all_languages[] = $lang;
+    $all_languages[] = 'en-us';
+    $lang_filter = implode(' OR ', $all_languages);
+  }
+
+  // Collecting entity IDS to get LABEL from SOLR for those categories.
+  $application_eid = '';
+  foreach ($values as $val) {
+    if (empty($application_eid)) {
+      $application_eid .= '(' . $val;
+    }
+    else {
+      $application_eid .= ' OR ' . $val;
+    }
+  }
+  $application_eid .= ')';
+
+  $keyword = "bundle:" . $field_name;
+  $parameter[]['fl'] = 'ss_field_content_title';
+  $parameter[]['fl'] = 'label';
+  $parameter[]['fl'] = 'entity_id';
+  $parameter[]['fl'] = 'ss_language';
+  $parameter[]['rows'] = 200;
+  $filter[]['entity_id'] = $application_eid;
+  $parameter[]['fq'] = 'ss_language:(' . $lang_filter . ')';
+
+  $data = igcommerce_utility_articles_solr_toc_sol_query($keyword, $parameter, $filter);
+
+  if (!empty($data->response->docs[0])) {
+    foreach ($data->response->docs as $key => $value) {
+      $all_lang_result[$value->entity_id][$value->ss_language] = $value;
+    }
+  }
+
+  if (!empty($all_lang_result) && isset($all_lang_result)) {
+    foreach ($all_lang_result as $entity_id => $result_data) {
+      // If filter label is DAM term then we will assume locale in different format.
+      if ($dam_ready) {
+        // If we have requested language content then take the requested language data.
+        // For example if we have current page in de-de so we are requesting de translated
+        // filter labels but it we dont have translations for de then we will directly assume
+        // to take english labels.
+        if ( isset($result_data[$language_to_get[0]]) ) {
+          if (isset($result_data[$language_to_get[0]]->ss_field_content_title) && !empty($result_data[$language_to_get[0]]->ss_field_content_title)) {
+            $map[$result_data[$language_to_get[0]]->entity_id] = $result_data[$language_to_get[0]]->ss_field_content_title;
+          }
+          else {
+            $map[$result_data[$language_to_get[0]]->entity_id] = $result_data[$language_to_get[0]]->label;
+          }
+        }
+        else { // Oherwise take default english label and content.
+          if (isset($result_data['en']->ss_field_content_title) && !empty($result_data['en']->ss_field_content_title)) {
+            $map[$result_data['en']->entity_id] = $result_data['en']->ss_field_content_title;
+          }
+          else {
+            $map[$result_data['en']->entity_id] = $result_data['en']->label;
+          }
+        }
+      }
+      else {
+        // If we have content from ECM then we have en-us kind of locale, then we take the current locale and if not
+        // then we will assume english version.
+        if ( isset($result_data[$lang]) ) {
+          if (isset($result_data[$lang]->ss_field_content_title) && !empty($result_data[$lang]->ss_field_content_title)) {
+            $map[$result_data[$lang]->entity_id] = $result_data[$lang]->ss_field_content_title;
+          }
+          else {
+            $map[$result_data[$lang]->entity_id] = $result_data[$lang]->label;
+          }
+        }
+        else { // Oherwise take default english label and content.
+          if (isset($result_data['en-us']->ss_field_content_title) && !empty($result_data['en-us']->ss_field_content_title)) {
+            $map[$result_data['en-us']->entity_id] = $result_data['en-us']->ss_field_content_title;
+          }
+          else {
+            $map[$result_data['en-us']->entity_id] = $result_data['en-us']->label;
+          }
+        }
+      }
+    }
+  }
+  return $map;
+}
+
+
+/**
+ * Implements hook_facet_items_alter.
+ *
+ * Configure what facets we need to displayed in filters, these settings are configurable at
+ * "admin/settings/igcommerce".
+ *
+ */
+function igcommerce_utility_training_facet_items_alter(&$build, &$settings) {
+  if ($settings->facet == "im_field_asset_category_dam") {
+    $asset_tids = array();
+    $selected_asset_categories = variable_get('asset_categories_items');
+
+    // Take from config what asset categories to display in FACETS.
+    foreach ($selected_asset_categories as $keys =>  $val) {
+      if ($val == 0) {
+        $asset_tids[$keys] = $keys;
+      }
+    }
+    foreach ($asset_tids as $tid) {
+      unset($build[$tid]);
+    }
+
+    // Retaining counts even after clicking the number of items in brackets.
+    foreach ($build as $k => $v) {
+      if ($build[$k]['#active']) {
+        $build[$k]['#markup'] = str_replace('_', ' ', ucfirst($build[$k]['#markup'])) . ' (' . $build[$k]['#count'] . ')';
+      }
+      else {
+        $build[$k]['#markup'] = str_replace('_', ' ', ucfirst($build[$k]['#markup']));
+      }
+    }
+  }
+
+  if ($settings->facet == "im_field_application_ecm" OR $settings->facet == "im_field_industry_ecm") {
+    // Retaining counts even after clicking the number of items in brackets.
+    foreach ($build as $k => $v) {
+      if ($build[$k]['#active']) {
+        $build[$k]['#markup'] = str_replace('_', ' ', ucfirst($build[$k]['#markup'])) . ' (' . $build[$k]['#count'] . ')';
+      }
+      else {
+        $build[$k]['#markup'] = str_replace('_', ' ', ucfirst($build[$k]['#markup']));
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_render.
+ *
+ * This function handles the output alteration for training/training-library Pages.
+ * Modifies the Date format as well as listing.
+ */
+function igcommerce_utility_training_views_pre_render(&$view) {
+  // Only applies for training library page and view.
+  if ($view->name == 'search_list_solr' && $view->current_display == 'training_library') {
+    global $language , $base_url ;
+    global $base_root;
+    $current_url = $base_root . request_uri();
+    $url_curr = explode('&', $current_url);
+    $path = current_path();
+
+    // Only process when we have some result from views.
+    if (count($view->result) > 0) {
+      $asset_path = '#';
+      $menu_term_data = igcommerce_utility_support_get_term();
+      $menu_term = $menu_term_data->field_content_title[$language->language][0]['value'];
+
+      foreach ($view->result as $key => $data) {
+        $asset_category = "";
+        $item_type = "";
+        $category_mapping = array();
+        // First character capital for dsiplaying in category in listing.
+        $item_type = l(ucfirst($view->result[$key]->bundle), $path);
+
+        // Check if we have asset category for making comma separated categories with linking to filter.
+        // This only applies for items like VIDEO, MANUAL, DOCUMENT but article dont have Asset Category.
+        if (isset($view->result[$key]->sm_vid_Asset_Category) && !empty($view->result[$key]->sm_vid_Asset_Category)) {
+          foreach ($view->result[$key]->sm_vid_Asset_Category as $k => $v) {
+            // Prepare filter link for facet.
+            $category_mapping[$view->result[$key]->im_field_asset_category[$k]] = l($v, $url_curr[0] . '&f[0]=im_field_asset_category:' . $view->result[$key]->im_field_asset_category[$k]);
+          }
+          // Prepare comma separated categories with filter link.
+          $asset_category = implode(', ', $category_mapping);
+          $view->result[$key]->im_field_application[0] = date('m-d-Y', strtotime($view->result[$key]->ds_created)) . " | " . $item_type . " | " . $asset_category;
+        }
+        else{
+          $app_mapping = array();
+          if ( isset($view->result[$key]->im_field_application) && !empty($view->result[$key]->im_field_application) ) {
+            foreach($view->result[$key]->im_field_application as $key_app => $values) {
+              $app_mapping[$values] = $view->result[$key]->sm_vid_Application[$key_app];
+            }
+            $app_category = array();
+            foreach($app_mapping as $map_key => $map_values) {
+              $app_category[$map_key] = l($map_values, $url_curr[0] . '&f[0]=im_field_application:' . $map_key);
+            }
+            $app_category = implode(', ', $app_category);
+            if (!empty($app_category)) {
+              $view->result[$key]->im_field_application[0] = date('m-d-Y', strtotime($view->result[$key]->ds_created)) . " | " . ucfirst($view->result[$key]->bundle) . " | " . $app_category;
+            }
+            else {
+              $view->result[$key]->im_field_application[0] = date('m-d-Y', strtotime($view->result[$key]->ds_created)) . " | " . ucfirst($view->result[$key]->bundle);
+            }
+          }
+        }
+
+        // Handle various kind of output for different types of content types.
+        switch ($view->result[$key]->bundle) {
+          // If we have article then asset URL should have ALIAS URL also take short summary.
+          case 'article':
+            $asset_path = '#';
+            $description = "";
+
+            if (isset($view->result[$key]->path_alias) && !empty($view->result[$key]->path_alias)) {
+              $asset_path = $base_url . "/" . $view->result[$key]->ss_language . "/" . $view->result[$key]->path_alias;
+            }
+
+            if (isset($view->result[$key]->ss_article_short_summary) && !empty($view->result[$key]->ss_article_short_summary)) {
+              $description = $view->result[$key]->ss_article_short_summary;
+            }
+          break;
+
+          // For manuals take asset categories tha too comma separated and manual file path.
+          case 'manual':
+            $asset_path = '#';
+            $description = "";
+
+            $all_manuals = igcommerce_utility_products_manuals_data($data->entity_id);
+            if (!empty($all_manuals['manual_data'])) {
+              $manuals_data = $all_manuals['manual_data'];
+              if (isset($manuals_data->manual_file) && !empty($manuals_data->manual_file)) {
+                $asset_path = $manuals_data->manual_file;
+              }
+            }
+            if (isset($view->result[$key]->tm_field_description) && !empty($view->result[$key]->tm_field_description)) {
+              $description = $view->result[$key]->tm_field_description;
+            }
+          break;
+
+          case 'document':
+            $asset_path = '#';
+            $description = "";
+
+            if (isset($view->result[$key]->ss_field_content_url) && !empty($view->result[$key]->ss_field_content_url)) {
+              $asset_path = $view->result[$key]->ss_field_content_url;
+            }
+
+            if (isset($view->result[$key]->ts_description) && !empty($view->result[$key]->ts_description)) {
+              $description = $view->result[$key]->ts_description;
+            }
+          break;
+
+          case 'video':
+            $asset_path = '#';
+            $description = "";
+
+            if (isset($view->result[$key]->ss_field_content_url) && !empty($view->result[$key]->ss_field_content_url)) {
+              $asset_path = $view->result[$key]->ss_field_content_url;
+            }
+
+            if (isset($view->result[$key]->ts_description) && !empty($view->result[$key]->ts_description)) {
+              $description = $view->result[$key]->ts_description;
+            }
+          break;
+        }
+        $view->result[$key]->tm_field_description = $description;
+        // Modifying output for displaying DATE | Categories
+        $view->result[$key]->tm_field_content_title[0] = l($view->result[$key]->tm_field_content_title[0], $asset_path);
+      }
+    }
+  }
+}
+
+/**
+ * Return a list of available training library filters
+ * @param array $filters_selected
+ */
+function igcommerce_utility_training_get_filter_options($terms_available = array(), $lang = 'en-us') {
+  // Categories product_category
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('product_category', $lang, 'dam');
+  $products = array();
+  
+  foreach ($terms as $term) {
+    $products[$term->entity_id] = $term->tm_field_display_title[0];    
+  }
+
+  asort($products);
+  
+  $options['product_category'] = $products;
+  
+  // Job Type
+  $options['job_type'] = array();
+  
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('job_type', $lang, 'dam');
+  foreach ($terms as $term) {
+    $options['job_type'][$term->entity_id] = $term->tm_field_display_title[0];
+  }  
+  
+  asort($options['job_type']);
+  
+  // Applications
+  $options['applications_for_training'] = array();
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('applications_for_training', $lang, 'dam');
+  foreach ($terms as $term) {
+    $options['applications_for_training'][$term->entity_id] = $term->tm_field_display_title[0];
+  }  
+  asort($options['applications_for_training']);
+  
+  // Industries
+  $options['industries_for_training'] = array();
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('industries_for_training', $lang, 'dam');
+  foreach ($terms as $term) {
+    $options['industries_for_training'][$term->entity_id] = $term->tm_field_display_title[0];
+  }
+   
+  asort($options['industries_for_training']);
+  
+  // Measurements
+  $options['measurements_for_training'] = array();
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('measurements_for_training', $lang, 'dam');
+  foreach ($terms as $term) {
+    $options['measurements_for_training'][$term->entity_id] = $term->tm_field_display_title[0];    
+  }  
+  asort($options['measurements_for_training']);
+  
+  // Pain Points
+  $options['pain_points_for_training'] = array();
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('pain_points_for_training', $lang, 'dam');
+  foreach ($terms as $term) {
+    $options['pain_points_for_training'][$term->entity_id] = $term->tm_field_display_title[0];
+  }  
+  asort($options['pain_points_for_training']);
+  
+  // Solutions
+  $options['solutions_for_training'] = array();
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('solutions_for_training', $lang, 'dam');
+  foreach ($terms as $term) {
+    $options['solutions_for_training'][$term->entity_id] = $term->tm_field_display_title[0];
+  }
+  asort($options['solutions_for_training']);
+  
+  // Loop through all options and remove any references to 'Fluke Industrial Group'  
+  foreach ($options as $parent => $children) {
+    foreach ($children as $key => $value) {
+      if ($value == 'Fluke Industrial Group' || !$value) {
+        unset($options[$parent][$key]);
+      }
+    }
+  }
+  
+  return $options;
+}
+
+/**
+ * Submit callback to remove all filters on training library form
+ */
+function igcommerce_utility_training_form_filters_remove_filters(&$form, &$form_state) {
+  // A little redundant, but just in case
+  $form_state['rebuild'] = FALSE;
+}
+
+/**
+ * Training Library filter form
+ */
+function igcommerce_utility_training_form_filters($form, &$form_state) {
+  global $language;
+  global $training_library_keyword;
+  global $search_result_count;
+  
+  $form = array();
+  
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility_training') . '/js/form.js');
+  drupal_add_css(drupal_get_path('module', 'igcommerce_utility_training') . '/css/form.css');
+  drupal_add_library('system', 'ui.accordion');
+  
+  // Store in global static state so it can be used elsewhere
+  $filters_selected = &drupal_static("igc_training_library_terms", array());
+  
+  if (!empty($form_state['filters'])) {
+    $filters_selected = $form_state['filters'];    
+  } 
+  
+  if (!empty($form_state['values']['keyword'])) {
+    $training_library_keyword = $form_state['values']['keyword'];
+  }
+  
+  // Load search results and global variables
+  global $reset_training_library_cache;
+  if (isset($form_state['filters'])) {
+    // Prevent duplicate counting and returning cached results
+    $reset_training_library_cache = TRUE;
+    $search_result_count = array();
+  }
+  igcommerce_utility_training_block_content();
+  $terms_available = array();
+  foreach ($search_result_count as $tid => $count) {
+    $terms_available[$tid] = $tid;
+  }
+  
+  // Load all options
+  $options = igcommerce_utility_training_get_filter_options(array(), $language->language);
+  foreach ($options as $type => $os) {
+    foreach ($os as $tid => $o) {
+      if (!empty($search_result_count[$tid])) {
+        $options[$type][$tid] .= ' (' . $search_result_count[$tid] . ')';
+      } else {
+        unset($options[$type][$tid]);
+      }
+    }
+    
+    if (empty($options[$type])) {
+      unset($options[$type]);
+    }
+  }
+    
+  if (!empty($options)) {
+    // Add header
+    $form['header'] = array(
+      '#prefix' => '<h3>' . t('Filter by type'),
+      '#suffix' => '</h3>',
+    );
+    
+    // Remove filters
+    if (!empty($filters_selected) || !empty($training_library_keyword)) {
+      $form['remove_filters'] = array(
+        '#prefix' => '<div class="remove-filter-container">',
+        '#type' => 'submit',
+        '#value' => t('Remove Filters'),
+        '#submit' => array('igcommerce_utility_training_form_filters_remove_filters'),  
+        '#suffix' => '</div>',
+        '#weight' => -100,
+      );
+    }
+    
+    foreach ($options as $key => $o) {
+      $active = array_intersect($filters_selected, array_flip($o));
+      $form[$key] = array(
+          '#type' => 'checkboxes',
+          '#options' => $o,
+          '#data_state' => !empty($active) ? 'active' : 'inactive',
+          '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+          '#toggle_state' => !empty($active) ? 'expanded' : '',
+          '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+
+    /*
+    if (!empty($options['product_category'])) {
+      $active = array_intersect($filters_selected, array_flip($options['product_category']));
+      $form['product_category'] = array(
+          '#type' => 'checkboxes',
+          //'#title' => t('Applications'),
+          '#options' => $options['product_category'],
+          '#data_state' => !empty($active) ? 'active' : 'inactive',
+          '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+          '#toggle_state' => !empty($active) ? 'expanded' : '',
+          '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+  
+    if (!empty($options['job_type'])) {  
+      $active = array_intersect($filters_selected, array_flip($options['job_type']));
+      $form['job_type'] = array(
+          '#type' => 'checkboxes',
+          //'#title' => t('Applications'),
+          '#options' => $options['job_type'],
+          '#data_state' => !empty($active) ? 'active' : 'inactive',
+          '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+          '#toggle_state' => !empty($active) ? 'expanded' : '',
+          '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+  
+    if (!empty($options['applications_for_training'])) {  
+      $active = array_intersect($filters_selected, array_flip($options['applications_for_training']));  
+      $form['applications_for_training'] = array(
+        '#type' => 'checkboxes',
+        //'#title' => t('Applications'),
+        '#options' => $options['applications_for_training'],  
+        '#data_state' => !empty($active) ? 'active' : 'inactive',
+        '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+        '#toggle_state' => !empty($active) ? 'expanded' : '',
+        '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+      
+    if (!empty($options['industries_for_training'])) {  
+      $active = array_intersect($filters_selected, array_flip($options['industries_for_training']));
+      $form['industries_for_training'] = array(
+        '#type' => 'checkboxes',
+        //'#title' => t('Industries'),
+        '#options' => $options['industries_for_training'],  
+        '#data_state' => !empty($active) ? 'active' : 'inactive',
+        '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+        '#toggle_state' => !empty($active) ? 'expanded' : '',
+        '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+  
+    if (!empty($options['measurements_for_training'])) {  
+      $active = array_intersect($filters_selected, array_flip($options['measurements_for_training']));
+      $form['measurements_for_training'] = array(
+        '#type' => 'checkboxes',
+        //'#title' => t('Measurements'),
+        '#options' => $options['measurements_for_training'],
+        '#data_state' => !empty($active) ? 'active' : 'inactive',
+        '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+        '#toggle_state' => !empty($active) ? 'expanded' : '',
+        '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+  
+    if (!empty($options['pain_points_for_training'])) {  
+      $active = array_intersect($filters_selected, array_flip($options['pain_points_for_training']));
+      $form['pain_points_for_training'] = array(
+        '#type' => 'checkboxes',
+        //'#title' => t('Pain Points'),
+        '#options' => $options['pain_points_for_training'],
+        '#data_state' => !empty($active) ? 'active' : 'inactive',
+        '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+        '#toggle_state' => !empty($active) ? 'expanded' : '',
+        '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+  
+    if (!empty($options['solutions_for_training'])) {  
+      $active = array_intersect($filters_selected, array_flip($options['solutions_for_training']));
+      $form['solutions_for_training'] = array(
+        '#type' => 'checkboxes',
+        //'#title' => t('Solutions'),
+        '#options' => $options['solutions_for_training'],
+        '#data_state' => !empty($active) ? 'active' : 'inactive',
+        '#wrapper_state' => !empty($active) ? 'expanded-wrapper' : '',
+        '#toggle_state' => !empty($active) ? 'expanded' : '',
+        '#menuitem_state' => !empty($active) ? 'display: block;' : 'display: none;',
+      );
+    }
+    */
+  }
+      
+  // Keyword *hidden*
+  $form['keyword'] = array(
+    '#type' => 'hidden',  
+  );
+  
+  // Submit *hidden*
+  $form['filter'] = array(
+    '#type' => 'submit',
+    '#value' => t('Filter'),  
+    '#attributes' => array('style' => 'display:none;'),
+  );
+  
+  return $form;
+}
+
+function igcommerce_utility_training_form_filters_submit(&$form, &$form_state) {
+  global $training_library_keyword;
+  
+  $values = $form_state['values'];
+  $filters = array();
+
+  // If there's a keyword, then add to global variable
+  if (!empty($values['keyword'])) {
+    $form_state['values']['keyword'] = $values['keyword'];
+    $training_library_keyword = $values['keyword'];
+  }
+  
+  // Build filter array  
+  $fields = array(
+    'product_category',
+    'job_type',
+    'applications_for_training',
+    'industries_for_training',
+    'measurements_for_training',
+    'pain_points_for_training',
+    'solutions_for_training',     
+  );
+  
+  foreach ($fields as $field) {
+    if (empty($values[$field])) {
+      continue;
+    }
+    foreach ($values[$field] as $key => $selected) {
+      if ($selected) {
+        $filters[$key] = $key;
+      }
+    }
+  }
+  
+  $form_state['rebuild'] = TRUE;
+  $form_state['filters'] = $filters;  
+}
+
+function igcommerce_utility_training_block_videos() {
+
+  $tids = &drupal_static("igc_training_library_terms", array());
+  $items = array();
+  global $search_result_count;
+  global $reset_training_library_cache;
+  
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if ($cache && !$reset_training_library_cache)  {
+    return $cache;
+  }
+
+  $videos = igcommerce_utility_training_search_entities($tids, 'video');
+  
+  if (!videos) {
+    return theme('training_list_items', array('items' => $items));
+  }
+  
+  // Ensure these videos are not "Demos"  
+  foreach ($videos as $video) {
+    $vars['video'] = $video;    
+        
+    // Url
+    if (!empty($video->ss_field_content_url)) {
+      $video_url = $video->ss_field_content_url . '&';
+    } elseif (!empty($video->ss_field_youtube_video)) {
+      if (strpos($video->ss_field_youtube_video, 'youtube.com/watch') !== FALSE) {
+        $video->ss_field_youtube_video = str_replace('youtube.com/watch', 'youtube.com/embed', $video->ss_field_youtube_video);
+      }
+      $video_url = $video->ss_field_youtube_video . '&';
+    } elseif (!empty($video->ss_field_demo_url)) {
+      $video_url = $video->ss_field_demo_url . '?';
+    } else {
+      // No video so skip this
+      continue;
+    }
+    $video_url .= 'iframe=true&autoplay=true';    
+    
+    if ($video->ss_video_type == 'demos') {
+      continue;
+    }
+    
+    $vars['video_url'] = $video_url;
+    
+    $items[] = theme('training_video_list_item', $vars);
+      
+    $counted = array();
+    foreach ($video->im_training_filter as $tid) {
+      // Skip duplicated terms?!!? How are there duplicates? TODO figure out
+      if (!empty($counted[$tid])) {
+        continue;
+      }
+      $search_result_count[$tid] = empty($search_result_count[$tid]) ? 1 : $search_result_count[$tid] + 1;
+      $counted[$tid] = $tid;
+    }
+  }
+ 
+  // Add js for popup
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility_training') . '/js/video.js');
+  
+  $output = theme('training_list_items', array('items' => $items));
+  $cache = $output;
+  return $output;
+}
+
+function igcommerce_utility_training_preprocess_training_video_list_item(&$vars) {
+  $video = $vars['video'];
+
+  // Url
+  $video_url = $vars['video_url'];
+
+  // Image
+  if (empty($video->ss_field_image)) {
+    $video->ss_field_image = NULL;
+  }  
+  $styles = igcommerce_utility_get_images($video->ss_field_image);
+  $image = igcommerce_utility_determine_toc_image($styles['field_original_url'], $styles['field_original_url'], $styles['field_medium_url'], $video->ss_field_content_title);
+  $vars['image'] = l($image, $video_url, array('html' => TRUE, 'attributes' => array('class' => array('colorbox-load', 'event-video-play'))));
+
+
+    // Title
+  $vars['title'] = l($video->ss_field_content_title, $video_url, array('attributes' => array('class' => array('colorbox-load', 'event-video-play'))));
+  
+  // Desc
+  $vars['desc'] = !empty($video->ts_video_caption) ? $video->ts_video_caption : (!empty($video->ts_description) ? $video->ts_description : '');
+}
+
+function igcommerce_utility_training_preprocess_training_doc_list_item(&$vars) {
+  $doc = $vars['doc'];
+  global $language;
+  
+  // Title
+  if (empty($vars['title'])) {
+    if (isset($doc->ss_field_content_title)) {
+      $title = $doc->ss_field_content_title;
+    }
+    else {
+      if (isset($doc->tm_field_display_title[0])) {
+        $title = $doc->tm_field_display_title[0];
+      }
+      else {
+        $title = '';
+      }
+    }
+    $vars['title'] = l($title, $doc->ss_field_content_url);
+  }
+  // Desc
+  if (empty($vars['desc'])) {
+    $vars['desc'] = !empty($doc->ts_short_description_summary) ? $doc->ts_short_description_summary : !empty($doc->ts_description) ? $doc->ts_description : '';
+  }
+}
+
+function igcommerce_utility_training_block_app_notes() {
+  global $search_result_count;
+  global $reset_training_library_cache;
+  $tids = &drupal_static("igc_training_library_terms", array());
+
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if ($cache && !$reset_training_library_cache)  {
+    return $cache;
+  }
+  
+  $items = array();
+  
+  if (!$docs = igcommerce_utility_training_search_entities($tids, 'document')) {
+    return theme('training_list_items', array('items' => $items));    
+  }
+  
+  foreach ($docs as $doc) {
+    $vars['doc'] = $doc;
+  
+    if ($doc->ss_document_type != 'application notes') {
+      continue;
+    }
+
+    // If there is no content url, bail.
+    if (empty($doc->ss_field_content_url)) {
+      continue;
+    }
+    
+    $items[] = theme('training_doc_list_item', $vars);
+    
+    $counted = array();
+    foreach ($doc->im_training_filter as $tid) {
+      // Skip duplicated terms?!!? How are there duplicates? TODO figure out
+      if (!empty($counted[$tid])) {
+        continue;
+      }
+      $search_result_count[$tid] = empty($search_result_count[$tid]) ? 1 : $search_result_count[$tid] + 1;
+      $counted[$tid] = $tid;
+    }
+  }
+  
+  $cache = $output = theme('training_list_items', array('items' => $items)); 
+
+  return $output;
+}
+
+function igcommerce_utility_training_block_demos() {
+  $tids = &drupal_static("igc_training_library_terms", array());
+  $items = array();
+  global $search_result_count;
+  global $reset_training_library_cache;
+  
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if ($cache && !$reset_training_library_cache)  {
+    return $cache;
+  }
+  
+  if (!$videos = igcommerce_utility_training_search_entities($tids, 'video')) {
+    return theme('training_list_items', array('items' => $items));
+  }
+  
+  // Ensure these videos are not "Demos"
+  foreach ($videos as $video) {
+    $vars['video'] = $video;
+  
+    if ($video->ss_video_type != 'demos') {
+      continue;
+    }
+    
+    // Url
+    if (!empty($video->ss_field_content_url)) {
+      $video_url = $video->ss_field_content_url . '&';
+    } elseif (!empty($video->ss_field_youtube_video)) {
+      if (strpos($video->ss_field_youtube_video, 'youtube.com/watch') !== FALSE) {
+        $video->ss_field_youtube_video = str_replace('youtube.com/watch', 'youtube.com/embed', $video->ss_field_youtube_video);
+      }
+      $video_url = $video->ss_field_youtube_video . '&';
+    } elseif (!empty($video->ss_field_demo_url)) {
+      $video_url = $video->ss_field_demo_url . '?';
+    } else {
+      // No video so skip this
+      continue;
+    }
+    $video_url .= 'iframe=true';
+    
+    $vars['video_url'] = $video_url;
+    
+    $items[] = theme('training_video_list_item', $vars);
+    
+    $counted = array();
+    foreach ($video->im_training_filter as $tid) {
+      // Skip duplicated terms?!!? How are there duplicates? TODO figure out
+      if (!empty($counted[$tid])) {
+        continue;
+      }
+      $search_result_count[$tid] = empty($search_result_count[$tid]) ? 1 : $search_result_count[$tid] + 1;
+      $counted[$tid] = $tid;
+    }
+  }
+  
+  $cache = $output = theme('training_list_items', array('items' => $items));
+  return $output;
+}
+
+function igcommerce_utility_training_block_documents() {
+  global $search_result_count;
+  global $reset_training_library_cache;
+  $tids = &drupal_static("igc_training_library_terms", array());
+
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if ($cache && !$reset_training_library_cache)  {
+    return $cache;
+  }
+    
+  $items = array();
+  
+  if (!$docs = igcommerce_utility_training_search_entities($tids, 'document')) {
+    return theme('training_list_items', array('items' => $items));    
+  }
+  
+  foreach ($docs as $doc) {
+    $vars['doc'] = $doc;
+    
+    if ($doc->ss_document_type == 'application notes') {
+      continue;
+    }
+    
+    // If there is no content url, bail.
+    if (empty($doc->ss_field_content_url)) {
+      continue;
+    }    
+        
+    $items[] = theme('training_doc_list_item', $vars);
+    
+    $counted = array();
+    foreach ($doc->im_training_filter as $tid) {
+      // Skip duplicated terms?!!? How are there duplicates? TODO figure out
+      if (!empty($counted[$tid])) {
+        continue;
+      }
+      $search_result_count[$tid] = empty($search_result_count[$tid]) ? 1 : $search_result_count[$tid] + 1;
+      $counted[$tid] = $tid;
+    }
+  }
+  
+  $cache = $output = theme('training_list_items', array('items' => $items));  
+  
+  return $output;
+}
+
+function igcommerce_utility_training_block_content() {
+  global $training_library_keyword;
+  
+  $filters_selected = &drupal_static("igc_training_library_terms", array());
+    
+  // Add js for pagination
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility') . '/js/paginate.js');
+  
+  $name = 'training_library_content';
+  
+  $settings = array();
+  $settings = array(
+      'ajax' => 0,
+      'hide_if_empty' => 1,
+      'default_tab' => 0,
+      'title' => 'Training Library',
+      'renderer' => 'quicktabs',
+      'style' => 'nostyle',
+  );
+  
+  $custom_tabs = array();
+
+  //Callback
+  $custom_tabs[] = array(
+    'title' => t('Videos'),
+    'bid' => 'igcommerce_utility_training_delta_training_library_videos',
+    'weight' => 1,
+    'type' => 'block',
+    'hide_title' => FALSE,
+  );
+  
+  $custom_tabs[] = array(
+    'title' => t('App Notes'),
+    'bid' => 'igcommerce_utility_training_delta_training_library_app_notes',
+    'hide' => 1,
+    'weight' => 2,
+    'type' => 'block',      
+    'hide_title' => FALSE,      
+  );
+  $custom_tabs[] = array(
+    'title' => t('Demos'),
+    'bid' => 'igcommerce_utility_training_delta_training_library_demos',
+    'hide' => 1,
+    'weight' => 3,
+    'type' => 'block',
+    'hide_title' => FALSE,      
+  );
+  $custom_tabs[] = array(
+    'title' => t('Documents'),
+    'bid' => 'igcommerce_utility_training_delta_training_library_documents',
+    'hide' => 1,
+    'weight' => 4,
+    'type' => 'block',
+    'hide_title' => FALSE,      
+  );
+
+  $qt = quicktabs_build_quicktabs($name, $settings, $custom_tabs);
+  
+  igcommerce_utility_fix_qt_links($qt);
+  
+  return drupal_render($qt);
+}
+
+/**
+ * Implements hook_block_info()
+ */
+function igcommerce_utility_training_block_info() {
+  $blocks['training_library_filter_form'] = array(
+      'info' => t('Training Library Filter Form'),
+      'cache' => DRUPAL_NO_CACHE,
+  );
+  $blocks['training_library_content'] = array(
+      'info' => t('Training Library Content w/ Tabs'),
+      'cache' => DRUPAL_NO_CACHE,      
+  );
+  $blocks['training_library_videos'] = array(
+      'info' => t('Training Library Videos'),
+      'cache' => DRUPAL_NO_CACHE,      
+  );
+  $blocks['training_library_app_notes'] = array(
+      'info' => t('Training Library App Notes'),
+      'cache' => DRUPAL_NO_CACHE,      
+  );
+  $blocks['training_library_demos'] = array(
+      'info' => t('Training Library Demos'),
+      'cache' => DRUPAL_NO_CACHE,      
+  );
+  $blocks['training_library_documents'] = array(
+      'info' => t('Training Library Documents'),
+      'cache' => DRUPAL_NO_CACHE,      
+  );
+  $blocks['training_library_search'] = array(
+      'info' => t('Training Library Search'),
+      'cache' => DRUPAL_NO_CACHE,      
+  );  
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view();
+ */
+function igcommerce_utility_training_block_view($delta = NULL) {
+
+  switch ($delta) {
+    case 'training_library_filter_form':
+      $block['subject'] = "";
+      $block['content']['form'] = drupal_get_form('igcommerce_utility_training_form_filters');
+      break;
+    case 'training_library_content':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_training_block_content();
+      break;      
+    case 'training_library_videos':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_training_block_videos();
+      break;
+    case 'training_library_app_notes':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_training_block_app_notes();
+      break;
+    case 'training_library_demos':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_training_block_demos();
+      break;
+    case 'training_library_documents':
+      $block['subject'] = "";
+      $block['content'] = igcommerce_utility_training_block_documents();
+      break;
+    case 'training_library_search':
+      $block['subject'] = "";
+      $block['content']['form'] = drupal_get_form('igcommerce_utility_training_form_search');
+      break;      
+    default:
+      $block = array();
+      break;
+  }
+  
+  return $block;
+}
+
+/**
+ * Sort the array of panes to be rendered in the order they are defined in the layout
+ *
+ * @param $vars
+ * @param $context
+ */
+function igcommerce_utility_training_panels_panes_prepared_alter(&$vars, $context) {
+  $region_weight = $context->plugins['layout']['regions'];
+  $index = 0;
+
+  foreach($region_weight as $key => $value) {
+    $region_weight[$key] = $index * 100;
+    $index++;
+  }
+
+  foreach($vars as $pid => $pane) {
+    $vars[$pid]->render_weight = $region_weight[$pane->panel] + $pane->position;
+  }
+
+  uasort($vars, function ($item1, $item2) {
+    return $item1->render_weight - $item2->render_weight;
+  });
+
+}
+
+/**
+ * Returns entities filtered by im_training_library terms
+ * @param array $tids an array of term tids
+ */
+function igcommerce_utility_training_search_entities($tids, $bundle, $lang = NULL) {
+
+  if($lang === NULL){
+    global $language;
+  }
+
+  global $training_library_keyword;
+  static $search_result_ids;
+  
+  if (empty($search_result_ids)) {
+    $search_result_ids = array();
+  }
+  
+  $cache = &drupal_static(__FUNCTION__);
+  $hash = md5(serialize($tids));
+  if (!empty($cache[$bundle][$hash][$training_library_keyword])) {
+    return $cache[$bundle][$hash][$training_library_keyword];
+  }
+    
+  $filter = '[* TO *]';
+  
+  if (!empty($tids)) {
+    $filter = '(' . implode(' AND ', $tids) . ')';
+  }
+  
+  /*
+    Exclude these
+    a) field_restricted_to_internal_use 
+    b) field_restricted_to_author_of_as 
+    c) field_pp_confidential 
+    d) field_pp_do_not_show_item_on_t 
+   */
+  $filters = array(
+      'entity_type' => 'node',
+      'bundle' => $bundle,
+      'ss_language' => $language->language,
+      'bs_status' => TRUE, // only interested in published articles
+      'im_training_filter' => $filter,
+      '-is_field_restricted_to_internal_use' => 1,
+      '-is_field_restricted_to_author_of_as' => 1,
+      '-is_field_pp_confidential' => 1,
+      '-is_field_pp_do_not_show_item_on_t' => 1,
+  );
+  
+  $options = array(
+    'rows' => 5000,
+    'filters' => $filters,
+    'sort' => array('ds_created' => 'desc'),
+  );
+  
+  if ($training_library_keyword) {
+    unset($options['sort']);
+    $t = $training_library_keyword;
+    $options['q'] = $t;
+// added to try to fine tune search TT on 5/17/2018
+   $options['keyword'] = $t;
+  }
+  
+  $default = 'entity_type,bundle,entity_id,im_training_filter,path_alias,bundle_name,ss_field_content_title,tm_field_content_title,ts_description';
+  $videos = ',ss_field_content_url,ss_field_youtube_video,ss_field_demo_url,ss_video_type,ss_field_image,ts_video_caption';
+  $docs = ',ss_document_type,ts_short_description_summary';
+  
+  $options['fl'] = $default . $videos . $docs;
+  
+  $options['params']['defType'] = 'edismax';
+  
+  // Add bias for specific fields for custom CJK fields.
+  if (in_array($language->language, array('cn', 'ko-kr', 'ja-jp'))) {
+    // Add qf params if required by language and add bias values
+    $bias = array(
+        'display_title_cjk' => 50,
+        'body_cjk' => 1,
+        'short_description_summary_cjk' => 1,
+//        'h1_title_cjk' => 50,
+//        'overview_cjk' =>40,
+//        'compare_key_features_cjk' => 20,
+//        'description_cjk' => 10,
+    );
+
+  } else {
+      // Boost title fields as they are most important
+      $bias = array(
+          'tm_field_content_title' => 50,
+          'ts_article_body' => 1,
+          'tm_short_description_summary' => 1,
+//        'tm_features' => 1,
+//        'tm_overview' => 1,
+//        'ts_description_field' => 1,
+//        'tm_description_field' => 1,
+      );
+
+   }
+
+    $qf = array();
+  
+    foreach ($bias as $field => $bias_value) {
+      $qf[] = $field . '^' . $bias_value;
+    }
+
+    $qf = implode(' ', $qf);
+    $qf = trim($qf);
+    // Use pf here to boost instead of query these fields as it will return 0 results since these fields aren't in all bundles
+    $options['params']['pf'] = $qf;
+
+  
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, $options);
+  $response = fluke_solr_query($filters);
+
+
+  $cache[$bundle][$hash][$training_library_keyword] = $response->response->docs;
+  
+  if (empty($response->response->docs[0])) {
+    return;
+  }
+
+  $docs = $response->response->docs;
+  
+  foreach ($docs as $doc) {
+    if (empty($doc->im_training_filter)) {
+      continue;
+    }
+    
+    if (empty($search_result_ids[$doc->bundle])) {
+      $search_result_ids[$doc->bundle] = array();
+    }
+    
+    // Skip results if they have already been counted
+    if (in_array($doc->entity_id, $search_result_ids[$doc->bundle])) {
+      continue;
+    }
+    
+    $search_result_ids[$doc->bundle][$doc->entity_id] = $doc->entity_id;
+  }
+  
+  return $response->response->docs;
+}
+
+/**
+ * Implements hook_theme()
+ */
+function igcommerce_utility_training_theme() {
+  $module_path = drupal_get_path('module', 'igcommerce_utility_training');
+  $base = array(
+      'path' => $module_path . "/templates",
+  );
+  return array(
+      'training_video_list_item' => $base + array(
+          'template' => 'training-video-list-item',
+          'variables' => array(),
+      ),
+      'training_doc_list_item' => $base + array(
+          'template' => 'training-doc-list-item',
+          'variables' => array(),
+      ),
+      'training_list_items' => $base + array(
+          'template' => 'training-list-items',
+          'variables' => array('items' => array()),
+      ),
+      'igcommerce_utility_training_form_filters' => $base + array(
+          'template' => 'training-form-filters',
+          'render element' => 'form',
+      ),
+  );
+}
+
+/**
+ * Keyword search for for training library
+ */
+function igcommerce_utility_training_form_search($form, &$form_state) {
+  global $training_library_keyword;
+
+  // Meta title and description
+  $term = fluke_solr_get_term_by_name('Library', 'url_builder');
+
+  if($term){
+    igcommerce_utility_head_elements($term, TRUE);
+  }
+  
+  $form = array();
+  $form_state['rebuild'] = TRUE;
+  
+  $form['keyword'] = array(
+    '#type' => 'textfield',
+    '#attributes' => array('placeholder' => t('Enter keywords')),  
+    '#default_value' => $training_library_keyword,
+  );
+  
+  $form['search'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search Training Center'),
+    '#suffix' => '<div class="search-help">' . t('Can\'t find what you are looking for? Try using quotes (") around your search.') . '</div>',
+  );
+  
+  return $form;
+}
+
+/**
+ * Submit handler for library search form
+ * This submit callback shouldn't be called as keyword search handled through filter form
+ */
+function igcommerce_utility_training_form_search_submit($form, &$form_state) {
+  global $training_library_keyword;
+  $form_state['rebuild'] = TRUE;
+  
+  $training_library_keyword = $form_state['values']['keyword'];
+  
+  if (empty($training_library_keyword)) {
+    return;
+  }
+}

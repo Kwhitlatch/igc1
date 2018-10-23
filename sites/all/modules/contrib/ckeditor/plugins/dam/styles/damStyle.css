@@ -1,0 +1,49 @@
+﻿
+.divTable {
+    display: table !important;
+    background-color: blue;
+}
+
+.divTitle {
+    display: table-caption !important;
+    text-align: center;
+    font-weight: bold;
+    font-size: larger;
+}
+
+.divHeading {
+    display: table-row !important;
+    font-weight: bold;
+    text-align: center;
+}
+
+.divRow {
+    display: table-row !important;
+}
+
+.divCell {
+    display: table-cell !important;
+    border: solid;
+    border-width: thin;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.btnSearch{
+    font-weight:bold;
+}
+.left-half{
+	float: left;
+}
+
+.right-half{
+	height:50%;
+	width: 50%;
+	float: right;
+	Padding: automatic;
+	
+}
+
+.full-width{
+	
+}
+

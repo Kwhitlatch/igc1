@@ -1,0 +1,60 @@
+// Example: /en-us/training/webinars
+// TODO: There was no content under the live webinars tab to style, may need 
+// to style again when you have live-content
+.pane-igcommerce-event-webinars {
+  .button {
+    width: 100%;
+  }
+  .form-item {
+    @extend %fancy-select;
+    width: 100%;
+    select {
+      margin-bottom: 0;
+      width: 100%;
+    }
+  }
+  // This wraps the tables in the tabs and adds a scrollbar on mobile.
+  #live-webinar-table-wrapper,
+  #od-webinar-table-wrapper {
+    overflow-x: scroll;
+    table {
+      table-layout: auto;
+    }
+    tr {
+      &:hover {
+        background-color: white;
+      }
+      th,
+      td {
+        min-width: 150px;
+      }
+    }
+  }
+  // live-webinar has 4 columns, date(20%), type(20%), name(40%), and cta(20%)
+  #live-webinar-table-wrapper {
+    th {
+      @include media($screen-sm) {
+        &:nth-child(2),
+        &:nth-child(4) {
+          width: 20%;
+        }
+        &:nth-child(3) {
+          width: 40%;
+        }
+      }
+    }
+  }
+  // on-demand-webinar has 3 columns, type(20%), name(60%), and cta(20%)
+  #od-webinar-table-wrapper {
+    th {
+      @include media($screen-sm) {
+        &:nth-child(2) {
+          width: 60%;
+        }
+        &:nth-child(3) {
+          width: 20%;
+        }
+      }
+    }
+  }
+}

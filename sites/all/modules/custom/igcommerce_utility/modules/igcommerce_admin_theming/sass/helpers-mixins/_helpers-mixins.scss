@@ -1,0 +1,42 @@
+%table-shrink {
+  table td { 
+    padding: 5px;
+    &:not(a.tabledrag-handle) {
+      line-height: 1rem;
+    }
+  }
+}
+%cell-shrink {
+      font-size: 10px;
+    line-height: 1.2em;
+}
+// Makes a button blue, applies the same styles as the "action-links" class
+%action-links-button {
+  background: linear-gradient(to bottom, #36a2f6 0%, #2f88cd 100%);
+  border: 1px solid #2f88cd;
+  color: white;
+  box-shadow: 0 1px 2px #cccccc, inset 0 1px 1px #7bb8ef;
+  &:hover {
+    border: 1px solid #2f88cd;
+    background: #359ff2;
+    box-shadow: 0 1px 2px #cccccc, inset 0 1px 1px #7bb8ef;
+    color: #fff;
+    text-shadow: 0 -1px 1px #2F88CD;
+  }
+}
+%gray-button {
+  background: linear-gradient(to bottom, #fefefe 0%, #e0e0e0 100%);
+  border: 1px solid #cccccc;
+  color: #5a5a5a;
+  box-shadow: 0 1px 2px #cccccc, inset 0 1px 1px white;
+  &:hover {
+    border: 1px solid #cccccc;
+    background: #eeeeee;
+    box-shadow: 0 1px 2px #ccc, inset 0 -1px 1px #fff;
+    color: #5A5A5A;
+    text-shadow: 0 -1px 1px #fff;
+  }
+}
+
+    //background: linear-gradient(to bottom, rgba(210,255,82,1) 0%, rgba(145,232,66,1) 100%);
+   // The text of this button is set via the button value, so an icon cannot be added

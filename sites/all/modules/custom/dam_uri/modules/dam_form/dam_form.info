@@ -1,0 +1,7 @@
+name = DAM FORM
+description = Creates the forms for the DAM eco system.
+package = DAM
+core = 7.x
+dependencies[] = ctools
+dependencies[] = views
+dependencies[] = form_options_attributes

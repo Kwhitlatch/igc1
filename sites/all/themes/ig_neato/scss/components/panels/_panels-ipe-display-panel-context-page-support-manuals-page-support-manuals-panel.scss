@@ -1,0 +1,31 @@
+//support/manuals
+// This wrapper class only appears when your logged in, so we can't use it for theming:
+// #panels-ipe-display-panel-context-page-support-manuals-page-support-manuals-panel 
+
+// 9 column content area
+.pane-igcommerce-utility-ig-manuals-search-form, .block-igcommerce-utility-training {
+  h2 {
+    @extend %h3;
+  }
+  #edit-search {
+    margin-right: 0;
+  }
+  .row {
+        border-bottom: 1px solid $gray-c;
+  }
+  @extend %ul-unstyled;
+  .training-doc-list-item, .training-library-list-items{
+    padding-top: 12px;
+    .date-type, {
+      margin-bottom: 12px;
+    }
+  }
+}
+
+// 3 column left navbar area
+#igcommerce-utility-manuals-form-filter {
+  padding: 20px;
+  > div > p {
+    @extend %h3;
+  }
+}

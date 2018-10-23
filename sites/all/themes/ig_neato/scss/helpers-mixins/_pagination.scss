@@ -1,0 +1,102 @@
+// THere are two types of pagination styling, div structure and ul strucuture
+// Pagination is implemented several different ways. If you come across other 
+// implementation methods, please add theme here.
+// sites/all/modules/custom/igcommerce_utility/js/paginate.js
+
+// Can be seen on support/manuals, 
+// All product TOC's
+// This is designed to work with wrapper>
+.pagination,
+%paginate-div {
+  background: white;
+  border-radius: 0rem;
+  clear: both;
+  display: table;
+  margin: 3rem auto;
+  text-align: center;
+  // There are some tabs that dont have enough content to generate a paginator.
+  // We put margin on the anchors and left/right padding on the container so 
+  // we can lean on padding-collapse to disappear the white container.
+  padding: 0 15px;
+  button,
+  a {
+    background-color: white;
+    border-radius: 0rem;
+    border: solid 1px darken($yellow, 10%);
+    color: $gray-21;
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    margin: 15px 2px;
+    padding: 7px 11px;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    &:focus {
+      background-color: white;
+      color: $gray-21;
+    }
+    &:hover {
+      background-color: darken($yellow, 10%);
+      border: solid 1px darken($yellow, 10%);
+      color: $gray-21;
+      text-decoration: none;
+    }
+    &.list_active_page,
+    &:active {
+      background-color: $yellow;
+      border: solid 1px $yellow;
+      text-decoration: none;
+    }
+  }
+  .elipses:after  {
+    content: "...";
+    padding: 7px 5px;
+    pointer-events: none;
+  }
+  .toc_show_all button {
+    margin-left: 20px;
+  }
+}
+
+// This is designed to work with a wrapper>ul>li>a
+// I don't think this is actually in use?  Comment it back in and leave a note if its yours...
+// %paginate-list {
+//   background: white;
+//   padding: 0 15px;
+//   margin: 3rem auto;
+//   border-radius: 0rem;
+//   font-size: 12px;
+//   text-align: center;
+//   display: table;
+//   ul, li {
+//     list-style: none;
+//     display: inline;
+//     padding-left: 0px;
+//   }
+//   li {
+//     &:hover {
+//       a {
+//         background-color: darken($yellow, 10%);
+//         border: solid 1px darken($yellow, 10%)
+//       }
+//     }
+//     &.active {
+//       a {
+//         background-color: $yellow;
+//         border: solid 1px $yellow;
+//       }
+//     }
+//     a {
+//       border: solid 1px darken($yellow, 10%);
+//       border-radius: 0rem;
+//       color: $gray-21;
+//       text-decoration: none;
+//       display: inline-block;
+//       text-align: center;
+//       line-height: 1;
+//       padding: 7px 11px;
+//       margin: 15px 2px;
+//     }
+//   }
+// }

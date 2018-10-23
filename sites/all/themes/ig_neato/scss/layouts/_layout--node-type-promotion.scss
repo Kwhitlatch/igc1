@@ -1,0 +1,7 @@
+// The promotions content types are usually bootstrap pages. Sometimes we need
+// to dial back site-wide styles so they don't bork these pages.
+body.node-type-promotion {
+  main {
+    padding: 0;
+  }
+}

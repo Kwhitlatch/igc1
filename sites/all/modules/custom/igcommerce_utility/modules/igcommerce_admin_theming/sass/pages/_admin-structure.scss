@@ -1,0 +1,14 @@
+.page-admin-structure {
+  @extend %table-shrink;
+  // For page: /admin/structure/types/manage/article/fields
+  &.page-admin-structure-types-manage-article-fields {
+    input.form-submit {
+      margin-right: 0;
+      margin-bottom: 0;
+      padding: 6px 10px;
+    }
+    td .field-formatter-summary {
+      @extend %cell-shrink;
+    }
+  }
+}

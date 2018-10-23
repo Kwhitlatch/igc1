@@ -1,0 +1,34 @@
+%all-list-unstyled {
+  ul,
+  ol {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+%ol-unstyled {
+  ol {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+%ul-unstyled {
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+%ul-left-aligned {
+  ul {
+    padding-left: 1.7rem;
+    margin: 0;
+  }
+}
+%ol-left-aligned {
+  ol {
+    padding-left: 1.7rem;
+    margin: 0;
+  }
+}

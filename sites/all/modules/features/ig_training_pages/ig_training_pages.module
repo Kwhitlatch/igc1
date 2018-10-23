@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the IG Training Pages feature.
+ */
+
+include_once 'ig_training_pages.features.inc';

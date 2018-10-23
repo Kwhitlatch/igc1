@@ -1,0 +1,73 @@
+/*
+* ACTUALLY READ THIS!
+*
+* This file contains settings for the brand differences.
+* If you change this file, you may change the css for a brand.
+*
+* This file imports only the brand settings file for this brand.
+* All of the rest of the file should be exactly the same for all brands.
+*/
+
+// All of the normalize stuff is imported with the default theme files
+
+// Make sure the charset is set appropriately
+
+@charset "UTF-8";
+
+
+// Import normalize.css
+@import "../../neato/bower_components/normalize.css/normalize.css";
+
+// Import Bourbon.
+@import "../../neato/bower_components/bourbon/app/assets/stylesheets/bourbon";
+
+// Import Neat.
+@import "../../neato/bower_components/neat/app/assets/stylesheets/neat";
+@import "../../neato/bower_components/neat/app/assets/stylesheets/neat-helpers";
+
+
+
+@import "variables/colors.scss";
+@import "variables/grid-settings.scss";
+@import "variables/typography.scss";
+@import "variables/all-other-variables.scss";
+@import "variables/brand-settings-default.scss";
+
+/*
+*
+* BRAND VARIABLES
+* this is the only section to be changed,
+* and really only change the line about the brand settings
+*
+*/
+
+@import "variables/brand-settings-default.scss";
+@import "variables/brand-settings-fluke.scss";
+//@import "variables/brand-settings-amprobe.scss";
+//@import "variables/brand-settings-brand.scss";
+//@import "variables/brand-settings-brand.scss";
+//@import "variables/brand-settings-pomona.scss";
+
+
+
+
+
+// DO NOT CHANGE THE ITEMS BELOW
+
+// Import mixins
+@import "helpers-mixins/**/*.scss";
+
+// Import Bitters.
+@import "base/base";
+
+// Import yer base stuff
+@import "base/**/*.scss";
+
+// Import Drupal element overrides
+@import "common/**/*.scss";
+
+// Import your components here.
+@import "components/**/*.scss";
+
+@import "custom_per_brand/fluke_custom.scss";
+//@import "custom_per_brand/fpi_custom.scss";

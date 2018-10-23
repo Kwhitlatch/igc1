@@ -1,0 +1,32 @@
+/* 
+ * I used https://google-webfonts-helper.herokuapp.com/fonts to pull google fonts local
+ * We chose Roboto slab specifically because it supports many non-latin languages.
+ * Use the google font Roboto Slab for heading fonts. 
+ */
+
+/* roboto-slab-regular - vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek */
+@font-face {
+  font-family: 'Roboto Slab';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-regular.eot'); /* IE9 Compat Modes */
+  src: local('Roboto Slab Regular'), local('RobotoSlab-Regular'),
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-regular.woff') format('woff'), /* Modern Browsers */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-regular.svg#RobotoSlab') format('svg'); /* Legacy iOS */
+}
+/* roboto-slab-700 - vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek */
+@font-face {
+  font-family: 'Roboto Slab';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-700.eot'); /* IE9 Compat Modes */
+  src: local('Roboto Slab Bold'), local('RobotoSlab-Bold'),
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-700.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-700.woff2') format('woff2'), /* Super Modern Browsers */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-700.woff') format('woff'), /* Modern Browsers */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-700.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('../fonts/robotoslab/roboto-slab-v7-vietnamese_greek-ext_latin_cyrillic-ext_cyrillic_latin-ext_greek-700.svg#RobotoSlab') format('svg'); /* Legacy iOS */
+}

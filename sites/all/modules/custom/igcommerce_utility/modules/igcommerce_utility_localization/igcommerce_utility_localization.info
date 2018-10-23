@@ -1,0 +1,6 @@
+name = IG Commerce localizations - URL Alias
+description = Utility module for setting up the localization on each and every locale level alongwith start and end date for piece of content, on basis of start and end date content can be said as LIVE or EXPIRED.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = pathauto

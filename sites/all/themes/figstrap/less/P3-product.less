@@ -1,0 +1,334 @@
+/**
+ * @file P3-product.less
+ * Styles pages of the UI pattern P3
+ *
+ * UI Templates can be found here: https://wiki.danahertm.com/display/flukewebdev/Templates
+ * Most articles will use the template "libby" and will be
+ * wrapped in the class of ".libby".
+ */
+
+ .libby{
+  /* BEGIN Product Carousel on Product page*/  
+  .flex-direction-nav a {
+    text-decoration: none;
+    display: block;
+    width: 55px;
+    height: 55px;
+    margin: 0;
+    position: absolute;
+    top: 35%;
+    z-index: 10;
+    overflow: hidden;
+    opacity: 0;
+    cursor: pointer;
+    color: @fluke-white;
+    text-shadow: none;
+    -webkit-transition: all 0.3s ease-in-out;
+    -moz-transition: all 0.3s ease-in-out;
+    -ms-transition: all 0.3s ease-in-out;
+    -o-transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out;
+    background-color: #eaeaea; //TODO: Update with Fluke colors
+  }
+  .flex-direction-nav a:hover {
+    background-color: @fluke-body-text;
+  }
+  .flex-nav-prev a {
+    color: @fluke-white;
+  }
+  .flexslider:hover
+  .flex-direction-nav .flex-prev {
+    opacity: 1.0;
+    left: 0;
+  }
+
+  //TODO: The syntax here is unclear - does this style anything?
+  .flexslider:hover
+  .flex-direction-nav .flex-next{
+    opacity: 1.0;
+    right: 0;
+  }
+
+  .flex-direction-nav a.flex-next:before {
+    color: @fluke-white;
+    content: '\276F';
+    display: inline-block;
+    font-family: @font-family-sans-serif;
+    font-size: 26px;
+    padding-right: 20px;
+    padding-top: 8px;
+    text-shadow: none;
+  }
+
+  .flex-direction-nav a.flex-prev:before {
+    color: @fluke-white;
+    content: '\276E';
+    display: inline-block;
+    font-family: @font-family-sans-serif;
+    font-size: 26px;
+    padding-left: 20px;
+    padding-top: 8px;
+    text-shadow: none;
+  }
+  .flex-control-thumbs li {
+    border: 1px solid @fluke-sidebar-background;
+    float: left;
+    margin-right: 10px;
+    margin: 0;
+    width: 15.48463356973995%;
+  }
+  .flex-control-thumbs li:last-child {
+    margin-right: 0px;
+  }
+  .flex-active {
+    box-shadow: 0 4px 0 #ed3223;
+  }
+  .flexslider {
+    margin: 0 0 60px;
+    background: @fluke-white;
+    border: none;
+    position: relative;
+    zoom: 1;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    -o-box-shadow: none;
+    box-shadow: none;
+  }
+  .flex-control-thumbs img {
+    opacity: 1.0;
+  }
+  .flex-control-thumbs {
+    margin: 10px 0 0;
+  }
+  /* END Product Carousel on Product page*/  
+
+  /* BEGIN Product Overview*/  
+
+// Makes the "buy now" button big on mobile only.
+.libby-overview-links .btn {
+  font-size: 23px;
+  @media (min-width: @screen-sm-min) {
+    font-size: 15px;
+  }
+}
+
+// Styles alerts, used for "Only available in the UK"
+.alert-info {
+  background-color: #fad7d4; //TODO: Make this a global variable for alerts
+  color: @fluke-body-text;
+  border-left: 4px solid #f08a81; //TODO: Make this a global variable for alerts
+  p {
+    display: inline; // Keeps the alert icon as the same line as alert text.
+    margin-bottom: 0;
+  }
+  // THere is a bug in the expander module that wraps content in a <p> this
+  // is a shitty hack.
+  div.field-expander {
+    display: inline-block; 
+  }
+}
+
+  /* END Product Overview*/  
+
+
+  /* BEGIN Secondary Sections*/  
+  .gray-wrapper{
+    background-color: #efefef; //TODO: Cross this over to fluke colors
+    padding: 80px 0px;
+  }
+  /* END Secondary Sections*/  
+
+  /* BEGIN Accessories*/  
+  .acc-carousel {
+    .jcarousel-skin-default .jcarousel-clip-horizontal {
+      width: 810px;
+    }
+    .jcarousel-skin-default .jcarousel-container-horizontal {
+      height: auto;
+      margin: auto;
+      padding: 0;
+      width: 810px;
+    }
+    .jcarousel-skin-default .jcarousel-item {
+      height: auto;
+      border: none;
+    }
+    .jcarousel-skin-default .jcarousel-item-horizontal {
+      margin: 0 30px 0 0;
+    }
+    .jcarousel-skin-default .jcarousel-next {
+      background-image: url("../../../../default/files/slide_next.png");
+      background-position:center;
+      height: 32px;
+      width: 32px;
+    }
+    .jcarousel-skin-default .jcarousel-prev {
+      background-image: url("../../../../default/files/slide_prev.png");
+      background-position:center;
+      height: 32px;
+      width: 32px;
+    }
+    .jcarousel-skin-default .jcarousel-next-horizontal {
+      background-position: center;
+      position: absolute;
+      right: 28px;
+      top: 59px;
+    }
+    .jcarousel-skin-default .jcarousel-prev-horizontal {
+      left: 0;
+      position: absolute;
+      top: 59px;
+    }
+  }
+  /* END Accessories*/  
+
+
+
+
+  /* BEGIN Resources*/  
+  .libby-resources h3 {
+    border-bottom: 1px solid @fluke-gray; 
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+  /* END Resources*/  
+
+
+
+
+  /* BEGIN Related Products*/  
+  .rp-carousel {
+    /* Positions all buttons at the bottom of the carousel items. */
+    .btn {
+     bottom: 0;
+     position: absolute;
+     width: inherit;
+   }
+    /**
+     * Sets a fixed height for all carousel items, so the buttons can sit
+     * at the bottom.
+     */
+     .jcarousel-item {
+      @media (min-width: @screen-sm-min) {
+       height: 525px;
+     }
+     @media (min-width: 850px) {
+       height: 500px;
+     }
+     /* Small devices (tablets, 768px and up) */ 
+     @media (min-width: @screen-md-min) {
+       height: 475px;
+     }
+   }
+
+  .jcarousel-skin-default .jcarousel-container-horizontal {
+    height: auto;
+    margin: auto;
+    padding: 0;
+    width: 100%;
+  }
+  .jcarousel-skin-default .jcarousel-clip-horizontal {
+    overflow: hidden;
+    width: 100%;
+  }
+  .jcarousel-skin-default .jcarousel-item-horizontal {
+    margin: 0 30px 0 0;
+  }
+  .jcarousel-skin-default .jcarousel-item {
+    background-color: transparent;
+    border: none;
+    list-style: none;
+    padding: 0;
+    width: 100px;
+  }
+  .jcarousel-skin-default {
+    text-align: left;
+  }
+  .related_products_image img {
+    background-color: @fluke-white;
+    padding: 15px 0;
+  }
+  /* Change list style in related product lists*/  
+  .field-item li {
+    list-style: disc;
+  }
+}
+}
+/* END Related Products*/  
+
+/* BEGIN Spec Table*/ 
+.page-product-specifications {
+  #overlay-content {
+   background-color: @fluke-sidebar-background;
+  }
+  table {
+    width: 100%;
+    color: @fluke-body-text;
+    background-color: @fluke-sidebar-background;
+  }
+  tr:first-child td { 
+    background-color: @fluke-white;
+    border-bottom: 1px solid @fluke-white; //TODO: Can this be removed?
+    font-family: @headings-font-family;
+    width: 15%;
+  }
+  /* Spec table first column styles*/ 
+  td:first-child { 
+    font-family: @headings-font-family;
+    width: 15%;
+  }
+  tbody,
+  tr,
+  td {
+    border-bottom: 1px solid @fluke-lines-and-pipes;
+    padding: 21px 0 21px 30px;
+    vertical-align: middle;
+  }
+  .view-header h2 {
+    padding-top: 25px;
+    position: absolute;
+  }
+  .btn-default {
+    margin-bottom: 25px;
+  }
+}
+
+/* Adds large space between related products and accessories */
+.libby-related {
+  @media (min-width: @screen-sm-min) {
+    padding-top: 5em;
+  }
+}
+
+
+/**
+ * The flexbox wrapper is required, because the sections .libby-overview and 
+ * .libby-overview-links switch places vertically on mobile devices
+ * and the alert button goes above the slideshow.
+ * Bootstrap framework does not natively support vertical reordering.
+ * The template can be found in 
+ * sites\all\modules\custom\flukestrap_layouts\plugins\layouts\flukestrap_libby
+ */
+.flexbox {
+  display: flex;
+  flex-wrap: wrap;
+  /* Re-orders the vertical sequence on mobile */
+  .libby-alert-panel { order: 1; }
+  .libby-slideshow { order: 2; }
+  .libby-overview-links { order: 3; }
+  .libby-overview { order: 4; }
+  /* Removes the flex styling for tablet and desktop */
+  @media (min-width: @screen-sm-min) {
+    display: block; 
+  }
+} 
+
+/* Puts space between related products on mobile. */
+.rp-carousel-mobile {
+  .col-xs-12:not(:first-of-type)  {
+    margin-top: 50px;
+  }
+}

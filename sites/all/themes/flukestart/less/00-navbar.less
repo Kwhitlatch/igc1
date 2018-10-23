@@ -1,0 +1,351 @@
+/** 
+ * @00-navbar.less
+ * Styles the nav bar
+ *
+ * TOC
+ * - Navbar Container
+ * - Shopping Cart 
+ * - User Menu
+ * - Main Navigation
+ * - Footer Navigation
+ * - Media Queries
+*/
+
+
+/** ===== Navbar Container ==== **********************************/
+/**
+/** Fixed navbar containg user menu, cart, logo and navigation **/
+
+
+#section-header #zone-user-wrapper{
+  background:rgba(0, 0, 0, 0.5);
+  height: 30px;
+  position: absoulute;
+  top:0;
+  z-index: 10;
+}
+
+.zone-branding .region-branding {
+  margin: 10px 0 15px 0;
+}
+
+//== Fluke Logo 25px above and below */
+.zone-branding .region-branding .logo-img {
+  margin:5px 0 2px 0;
+}
+
+//== Fluke Store text centered on Fluke Logo */
+.site-name {
+  margin:10px 0 0 0;
+}
+
+
+/** ===== Shopping Cart ==== *************/
+/**
+/** Shopping cart and checkout section **/
+
+
+#section-header{
+//== Branding customer login navigation wrapper based on general Fluke styles.
+  
+  //** Shopping cart - checkout button override
+  .block-shopping-cart-block .content .view-shopping-cart .line-item-summary ul.links {
+    background-color: @fluke-yellow;
+    height: 30px;
+  }
+  
+  //== Shopping cart icon and style over rides
+  .block-shopping-cart-block .content {
+    background-color: transparent;
+    background-image: url("../images/picto_cart_white.png");
+    color: @fluke-white;
+  }
+  
+  //==Current cost of items in your cart styles 
+  .line-item-total .line-item-total-raw{
+    color: @fluke-white;
+  }
+
+  //==Cart Item quantity color 
+  .block-shopping-cart-block .content .view-shopping-cart .line-item-summary .line-item-quantity {
+    color: @fluke-yellow;
+  }
+
+  .view-empty p{
+    color: @fluke-white !important;
+  }
+
+
+  /** ===== User Menu ==== ***************/
+  /**
+  /** User login and create an account **/
+
+
+  //** Caption*/
+  .block-menu-user-menu .block-inner {
+    float: left;
+  }
+
+  //== Caption
+  #block-views-exp-display-products-page .form-text {
+    -khtml-border-radius: 0;
+    -moz-border-radius: 0;
+    -webkit-border-radius: 0;
+    background: @fluke-header-background;
+    border-color: @fluke-header-background;
+    border-radius: 0;
+    color: @fluke-white;
+    display: block;
+    float: left;
+    font-family: @font-family-sans-serif;
+    font-weight: 400;
+    height: 25px;
+    left: 0;
+    margin-top: 0;
+    padding: 0 0 0 35px;
+    position: absoulute;
+    top: 0;
+    transition: all .5s;
+    width: 60%;
+  }
+
+  #edit-search-api-views-fulltext:hover {
+    background: darken(@fluke-header-background, 10%);
+    transition: all .5s;
+  }
+
+  //== Caption
+  #block-views-exp-display-products-page .views-submit-button .form-submit {
+    font-size: 4px;
+    background-size: 16px;
+    background: url(../images/search_icon.svg) no-repeat 15px center;
+    cursor: auto;
+    margin-left:-300px;
+    margin-top: -10px;
+    padding-bottom: 10px;
+    padding-left: 30px;
+    padding-right: 30px;
+    width: 100%;
+  }
+
+  //==Removing placeholder text from search 
+  ::-webkit-input-placeholder {
+    color: transparent;
+  }
+  
+  :-moz-placeholder { //== Firefox 18- 
+     color: transparent;
+  }
+  
+  ::-moz-placeholder {  //== Firefox 19+
+     color: transparent;
+  }
+  
+  :-ms-input-placeholder {  
+     color: transparent;
+  }
+
+
+/** ===== Main Navigation ==== **/
+/**
+/** Main Megamenu navigation **/
+
+
+  //==Branding grey navigation wrapper based on general Fluke styles. 
+  #zone-branding-wrapper{
+    background-color: @fluke-header-background;
+    border-bottom: 4px solid @fluke-yellow;   
+    box-shadow: 5px 0px 5px rgba(0,0,0,0.15);
+    height: 80px;
+    left: 0;
+    margin-top:30px;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 997;
+  }
+
+
+  //== Styles for the site h1. 
+  .site-name a{
+    color: @fluke-white;
+    font-size: @font-size-h2;
+    padding-left: 20px;
+  }
+
+  //== Over-ride background color  
+  .tb-megamenu {
+    background-color: @fluke-header-background;
+    float: left;
+    padding-left:45px;
+    position: absoulute;
+    z-index: 2;
+  }
+
+  //== Over-ride Font family and size to Roboto
+  .tb-megamenu .nav > li {
+    float: left;
+    font-family: @fluke-body-text;
+    font-size: ceil((@font-size-base * 1.235)); // ~16px
+    font-weight: 400;
+  }
+
+  //== Over-ride Border + font weight 
+  .tb-megamenu .nav > li > a {
+    border-right: none;
+    border-top: 0;
+    font-weight: 400;
+  }
+
+  //== Over-ride Active / Focus / Hover states
+  .tb-megamenu .nav > .active > a,
+  .tb-megamenu .nav > .active > a:hover,
+  .tb-megamenu .nav > .active > a:focus,
+  .tb-megamenu .nav > li > a:focus,
+  .tb-megamenu .nav > li > a:hover {
+    background-color: @fluke-header-background;
+    color: #ffc20e;
+  }
+  
+  //==  Drop-down menu Over-ride Active / Focus / Hover states
+  .tb-megamenu .dropdown-menu li > a:hover,
+  .tb-megamenu .dropdown-menu li > a:focus,
+  .tb-megamenu .dropdown-submenu:hover > a {
+    background-color: none;
+    color: @fluke-gray-links;
+  }
+  //==  Fixes trailing white background + red font color when losing focus 
+  .tb-megamenu .nav li.dropdown.open > .dropdown-toggle {
+    background-color: @fluke-header-background;
+    color: #ffc20e;
+  }
+  
+  .tb-megamenu .nav > li > a {
+    padding: 20px 20px;
+  }
+  
+  //== Over-ride dropdown menu
+  .tb-megamenu .dropdown-menu { 
+    background-color: @fluke-sidebar-background;
+    border-bottom: 4px solid @fluke-yellow;
+    font-size: @font-size-base;
+    margin-top: 4px;
+  }
+}
+
+
+/** ===== Footer Navigation ==== ******/
+/**
+/** Footer navigation and copyright **/
+
+
+.contact-block{
+  margin-bottom: 0;
+  margin-top: 100px;
+}
+
+//== Footer Contact Wrapper removing extra bottom padding
+.zone-footer-wrapper {
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+//== Footer Contact Wrapper removing extra bottom margin
+.zone-footer-wrapper p{
+  margin-bottom: 0;
+}
+
+//== Footer 2 Wrapper
+.zone-footer2-wrapper {
+  background-color: @fluke-header-background;
+  bottom: 0;
+  margin: -26px 0 0 0;
+  min-height: 20px;
+  padding: 20px 0;
+  position: relative;
+  width: 100%;
+  color: @fluke-white;
+}
+
+.zone-footer2-wrapper p{
+  color: @fluke-white;
+}
+
+//== Footer Navigation link style over-ride
+.section-footer ul.menu, .section-footer ul.menu li {
+  display: inline-block;
+  padding: 5px 10px 0 0;
+}
+
+//== Footer Navigation anchor styles
+.section-footer ul.menu, .section-footer ul.menu li a{
+  color:@fluke-white;
+}
+
+.section-footer ul.menu, .section-footer ul.menu li a:hover{
+  color:@fluke-yellow;
+}
+
+.zone-footer2-wrapper p {
+  padding-top:9px;
+  float: right;
+}
+
+//== Footer Navigation anchor styles
+.zone-content-wrapper .zone-content {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+  position: relative;
+}
+
+
+/** ===== Media Queries ==== **/
+/**
+/** Mobile styles ************/
+
+
+//== Search Bar - Full Desktop
+  @media (min-width: 1220px){
+    .views-exposed-form{
+      margin-left: -565px;
+      margin-top: -52px;
+    }
+  }
+
+//== Search Bar - Medium Desktop
+  @media (max-width: 1219px){
+    .views-exposed-form{
+      margin-left: -325px;
+      margin-top: -52px;
+    }
+  }
+
+  //== Removing Extra Whitespace on wrapper in mobile
+  @media (max-width: 979px){
+    #section-header #zone-branding-wrapper {
+      height: 80px;
+      margin-top:30px;
+    }
+
+  //== Fixed Mobile Floating Logo
+    .logo-img {
+      float: left;
+      margin: 15px;
+      position: absolute;
+      top: 200;
+    }
+
+  //== Mobile Cart
+#section-header .block-shopping-cart-block .content {
+    background-image: url("../images/picto_cart_white.png");
+    color: #fff;
+    background-color:rgba(0, 0, 0, 1);
+}
+
+  //==Fixed site name floating top in mobile
+    .site-name {
+      margin-left: -80px;
+      margin-top: 15px;
+  }
+}

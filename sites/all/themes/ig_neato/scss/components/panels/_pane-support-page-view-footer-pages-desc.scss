@@ -1,0 +1,17 @@
+/* 
+There are a few unique pages that contain only content but no sidebar, 
+so the text runs way too long on desktop. 
+These pages are found in links in the footer. 
+Some of the links in the footer point to pages that are also under the support 
+section. Those pages are in a template that have a sidebar, and should not 
+be affected by the styles below.
+For example: /en-us/site/privacy-policy 
+*/
+.pane-support-page-view-footer-pages-desc {
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
+  @include media($screen-lg) {
+    margin-left: 30px;
+    @include span-columns(7);
+  }
+}

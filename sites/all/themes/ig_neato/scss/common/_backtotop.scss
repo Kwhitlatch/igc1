@@ -1,0 +1,23 @@
+/**
+ * - Back To Top Module
+ * ----------------------------------------------------------------------------
+ *
+ * This module has an admin interface for setting colors and icons:
+ * /admin/config/user-interface/back_to_top
+ *
+ */
+
+#backtotop {
+    border-radius: 0;
+    border: none;
+    bottom: 3rem;
+    font-size: 3.8rem;
+    height: 5rem;
+    opacity: .4;
+    padding: .4rem .9rem .7rem .9rem;
+    right: 3rem;
+    width: 5rem;
+    &:hover {
+        opacity: 1;
+    }
+}

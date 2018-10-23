@@ -1,0 +1,17 @@
+name = Tax Meas Harm
+description = Tax Meas Harm
+core = 7.x
+package = Fluke Features
+version = 7.x-1.0
+features[features_api][] = api:2
+features[taxonomy][] = harmonics
+features[uuid_term][] = 690c4648-8ee4-432b-a325-a6808c9c5ae7
+features[uuid_term][] = 8e001a58-1bec-4578-b49a-a43af3d044c2
+features[uuid_term][] = 9f49b46a-053e-4a1a-aa81-2129e87b1824
+features[uuid_term][] = a432144d-50ab-437f-9628-715b3cb4d2f4
+features[uuid_term][] = d2adc312-acc1-4740-9dd5-79ee30ea2efd
+features[uuid_term][] = fcc69da6-a03a-4cc2-aad4-12f10c4dcb04
+features_exclude[dependencies][features] = features
+features_exclude[dependencies][taxonomy] = taxonomy
+features_exclude[dependencies][uuid] = uuid
+features_exclude[dependencies][uuid_features] = uuid_features

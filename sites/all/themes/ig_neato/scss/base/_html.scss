@@ -1,0 +1,7 @@
+body {
+  -webkit-user-select: initial !important;
+  -moz-user-select: initial !important;
+  -ms-user-select: text !important; // MIG-3861: Fixes a bug in ie11 that disalows user text selection. https://www.drupal.org/project/mmenu/issues/2547353
+  -o-user-select: initial !important;
+  user-select: initial !important;
+}

@@ -1,0 +1,2310 @@
+<?php
+/**
+ * @file
+ * The IG Commerce Utility Products module.
+ * @author anisha.shaikh@fluke.com
+ */
+
+function igcommerce_utility_products_menu(){
+    $items = [];
+
+    //Setup paths for products based on url builder
+    $term = array_pop(taxonomy_get_term_by_name('product', 'url_builder'));
+
+    foreach($term->field_url_title as $language => $values){
+        if($values[0]['value'] !== 'product'){
+
+            //$items[$values[0]['value'].'/%'] = [
+            $items[$values[0]['value']] = [
+                'page callback' => 'page_manager_page_execute',
+                'page arguments' => ['product_page'],
+                'access arguments' => ['access content'],
+                'file' => 'plugins/tasks/page.inc',
+                'file path' => drupal_get_path('module', 'page_manager'),
+            ];
+        }
+    }
+
+    return $items;
+}
+
+/**
+ * Declare what blocks are provided by this module.
+ * Implements hook_block_info().
+ */
+function igcommerce_utility_products_block_info()
+{
+
+    $blocks['Product Detail Page'] = array(
+        'info' => t('Product Detail Page'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+
+    $blocks['New Products Page'] = array(
+        'info' => t('New Products Page'),
+        'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+
+    $blocks['pricespider-wtb-page'] = array(
+      'info' => t('Pricespider for where to buy page'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+    );
+
+    return $blocks;
+}
+
+/**
+ * Define what the block is going to look like.
+ * Implements hook_block_view().CTA button for product display page
+ */
+function igcommerce_utility_products_block_view($delta)
+{
+
+    $block = array();
+
+    switch ($delta) {
+        case 'Product Detail Page':
+            $block['content'] = igcommerce_utility_product_detail_page();
+            break;
+        case 'New Products Page' :
+            module_load_include('inc', 'igcommerce_utility_products', 'includes/igcommerce_utility_product_new');
+            $block['content'] = igcommerce_utility_product_new_products_page();
+            break;
+        case 'pricespider-wtb-page' :
+          $block['content'] = igcommerce_utility_product_pricespider_wtb();
+          break;
+    }
+
+    return $block;
+}
+
+
+function igcommerce_utility_product_detail_page() {
+  global $language;
+  $content = NULL;
+  
+  $filters = array(
+      "ss_path_alias" => current_path(),
+      "ss_language" => $language->language,
+      "bundle" => "product_display"
+  );
+  
+  $query = fluke_solr_get_connection();
+  
+  $query_options = fluke_solr_add_filters($query, array('filters' => $filters));
+  $response = fluke_solr_query($query_options);
+  
+  if (!empty($response->response->docs[0])) {
+    // Add metatags
+    igcommerce_utility_head_elements($response->response->docs[0]);
+  } else {
+    drupal_not_found();
+  }
+  
+  if (!empty($response->response->docs)) {
+    $content = igcommerce_utility_product_detail_page_render($response->response->docs[0]);
+  }
+  return $content;
+  
+}
+
+
+function igcommerce_utility_product_detail_page_render($solr_doc){
+
+    igcommerce_utility_head_elements($solr_doc, TRUE);
+    // Needed for determining if product is an accessory or not.
+    $product_type = '';
+    if (!empty($solr_doc->sm_product_type[0])) {
+      $product_type = $solr_doc->sm_product_type[0];
+    } elseif (!empty($solr_doc->sm_vid_Product_Type[0])) {
+      $product_type = $solr_doc->sm_vid_Product_Type[0];
+    }
+
+    drupal_add_css(libraries_get_path('flexslider') . '/flexslider.css');
+    drupal_add_css(drupal_get_path('module', 'igcommerce_utility_products') . '/css/igcommerce_utility_products.css');
+    drupal_add_js(libraries_get_path('flexslider') . '/jquery.flexslider-min.js');
+    drupal_add_js(libraries_get_path('readmore_formatter') . '/readmore.min.js');
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_products') . '/js/igcommerce_utility_products.js');
+    // Fade in/out transitions for the tab panels
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_products') . '/js/transition.js');
+    // Tab functionality
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_products') . '/js/tab.js');
+    // Handles the accordion collapsing
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_products') . '/js/collapse.js');
+    // Tab collapse to accordion on mobile
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_products') . '/js/tab-collapse.js');
+
+    $content = array();
+    $content['banner'] = igcommerce_utility_products_get_banner($solr_doc);
+    $content['bread'] = igcommerce_utility_products_get_bread($solr_doc);
+    $content['title'] = $solr_doc->ss_field_content_title;
+    $content['reviews_stars'] = igcommerce_utility_products_get_reviews_stars($solr_doc); // Bazaarvoice stars
+    $content['slideshow'] = igcommerce_utility_products_get_slideshow($solr_doc);
+    $content['alerts'] = igcommerce_utility_products_get_alerts($solr_doc); // fluke-product-display-alerts
+    $content['replaced'] = igcommerce_utility_products_get_replaced($solr_doc); // fluke-product-display-replaced-by
+    $content['features'] = igcommerce_utility_products_get_features($solr_doc); // Keyfeatures title and content
+    // Awards were intentionally removed when product layout changed to tabs, this may come back later
+    //$content['awards'] = igcommerce_utility_products_get_awards($solr_doc); // icon indicating awards won
+    $content['safety'] = igcommerce_utility_products_get_safety($solr_doc); // safety certifications
+    $content['cta'] = igcommerce_utility_products_top_cta($solr_doc); // CTA buttons
+    $content['overview'] = igcommerce_utility_products_get_overview($solr_doc);
+    $content['specs'] = igcommerce_utility_products_get_specs($solr_doc);
+    $content['models'] = igcommerce_utility_products_get_models($solr_doc);
+    $content['top_pick_access'] = igcommerce_utility_products_get_top_pick_access($solr_doc);
+    $content['accordion_access'] = igcommerce_utility_products_get_accordion_access($solr_doc);
+    $content['related_prod'] = igcommerce_utility_products_get_related_prod($solr_doc);
+    $content['accessories_related_prod'] = igcommerce_utility_accessories_get_related_prod($solr_doc);
+    $content['reviews'] = igcommerce_utility_products_get_reviews($solr_doc); // Bazaarvoice reviews
+    $content['footer'] = igcommerce_utility_products_get_footer($solr_doc);
+    $content['special_offers'] = igcommerce_utility_get_products_offers($solr_doc);
+    // igcommerce_utility_products_get_resources() returns the output and a flag telling if there are
+    // manuals for this product.
+    $resources = igcommerce_utility_products_get_resources($solr_doc);
+    $content['resources'] = $resources['output'];
+    // Render the manual link if there are manuals.
+    if ($resources['manuals_yn']) {
+      $content['manual'] = theme('product_manual_link'); // Link to manuals
+    }
+
+    return theme('product_detail', array('content' => $content, 'product_type' => $product_type));
+}
+
+
+function igcommerce_utility_get_price_list($solr_doc) {
+
+    global $language;
+    $lang = $language->language;
+    $output = NULL;
+
+    $options = array(
+        "ss_language" => $lang,
+        "bundle" => "price_list",
+        "entity_type" => "taxonomy_term",
+    );
+
+    $conn = fluke_solr_get_connection();
+
+    $filters = fluke_solr_add_filters($conn, array('filters' => $options, 'fl' => 'sm_field_content_title, ss_field_url', 'rows' => 1));
+    $response = fluke_solr_query($filters);
+
+    $docs = $response->response->docs;
+
+    if (sizeof($docs) > 0) {
+        if (isset($docs[0]->ss_field_url)) {
+            $output .= '<div class="panel panel-default">';
+            $output .= '<div class="panel-heading" id="fluke-product-display-pricelist-title" role="tab">';
+            $output .= "<h4 class='panel-title'>";
+            $output .= '<a aria-controls="fluke-product-display-manuals-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-price-list" role="button">';
+            $output .= t("Price Lists") . " (1)"; // there will always only be one
+            $output .= "</a></h4>";
+            $output .= '</div>'; // end .panel-heading
+            $output .= '<div aria-labelledby="fluke-product-display-pricelist-title" class="panel-collapse collapse" id="fluke-product-display-price-list" role="tabpanel">';
+            $output .= '<div class="panel-body">';
+            $output .= "<ul class='fluke-product-display-price-list'>";
+            $output .= "<a href='" . $docs[0]->ss_field_url . "' alt='pricelist' target='_blank'>";
+            $output .= $docs[0]->sm_field_content_title[0];
+            $output .= "</a>";
+            $output .= "</ul>";
+            $output .= '</div>'; // end .panel-body
+            $output .= '</div>'; // end .panel-collapse
+            $output .= '</div>'; //end .panel
+        }
+    }
+
+    return $output;
+
+}
+
+
+
+function igcommerce_utility_get_products_offers($solr_doc)
+{
+
+    global $language;
+
+    $content = array();
+
+    if (isset($solr_doc->tm_special_offers)) {
+        $specials = json_decode($solr_doc->tm_special_offers[0]);
+        foreach ($specials as $special) {
+            $offers = NULL;
+            $special_offer = json_decode($special);
+
+            // Skip if the title is empty.
+            if(empty($special_offer[0]->title)){
+                continue;
+            }
+
+            if ($special_offer[0]->bundle == "e_link") {
+                if($special_offer[0]->path_alias){
+                    $path = $special_offer[0]->path_alias;
+                }else{
+                    $path = $special_offer[0]->external_url;
+                }
+
+                $offers .= "<a href='" . $path . "'  target='_blank'>";
+            } else {
+                $offers .= "<a class='special-offers' href='/" . $language->language . "/" . $special_offer[0]->path_alias . "'>";
+            }
+            $offers .= $special_offer[0]->title;
+            $offers .= "</a>";
+            $content[] = $offers;
+        }
+    }
+    if(count($content)) {
+        return theme('product_special_offers', array('content' => $content));
+    }else{
+        return "";
+    }
+}
+
+function igcommerce_utility_products_get_bread($solr_doc)
+{
+    // The structured microdata in the breadcrumbs are based on google recomendations:
+    // https://developers.google.com/search/docs/data-types/breadcrumbs
+    $content = array();
+
+    if (!empty($solr_doc->im_url_path_builder)) {
+
+        $bc_array = [];
+        $ids = '';
+
+        $last = count($solr_doc->im_url_path_builder) - 1;
+
+        foreach ($solr_doc->im_url_path_builder as $index => $item) {
+            $ids .= $item;
+
+            if ($index != $last) {
+                $ids .= ' OR ';
+            }
+        }
+
+        global $language;
+        $lang = $language->language;
+
+        $options = [
+            "ss_language" => $lang,
+            "bundle" => "url_builder",
+            "entity_type" => "taxonomy_term",
+            "entity_id" => "($ids)"
+        ];
+
+        $fields = [];
+
+        $conn = fluke_solr_get_connection();
+
+        $filters = fluke_solr_add_filters($conn, array('filters' => $options, 'fl' => $fields, 'rows' => 10));
+        $response = fluke_solr_query($filters);
+
+        $docs = $response->response->docs;
+        $link = '/';
+
+        $proper_order = array_reverse($solr_doc->im_url_path_builder);
+
+        // Needs to be in the same order as the original field
+        foreach ($proper_order as $index => $item) {
+            foreach($response->response->docs as $doc){
+                if ($doc->sm_field_content_title[0] === 'Fluke IG') {
+                    continue;
+                }
+                if($item === $doc->entity_id){
+                    $link .= $doc->sm_field_url_title[0];
+
+                    $bc_array[] = ['title' => $doc->sm_field_content_title[0], 'link' => $link];
+
+                    $link .= '/';
+                }
+            }
+        }
+
+        $content['breadcrumb_array'] = $bc_array;
+        $content['title'] = $solr_doc->ss_field_content_title;
+        return theme('product_breadcrumbs', array('content' => $content));
+    }
+    return NULL;
+}
+
+
+/**
+ * Generates the output for resources on a product display
+ * @param  [type] $solr_doc [description]
+ * @return [type]           [description]
+ *
+ * output structure:
+ * 1) Manuals
+ * 2) Datasheets
+ * 3) App notes
+ * 4) Brochures
+ * 5) Case studies
+ * 6) White papers
+ * 7) Other
+ * 8) Webcards
+ * 9) Download the app
+ * 10) Related software
+ * 11) Safety certifications //Safety Certs were moved to the Key Features section -rrn 5-25-17
+ * 12) Related links
+ * 13) Register products
+ *
+ */
+function igcommerce_utility_products_get_resources($solr_doc) {
+  // Define return array.
+  $return = [];
+  
+  // Get manuals, documents, and videos which include demos) for this product from Solr, This will provide content for
+  // manuals, data sheets, app notes, brochures, case studies, and white papers.
+  $filters = array(
+    "im_pp_pcat_products" => $solr_doc->ss_product_id_pcat,
+    "ss_language" => $solr_doc->ss_language,
+    "bundle" => '(document OR manual OR video)'
+  );
+  $options['filters'] = $filters;
+  $options['rows'] = 100;
+  // What is run from within fluke_solr_get_entity()
+  $query = fluke_solr_get_connection();
+  $query->setAvailableSort('is_sort', array(
+    'title' => t('Sort Field'),
+    'default' => 'asc'
+  ));
+  $query->setAvailableSort('ss_field_content_title', array(
+    'title' => t('Content Title'),
+    'default' => 'asc'
+  ));
+  // Adding multiple sorts via fluke_solr_add_filters() doesn't work, since only one
+  // ends up being added to the query, so we just add it as one parameter here.
+  $query->addParam('sort', 'is_sort asc, ss_field_content_title asc');
+  $filters = fluke_solr_add_filters($query, $options);
+  $response = fluke_solr_query($filters);
+  $resource_docs = $response->response->docs;
+ 
+  // Loop through and organize into array by bundle and doc type.
+  $resources = array();
+  foreach ($resource_docs as $item) {
+    switch ($item->bundle) {
+      case 'manual':
+        $resources['manuals'][] = $item;
+        break;
+      case 'document':
+        // Documents have to be sorted by ss_document_type.
+        $resources['documents'][$item->ss_document_type][] = $item;
+        break;
+      case 'video':
+        // We need to split out video into demos and non-demos.
+        if ($item->is_video_type == 2166) {
+          $resources['demos'][] = $item;
+        }
+        else {
+          $resources['videos'][] = $item;
+        }
+        break;
+    }
+  }
+
+  if(!empty($solr_doc)) {
+     $output = '<section id="fluke-product-display-resources-section">';
+     $output .= '<h2>' . t('Resources') . ': ' . $solr_doc->ss_field_content_title . '</h2>';
+     $output .= '<div id="fluke-product-display-resources">';
+     $output .= '<div aria-multiselectable="true" class="panel-group" id="resources-accordion" role="tablist">';
+     if (count($resources) > 0 && isset($resources['manuals'])) {
+       $output .= igcommerce_utility_products_get_manuals($resources['manuals']);
+     }
+     // There may or may not be content for the documents, so we only want to pass the values to
+     // igcommerce_utility_products_render_resources() if there is content to avoid PHP errors.
+     if (count($resources) > 0 && isset($resources['documents']))  {
+       foreach ($resources['documents'] as $type => $items) {
+         $output .= igcommerce_utility_products_render_resources($resources['documents'][$type]);
+       }
+     }
+     // Other non-document stuff
+     $output .= igcommerce_utility_products_get_webcard($solr_doc);
+     $output .= igcommerce_utility_products_get_app($solr_doc);
+     $output .= igcommerce_utility_products_get_relatedsw($solr_doc);
+     // Safety section moved to key features -rrn
+     //$output .= igcommerce_utility_products_get_safety($solr_doc);
+     $output .= igcommerce_utility_products_get_links($solr_doc);
+     if (count($resources) > 0 && isset($resources['videos'])) {
+       $output .= igcommerce_utility_products_get_videos($resources['videos']);
+     }
+     if (count($resources) > 0 && isset($resources['demos'])) {
+      $output .= igcommerce_utility_products_get_demos($resources['demos']);
+     }
+
+     // added price lists 8/2018 TT
+     $output .= igcommerce_utility_get_price_list($solr_doc);
+
+     $output .= igcommerce_utility_products_get_register($solr_doc);
+     $output .= '</div>'; // end #resources-accordion
+     $output .= '</div>'; // end #fluke-product-display-resources
+     $output .= '</section>'; // end #fluke-product-display-resources-section
+
+     $return['output'] = $output;
+     // Set flag specifying if there are manuals.
+     $return['manuals_yn'] = count($resources) > 0 && isset($resources['manuals']) ? TRUE : FALSE;
+     
+     return $return;
+  }
+}
+
+/**
+ * HTML output for product resources/manuals
+ * @param ApacheSolrDocument $solr_doc
+ */
+function igcommerce_utility_products_get_manuals($manuals) {
+  global $language;
+  $lang = $language->language;
+
+  if (is_null($manuals) || count($manuals) == 0) {
+    return;
+  }
+
+  // Need to pull out user manuals so they stay on top.
+  $user_manuals = array();
+  $other_manuals = array();
+  foreach($manuals as $key => $value) {
+    if ($value->is_sort == 2) {
+      $user_manuals[] = $value;
+    }
+    else {
+      $other_manuals[] = $value;
+    }
+  }
+
+  // Perform case insensitive sort on the rest by tm_field_display_title[0]
+  usort($other_manuals, function($a, $b) {
+    return strtolower($a->ss_field_content_title) <=> strtolower($b->ss_field_content_title);
+  });
+
+  // Merge them back together.
+  $manuals2 = array_merge($user_manuals, $other_manuals);
+
+  $man = array();
+  foreach ($manuals2 as $key => $doc) {
+    $title = $doc->ss_field_content_title;
+    $term = _taxonomy_term_load_solr($doc->is_field_manual_type_tid, $language->language, 'dam');
+    // Get translated manual_type term to use as suffix for manual and supplement.
+    $manual_type = str_replace('&#039;', '', $term->sm_field_display_title[0]);
+    $supplement_type = str_replace('&#039;', '', $term->sm_field_supplement_title_transl[0]);
+    if (!empty($doc->tm_manuals_and_supplement)) {
+      $supp = json_decode($doc->tm_manuals_and_supplement[0]);
+      foreach ($supp as $manualorsupplement) {
+        // We are assuming there is only one manual file and the latest supplement indexed.
+        $url = isset($manualorsupplement->manual_file) ? $manualorsupplement->manual_file : '';
+
+        $man[$key]['title'] = $title . ' | ' . $manual_type;
+        $man[$key]['url'] = $url;
+        // Add supplements if found
+        if(isset($manualorsupplement->supplement_file)) {
+          $man[$key]['supplements'] = $manualorsupplement->supplement_file;
+          $man[$key]['supplement_title'] = isset($manualorsupplement->supplement_title) ? $manualorsupplement->supplement_title  . ' | ' . $supplement_type : $title . ' | ' . $supplement_type;
+        }
+      }
+    }
+  }
+
+  $output = '';
+  //Changed to incremental counter to add supplement to manuals - MIG-2053
+  $count = 0;
+    foreach ($man as $manual) {
+    $count++;
+      // check supplements
+      if (!empty($manual['supplements'])) {
+          $count++;
+      }
+  }
+  $output .= '<div class="panel panel-default">';
+  $output .= '<div class="panel-heading" id="fluke-product-display-manuals-title" role="tab">';
+  $output .= "<h4 class='panel-title'>";
+  $output .= '<a aria-controls="fluke-product-display-manuals-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-manuals-list" role="button">';
+  $output .= t("Manuals") . " (" . $count . ")";
+  $output .= "</a></h4>";
+  $output .= '</div>'; // end .panel-heading
+  $output .= '<div aria-labelledby="fluke-product-display-manuals-title" class="panel-collapse collapse" id="fluke-product-display-manuals-list" role="tabpanel">';
+  $output .= '<div class="panel-body">';
+  $output .= "<ul class='fluke-product-display-manuals-list'>";
+  foreach ($man as $manual) {
+    $output .= "<li class='fluke-product-display-manuals-item'>";
+    // MIG4392: We must use the noopener/noreferrer fix to allow the manuals to 
+    // open in a new tab in safari/desktop & iphoneX
+    // This also addresses a security vulnerability: 
+    // https://support.performancefoundry.com/article/186-noopener-noreferrer-on-my-links
+    $output .= "<a href='" . $manual['url'] . "' class='event-manual' rel='noopener noreferrer'>";
+    $output .= $manual['title'];
+    $output .= "</a>";
+    $output .= "</li>";
+      // check supplements
+      if (!empty($manual['supplements'])) {
+          $output .= "<li class='fluke-product-display-manuals-item'>";
+          $output .= "<a href='" .$manual['supplements'] . "' class='event-supplement'>";
+          $output .= $manual['supplement_title'];
+          $output .= "</a>";
+          $output .= "</li>";
+      }
+  }
+  $output .= "</ul>";
+  $output .= '</div>'; // end .panel-body
+  $output .= '</div>'; // end .panel-collapse
+  $output .= '</div>'; //end .panel
+
+  return $output;
+
+}
+
+/**
+ * Helper function to generate markup for resource sections
+ *
+ * @param $docs
+ *   The solr docs for the resource
+ */
+function igcommerce_utility_products_render_resources($docs) {
+  $output = $item_output = '';
+  $count = count($docs);
+  // Get title from the first doc, since all in the group are of
+  // the same type.
+  $title = ucwords($docs[0]->ss_document_type);
+  // We have to convert "General" to "Other"
+  $title = $title == "General" ? "Other" : $title;
+
+  if ($count > 0) {
+    foreach ($docs as $doc) {
+      $class = 'event-' . drupal_html_class($title);
+      $url = l($doc->ss_field_content_title, $doc->ss_field_content_url, array('attributes' => array('class' => array($class))));
+      $item_output .= theme('product_resource', array('url' => $url));
+    }
+    // Theme the total.
+    $title = t($title) . " (" . $count . ")";
+  
+    $output = theme('product_resources', array(
+      'title' => $title,
+      'items' => $item_output
+    ));
+  
+    return $output;
+  }
+}
+
+function igcommerce_utility_products_get_webcard($solr_doc)
+{
+
+    $output = NULL;
+    if (isset($solr_doc->tm_web_card_details) && !empty($solr_doc->tm_web_card_details)) {
+        $webcards = json_decode($solr_doc->tm_web_card_details[0]);
+        if (sizeof($webcards) > 0) {
+            $output .= '<div class="panel panel-default">';
+            $output .= '<div class="panel-heading" id="fluke-product-display-web-card-title" role="tab">';
+            $output .= "<h4 class='panel-title'>";
+            $output .= '<a aria-controls="fluke-product-display-web-card-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-web-card-list" role="button">';
+            $output .= t("Webcards") . " (" . sizeof($webcards) . ")";
+            $output .= "</a></h4>";
+            $output .= '</div>'; // end .panel-heading
+            $output .= '<div aria-labelledby="fluke-product-display-web-card-title" class="panel-collapse collapse" id="fluke-product-display-web-card-list" role="tabpanel" >';
+            $output .= '<div class="panel-body">';
+            $output .= "<ul class='fluke-product-display-web-card-list'>";
+            if (sizeof($webcards) == 1) {
+                if (strlen($webcards->alt) < 1) {
+                    $webcards->alt = ucfirst(str_replace("-", " ", $solr_doc->ss_field_url_title)) . " web card";
+                }
+                $output .= "<li class='fluke-product-display-webcard-item'>";
+                $output .= "<a href='" . $webcards->url . "' alt='" . $webcards->alt . "' class='event-webcard'>";
+                $output .= $webcards->alt;
+                $output .= "</a>";
+                $output .= "</li>";
+            } else {
+                foreach ($webcards as $webcard) {
+                    if (strlen($webcard->alt) < 1) {
+                        $webcard->alt = ucfirst(str_replace("-", " ", $solr_doc->ss_field_url_title)) . " web card";
+                    }
+                    $output .= "<li class='fluke-product-display-webcard-item'>";
+                    $output .= "<a href='" . $webcard->url . "' class='event-webcard'>";
+                    $output .= $webcard->alt;
+                    $output .= "</a>";
+                    $output .= "</li>";
+                }
+            }
+            $output .= "</ul>";
+            $output .= '</div>'; // end .panel-body
+            $output .= '</div>'; // end .panel-collapse
+            $output .= '</div>'; //end .panel
+        }
+    }
+
+    return $output;
+
+}
+
+function igcommerce_utility_products_get_app($solr_doc)
+{
+
+    $output = NULL;
+    $items = array();
+    if (isset($solr_doc->tm_download_apps) && is_array($solr_doc->tm_download_apps)) {
+      if (strlen($solr_doc->tm_download_apps[0]) > 0) {
+        $apps = json_decode($solr_doc->tm_download_apps[0]);
+        if (sizeof($apps) > 0) {
+          $output .= '<div class="panel panel-default">';
+          $output .= '<div class="panel-heading" id="fluke-product-display-apps-title" role="tab">';
+          $output .= "<h4 class='panel-title'>";
+          $output .= '<a aria-controls="fluke-product-display-apps-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-apps-list" role="button">';
+          $output .= t("Download the app") . " (" . count((array) $apps) . ")";
+          $output .= "</a></h4>";
+          $output .= '</div>'; // end .panel-heading
+          $output .= '<div aria-labelledby="fluke-product-display-apps-title" class="panel-collapse collapse" id="fluke-product-display-apps-list" role="tabpanel">';
+          $output .= '<div class="panel-body">';
+          $output .= "<ul class='fluke-product-display-apps-list'>";
+          foreach ($apps as $app) {
+
+            $output .= "<li class='fluke-product-display-apps-item'>";
+            $output .= "<a href='" . $app->url . "' class='event-app-download'>";
+            $output .= $app->alt;
+            $output .= "</a>";
+            $output .= "</li>";
+          }
+          $output .= "</ul>";
+          $output .= '</div>'; // end .panel-body
+          $output .= '</div>'; // end .panel-collapse
+          $output .= '</div>'; //end .panel
+          //dpm($apps);
+          //$items['accet_name'] = t("Download the app");
+          //$items['details'] = $apps;
+          //$items['total'] = count((array)$apps);
+        }
+      }
+    }
+    //return theme('product_accets', array('items' => $items));
+    return $output;
+
+}
+
+function igcommerce_utility_products_get_relatedsw($solr_doc)
+{
+    global $language;
+    $output = NULL;
+    $lang_local = igcommerce_utility_get_local();
+    if (isset($solr_doc->tm_related_software) && is_array($solr_doc->tm_related_software)) {
+      if (strlen($solr_doc->tm_related_software[0]) > 0) {
+        $software = json_decode($solr_doc->tm_related_software[0]);
+        if (sizeof($software) > 0) {
+          $output .= '<div class="panel panel-default">';
+          $output .= '<div class="panel-heading" id="fluke-product-display-relatedsw-title" role="tab">';
+          $output .= "<h4 class='panel-title'>";
+          $output .= '<a aria-controls="fluke-product-display-relatedsw-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-relatedsw-list" role="button">';
+          $output .= t("Software") . " (" . count((array) $software) . ")";
+          $output .= "</a></h4>";
+          $output .= '</div>'; // end .panel-heading
+          $output .= '<div aria-labelledby="fluke-product-display-relatedsw-title" class="panel-collapse collapse" id="fluke-product-display-relatedsw-list" role="tabpanel">';
+          $output .= '<div class="panel-body">';
+          $output .= "<ul class='fluke-product-display-relatedsw-list'>";
+          foreach ($software as $sw) {
+            $output .= "<li class='fluke-product-display-relatedsw-item'>";
+            $output .= "<a href='" . $lang_local . '/' . $sw->url . "' class='event-software'>";
+            $output .= $sw->display_title;
+            $output .= "</a>";
+            $output .= "</li>";
+          }
+          $output .= "</ul>";
+          $output .= '</div>'; // end .panel-body
+          $output .= '</div>'; // end .panel-collapse
+          $output .= '</div>'; //end .panel
+        }
+      }
+    }
+
+    return $output;
+
+}
+
+
+// This will generate the saftey certifications wrapped in an accordion for
+// output in the resources section. The safety certifications should be in the
+// key features section, and don't need the accordion wrapping. Delete
+// this code after it has been confirmed with Pascal the movement to Key
+// Features is correct, and not a design change that I was unaware of.
+// RRN 5-25-17
+// function igcommerce_utility_products_get_safety($solr_doc) {
+
+//   $output = NULL;
+
+//   if (strlen($solr_doc->tm_safety_certificates[0]) > 0) {
+//     $certs = json_decode($solr_doc->tm_safety_certificates[0]);
+//     if (sizeof($certs) > 0) {
+//       $output .= '<div class="panel panel-default">';
+//       $output .= '<div class="panel-heading" id="fluke-product-display-safety-title" role="tab">';
+//       $output .= "<h4 class='panel-title'>";
+//       $output .= '<a aria-controls="fluke-product-display-safety-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-safety-list" role="button">';
+//       $output .= t("Safety certificates") . " (" . count((array)$certs) . ")";
+//       $output .= "</a></h4>";
+//       $output .= '</div>'; // end .panel-heading
+//       $output .= '<div aria-labelledby="fluke-product-display-safety-title" class="panel-collapse collapse" id="fluke-product-display-safety-list" role="tabpanel">';
+//       $output .= '<div class="panel-body">';
+//       $output .= "<ul class='fluke-product-display-safety-list'>";
+//       foreach ($certs as $cert) {
+//         $output .= "<li class='fluke-product-display-safety-item'>";
+//         $output .= "<div class='safety-icon " . $cert->name . "'></div>";
+//         $output .= "</li>";
+//       }
+//       $output .= "</ul>";
+//       $output .= '</div>'; // end .panel-body
+//       $output .= '</div>'; // end .panel-collapse
+//       $output .= '</div>'; //end .panel
+//     }
+//   }
+
+//   return $output;
+
+// }
+
+function igcommerce_utility_products_get_safety($solr_doc)
+{
+
+    $output = NULL;
+
+    if (!empty($solr_doc->tm_safety_certificates[0])) {
+        $certs = json_decode($solr_doc->tm_safety_certificates[0]);
+        if (sizeof($certs) > 0) {
+            $output .= "<div id='fluke-product-display-safety-certs'>";
+            foreach ($certs as $cert) {
+                $output .= "<span class='fluke-product-display-safety-item safety-icon " . $cert->name . "'></span>";
+            }
+            $output .= "</div>";
+        }
+    }
+
+    return $output;
+
+}
+
+
+function igcommerce_utility_products_get_links($solr_doc) {
+  global $language;
+  
+  $output = NULL;
+  
+  if (!empty($solr_doc->im_field_related_links_solr)) {
+    $links_array = $solr_doc->im_field_related_links_solr;
+    $links = array();
+    
+    // Load the links here to get an accurate count. If a link can't be retrieved
+    // from SOLR, then no need counting it or trying to display it
+    foreach ($links_array as $nid) {
+      if ($link = fluke_solr_get_entity($nid,'node', 'e_link')) {
+        // check if a legacy field exists
+        $fieldname = 'ss_field_content_title';
+        if (!empty($link->{$fieldname})) {
+          $link->ss_field_content_title = $link->{$fieldname};
+        }
+        $links[] = $link;
+      }
+    }
+    
+    $count = count($links);
+    if ($count) {
+      $output .= '<div class="panel panel-default">';
+      $output .= '<div class="panel-heading" id="fluke-product-display-links-title" role="tab">';
+      $output .= "<h4 class='panel-title'>";
+      $output .= '<a aria-controls="fluke-product-display-links-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-links-list" role="button">';
+      $output .= t("Related links") . " (" . $count . ")";
+      $output .= "</a></h4>";
+      $output .= '</div>'; // end .panel-heading
+      $output .= '<div aria-labelledby="fluke-product-display-links-title" class="panel-collapse collapse" id="fluke-product-display-links-list" role="tabpanel">';
+      $output .= '<div class="panel-body">';
+      $output .= "<ul class='fluke-product-display-links-list'>";
+      foreach ($links as $link) {
+        $output .= "<li class='fluke-product-display-links-item'>";
+        $output .= "<a href='$link->ss_external_url' class='event-related-link'>";
+        $output .= $link->ss_field_content_title;
+        $output .= "</a>";
+        $output .= "</li>";
+      }
+      $output .= "</ul>";
+      $output .= '</div>'; // end .panel-body
+      $output .= '</div>'; // end .panel-collapse
+      $output .= '</div>'; //end .panel
+    }
+  }
+  
+  return $output;
+
+}
+
+function igcommerce_utility_products_get_videos($docs) {
+  global $language;
+
+  $output = NULL;
+
+  // Load the links here to get an accurate count. If a link can't be retrieved
+  // from SOLR, then no need counting it or trying to display it
+  foreach ($docs as $video) {
+    // Url
+    if (!empty($video->ss_field_content_url)) {
+      $video_url = $video->ss_field_content_url . '&';
+    }
+    elseif (!empty($video->ss_field_youtube_video)) {
+      if (strpos($video->ss_field_youtube_video, 'youtube.com/watch') !== FALSE) {
+        $video->ss_field_youtube_video = str_replace('youtube.com/watch', 'youtube.com/embed', $video->ss_field_youtube_video);
+      }
+      $video_url = $video->ss_field_youtube_video . '&';
+    }
+    elseif (!empty($video->ss_field_demo_url)) {
+      $video_url = $video->ss_field_demo_url . '?';
+    }
+    else {
+      // No video so skip this
+      continue;
+    }
+    $video_url .= 'iframe=true';
+
+    $video->video_url = $video_url;
+
+    $videos[] = $video;
+
+  }
+  
+  $count = count($videos);
+  if ($count > 0) {
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_products') . '/js/video.js');
+  
+    $title = t("Related videos") . " (" . $count . ")";
+    $item_output = '';
+    // Generate links for each video.
+    foreach ($videos as $item) {
+      $url = l($item->ss_field_content_title, $item->video_url, array('attributes' => array('class' => array('colorbox-load', 'event-video-play'))));
+      $item_output .= theme('product_video', array('url' => $url));
+    }
+    // Generate output for entire section.
+    $output = theme('product_videos', array(
+      'title' => $title,
+      'items' => $item_output
+    ));
+  }
+
+  return $output;
+}
+
+
+function igcommerce_utility_products_get_demos($docs) {
+  global $language;
+  
+  $output = NULL;
+
+  // Load the links here to get an accurate count. If a link can't be retrieved
+  // from SOLR, then no need counting it or trying to display it
+  foreach ($docs as $video) {
+    // Url
+    if (!empty($video->ss_field_content_url)) {
+      $video_url = $video->ss_field_content_url . '&';
+    }
+    elseif (!empty($video->ss_field_youtube_video)) {
+      if (strpos($video->ss_field_youtube_video, 'youtube.com/watch') !== FALSE) {
+        $video->ss_field_youtube_video = str_replace('youtube.com/watch', 'youtube.com/embed', $video->ss_field_youtube_video);
+      }
+      $video_url = $video->ss_field_youtube_video . '&';
+    }
+    elseif (!empty($video->ss_field_demo_url)) {
+      $video_url = $video->ss_field_demo_url . '?';
+    }
+    else {
+      // No video so skip this
+      continue;
+    }
+    $video_url .= 'iframe=true';
+
+    $video->video_url = $video_url;
+
+    $videos[] = $video;
+  }
+
+  $count = count($videos);
+  if ($count) {
+    drupal_add_js(drupal_get_path('module', 'igcommerce_utility_products') . '/js/video.js');
+
+    $title = t("Related demos") . " (" . $count . ")";
+    $item_output = '';
+    // Generate links for each video.
+    foreach ($videos as $item) {
+      $url = l($item->ss_field_content_title, $item->video_url, array('attributes' => array('class' => array('colorbox-load', 'event-video-play'))));
+      $item_output .= theme('product_video', array('url' => $url));
+    }
+    // Generate output for entire section.
+    $output = theme('product_videos', array(
+      'title' => $title,
+      'items' => $item_output
+    ));
+
+    return $output;
+  }
+}
+
+
+function igcommerce_utility_products_get_register($solr_doc)
+{
+
+    $output = '<div class="panel panel-default">';
+    $output .= '<div class="panel-heading" id="fluke-product-display-register-title" role="tab">';
+    $output .= "<h4 class='panel-title'>";
+    $output .= '<a aria-controls="fluke-product-display-register-list" aria-expanded="false" class="collapsed"  href="#fluke-product-display-register-list" role="button">';
+    $output .= t("Register products");
+    $output .= "</a></h4>";
+    $output .= '</div>'; // end .panel-heading
+    $output .= '<div aria-labelledby="fluke-product-display-register-title" class="panel-collapse collapse" id="fluke-product-display-register-list" role="tabpanel">';
+    $output .= '<div class="panel-body">';
+    $output .= "<ul class='fluke-product-display-register-list'>";
+    $output .= "<li class='fluke-product-display-regsiter-item'>";
+    $link = 'http://a.fluke.com/registration';
+    //global $language;
+    //if($language->language == 'en-us') {
+    //  $link = 'http://a.fluke.com/register-your-product?countrySelect=US&langSelect=eng&elqTrackId=29ef8a91281346669a402dc0f1240eb5&elq=00000000000000000000000000000000&elqaid=2255&elqat=2&elqCampaignId=';
+    //}
+    $output .= "<a href='".$link."' class='event-register-product'>";
+    $output .= t("Register product");
+    $output .= "</a>";
+    $output .= "</li>";
+    $output .= "</ul>";
+    $output .= '</div>'; // end .panel-body
+    $output .= '</div>'; // end .panel-collapse
+    $output .= '</div>'; //end .panel
+
+    return $output;
+
+}
+
+
+function igcommerce_utility_products_get_related_prod($solr_doc) {
+  global $language;
+  $output = NULL;
+
+  $lang = $language->language;
+  // Make sure there are related products
+  if (isset($solr_doc->tm_related_products[0])) {
+    // Make sure the product is not an Accessory (Those get something else in that section)
+    if($solr_doc->im_field_product_type[0] != 1534) {
+      $products = json_decode($solr_doc->tm_related_products[0]);
+      $prods = $products->$lang;
+      if (sizeof($prods) > 0) {
+        $output = "<aside id='fluke-product-display-related-products'>";
+        $output .= "<h2 class='fluke-product-display-related-products-title'>";
+        $output .= t("Related Products");
+        $output .= "</h2>";
+        if (sizeof($prods) > 4) {
+          //$output .= '<div class="fluke-product-display-related-products-count">' . t("Showing") . " 4 " . t("of") . " " . sizeof($prods) . " " . t("products") . '</div>';
+          $output .= '<div class="fluke-product-display-related-products-count">' . " " . sizeof($prods) . " " . t("products") . '</div>';
+        }
+        $output .= "<div class='ig-related-flexslider'>";
+        $output .= "<ul class='fluke-product-display-related-products-list slides'>";
+        foreach ($prods as $product) {
+          $output .= '<li class="fluke-product-display-related-product-item" itemprop="isRelatedTo" itemscope itemtype="https://schema.org/Product">';
+          // added language and products to URL to complete the whole URL 2/12/2018 - TT
+          $img_url = !empty($product->image) ? $product->image : '';
+          //$styles = igcommerce_utility_get_images($img_url);
+
+          if(!isset($product->alt)) $product->alt = '';
+          
+          //$link_copy = igcommerce_utility_determine_toc_image($styles['field_large_url'], $styles['field_large_url'], $styles['field_large_url'], $product->alt, 'fluke-product-display-related-product-image');
+          $link_copy = igcommerce_utility_format_image_related_products($img_url, $product->alt);
+          $link_copy . '<h3 class="fluke-product-display-related-product-title" itemprop="name">';
+          $link_copy .= $product->display_title;
+          $link_copy . '</h3>';
+
+          $alt = !empty($product->alt) ? $product->alt : $product->display_title;
+          
+          // need to load entity from solr to get up to date path alias as it was out dated on some product_displays
+          $entity = fluke_solr_get_entity($product->entity_id, 'node', 'product_display', $lang, 'ecm', FALSE, TRUE);
+          $output .= l($link_copy, $entity->ss_path_alias_locale, array('html' => TRUE, 'language' => $language, 'attributes' => array('class' => array('fluke-product-display-related-product-link'), 'title' => $alt)));
+          $output .= '<p class="fluke-product-display-related-product-desc" itemprop="description">';
+          $output .= $product->short_desc_summary;
+          $output .= '</p>';
+
+          // Outputs Bazaarvoice inline rating wrapper only for us products
+          if ($lang == "en-us") {
+            // 'explode' can't be nested inside 'end', because it will throw a 'Only variables should be passed by reference' error
+            $get_path_pieces = explode('/', $product->rel_prod_path_alias);
+            $bv_end_id = end($get_path_pieces);
+            $output .= '<div data-bv-show="inline_rating" data-bv-product-id="' . $bv_end_id . '""></div>';
+          }
+          $output .= '</li>';
+        }
+        $output .= '</ul>';
+        $output .= '</div>'; // end ig-related-flexslider
+        $output .= '</aside>';
+      }
+      return $output;
+    }
+  }
+}
+
+/**
+ * Get all related products for display on an Accessory page.
+ *
+ * @param $solr_doc
+ *
+ * On Accessory pages, the sections "Related Products" and "Accessories" do not
+ * show. In their stead, they get this section of products that have this
+ * particular accessory related to them. It's worth noting, that in the ECM, to
+ * get products to show in this section, you have to attach the accessory to the
+ * product, instead of adding the product to the "Related Products" section
+ * of the Accessory. See this for an example:
+ * /en-us/product/accessories/other/fluke-tpak
+ */
+function igcommerce_utility_accessories_get_related_prod($solr_doc) {
+  // A.K.A. Compatible Products
+
+  $content = '';
+  global $language;
+
+  // Query Solr for related products based on im_accessory_ids.
+  $filters = array(
+    "im_accessory_ids" => $solr_doc->entity_id,
+    "ss_language" => $language->language,
+    "bundle" => "product_display"
+  );
+  
+  $query = fluke_solr_get_connection();
+  $query_options = fluke_solr_add_filters($query, array('filters' => $filters));
+  $response = fluke_solr_query($query_options);
+  
+  if (!empty($response->response->docs[0])) {
+    $rows = array();
+    $header = array('Model Name');
+    $docs = $response->response->docs;
+    foreach ($docs as $doc){
+      if (!empty($doc->sm_product_category_names[0]) && !empty($doc->ss_field_content_title) && !empty($doc->ss_path_alias_locale)) {
+        $url = $doc->ss_path_alias_locale;
+        $prod_cat = $doc->sm_product_category_names[0];
+        $prod_link = l($doc->ss_field_content_title, $url);
+        $rows[] = array(
+          "link" => $prod_link,
+          "category_name" => $prod_cat,
+        );
+      }
+    }
+    //echo '<pre>'; print_r($rows); echo '</pre>';
+    // Organizes all the products according to category
+    $result = array();
+    foreach ($rows as $element) {
+      $result[$element['category_name']][] = $element['link'];
+    }
+    // Orders array alphabetically by keys
+    ksort($result);
+    // If there were no related products, we don't even want to call this template,
+    // so we won't have an empty section on the page.
+
+    return theme('accessories_related_products', array('content' => $result, 'translated_title' => $solr_doc->ss_field_content_title));
+  }
+  
+}
+
+
+/**
+ * Get all "Top Pick Accessories" for diplay on a product
+ *
+ * @param $solr_doc
+ *
+ * Only products (Not accessories) will get the top-pick accessory slideshow
+ * In earlier iterations of the site, top-pick-accessoreies and the accessory
+ * accordion were combined into a single section. In the tabbed product layout,
+ * these were split into two seperate functions.
+ *
+ */
+function igcommerce_utility_products_get_top_pick_access($solr_doc) {
+
+  $output = NULL;
+  global $language;
+
+  if ((isset($solr_doc->tm_all_related_accessories) &&
+          strlen($solr_doc->tm_all_related_accessories[0]) > 2) ||
+      isset($solr_doc->tm_top_pick_accessories) &&
+      strlen($solr_doc->tm_top_pick_accessories[0]) > 2
+  ) {
+
+    if (isset($solr_doc->tm_top_pick_accessories) &&
+        strlen($solr_doc->tm_top_pick_accessories[0]) > 2
+    ) {
+        $output = "<aside id='fluke-product-display-accessories'>";
+        $output .= "<h2 class='fluke-product-display-accessories-title'>" . t("Top pick accessories") . "</h2>";
+        $top_pick_accessories = json_decode($solr_doc->tm_top_pick_accessories[0]);
+        $output .= "<div class='ig-related-flexslider'>";
+        $output .= "<ul class='fluke-product-display-top-picks slides'>";
+        foreach ($top_pick_accessories as $top_pick_accessory) {
+          if (is_null($top_pick_accessory->image)) {
+              $top_pick_accessory->image = variable_get('no_image_found_desktop');
+          }
+          if (is_null($top_pick_accessory->image_alt)) {
+              $top_pick_accessory->image_alt = t("Fluke Corporation");
+          }
+
+          $url = $top_pick_accessory->accesssory_alias;// sic
+
+          $output .= "<li class='fluke-product-display-top-pick-item'>";
+          $link_copy = igcommerce_utility_format_image_related_products($top_pick_accessory->image, $top_pick_accessory->image_alt);
+          $link_copy .= "<h3 class='fluke-product-display-top-pick-title'>";
+          $link_copy .= $top_pick_accessory->accessory_title;
+          $link_copy .= "</h3>";
+          $output .= l($link_copy, $url, array('html' => TRUE, 'language' => $language));
+          $output .= "</li>";
+        }
+        $output .= "</ul>";
+        $output .= "</div>"; // end ig-related-flexslider
+        $output .= "</aside>"; // end of accessories
+      } // end slider if
+  } // end section if
+
+  return $output;
+}
+
+/**
+ * Get all Accessories to display in the Accessory tab for diplay on a products
+ *
+ * @param $solr_doc
+ *
+ * Only products (Not accessories) will get the accessory accordion that lives
+ * in the Accessory tab. (Accessories don't git this tab at all)
+ * In earlier iterations of the site, top-pick-accessoreies and the accessory
+ * accordion were combined into a single section. In the tabbed product layout,
+ * these were split into two seperate functions.
+ *
+ */
+function igcommerce_utility_products_get_accordion_access($solr_doc) {
+
+  $output = NULL;
+  global $language;
+
+  // The html accorion uses the tbbb code:
+  // http://dev-thunderbeast-baby-buffalo.pantheonsite.io/accordion
+  // because there are two accordions on the page, the accordion
+  // has been adapted for unique id's, in this section and the resources section
+  if (isset($solr_doc->tm_all_related_accessories) &&
+      strlen($solr_doc->tm_all_related_accessories[0]) > 2
+  ) {
+    $all_accessories = json_decode($solr_doc->tm_all_related_accessories[0], TRUE);
+
+    // Remove duplicate accessories MIG-3788
+    $unique = array();
+    foreach ($all_accessories as $cat => $items) {
+      foreach ($items as $id => $item) {
+        if (!empty($unique[$id])) {
+          unset($all_accessories[$cat][$id]);
+        }
+        $unique[$id] = $id;
+      }
+      if (empty($all_accessories[$cat])) {
+        unset($all_accessories[$cat]);
+      }
+    }
+    $output = "<aside id='fluke-product-display-accessories-accordion-section'>";
+    $output .= '<h2>' . t('Accessories') . ': ' . $solr_doc->ss_field_content_title . '</h2>';
+    $output .= "<div id='fluke-product-display-accessories-accordion'>";
+    $output .= '<div aria-multiselectable="true" class="panel-group" id="accessory-accordion" role="tablist">';
+
+    foreach ($all_accessories as $accessory_category => $accessories_in_category) {
+      $translated_category = _translate_accessory_category($accessory_category);
+
+      $output .= '<div class="panel panel-default">';
+      $output .= '<div class="panel-heading" id="heading-' . strtolower(str_replace(" ", "-", $accessory_category)) . '" role="tab">';
+      $output .= '<h4 class="panel-title">';
+      $output .= '<a aria-controls="' . strtolower(str_replace(" ", "-", $accessory_category)) . '" aria-expanded="false" class="collapsed" data-parent="#accessory-accordion" href="#' . strtolower(str_replace(" ", "-", $accessory_category)) . '" role="button">';
+      $output .= "<span class='fluke-product-display-accessory-category'>";
+      $output .= $translated_category . " (" . count($accessories_in_category) . ")";
+      $output .= "</span>";
+      $output .= '</a>';
+      $output .= '</h4>';
+      $output .= '</div>'; // end .panel-heading
+      $output .= '<div aria-labelledby="heading-' . strtolower(str_replace(" ", "-", $accessory_category)) . '" class="panel-collapse collapse" id="' . strtolower(str_replace(" ", "-", $accessory_category)) . '" role="tabpanel">';
+      $output .= '<div class="panel-body">';
+      $output .= "<ul class='fluke-product-display-all-accessories'>";
+      foreach ($accessories_in_category as $accessory) {
+        $url = $accessory['accesssory_alias']; // sic
+
+        $language_local = igcommerce_utility_get_local();
+
+        $output .= "<li class='fluke-product-display-all-accessory'>";
+        $output .= l($accessory['accessory_title'], $url, array('language' => $language));
+        $output .= "</li>";
+      }
+      $output .= "</ul>";
+      $output .= '</div>'; //panel-body
+      $output .= '</div>'; //panel-collapse
+      $output .= '</div>'; //panel
+    } // end foreach
+    $output .= '</div>'; // end #accessory-accordion
+    $output .= '</div>'; // end #fluke-product-display-accessories-accordion
+    $output .= '</aside>'; // end #fluke-product-display-accessories-accordion-section
+} // end accordion if
+
+    return $output;
+}
+
+function _translate_accessory_category($accessory_category){
+  global $language;
+  $lang = $language->language;
+
+  $return = $accessory_category;
+
+  $terms = _taxonomy_terms_load_by_vocabulary_solr('product_category', $lang);
+
+  foreach($terms as $term){
+    if(strpos($term->label, $accessory_category) !== FALSE){
+      $return = $term->sm_field_content_title[0];
+      break;
+
+    }
+  }
+  return $return;
+}
+
+function igcommerce_utility_products_get_models($solr_doc) {
+
+  global $language;
+  $output = NULL;
+
+  if (isset($solr_doc->tm_new_models[0])) {
+    $allmodels = json_decode($solr_doc->tm_new_models[0]);
+    $output = '<section id="fluke-product-display-models-section">';
+    $output .= '<h2>' . t('Models') . ': ' . $solr_doc->ss_field_content_title . '</h2>';
+    $output .= '<div id="fluke-product-display-models">';
+    // We use this counter to load the page with the first accordion open
+    $i = 0; 
+    foreach ($allmodels as $key => $models) {
+      if ($key == $language->language) {
+        $output .= '<div id="Product-models">';
+        $output .= '<div class="ig-product-models" id="ig-product-models">';
+        foreach ($models as $key => $model) {
+          $output .= '<div class="product-model" itemprop="model" itemscope itemtype="https://schema.org/ProductModel">';
+          // First model should have active class to open it on page load
+          if ($i == 0) {
+            $output .= '<div class="accordion active">';
+          }
+          else {
+            $output .= '<div class="accordion">';
+          }
+          if (isset($model->model_name)) {
+            // Only display the caret if there are model details
+            $caret = !empty($model->model_details) ? '<span class="fluke-icon fluke-icon-caret-down"></span>' : '';
+            $output .= '<div class="model-name" itemprop="name">' . $model->model_name . $caret . '</div>';
+          }
+          if (isset($model->long_desc)) {
+            $output .= '<div class="model-desc" itemprop="description">' . $model->long_desc . '</div>';
+          }
+          $output .= '</div>'; //end .accordion
+          if (!empty($model->sku) && $language->language == "en-us") {
+            $output .= '<div class="pricespider">
+            <div id="' . $model->sku . '" style="color: #ebebeb;">
+              <div class="event-buy-now-cta ps-widget" ps-sku="' . $model->sku . '" ></div>
+              </div>
+            </div>';
+          } 
+          elseif (!empty($model->sku) && $language->language == "es-us") {
+            $output .= '<div class="pricespider">
+              <div id="' . $model->sku . '" style="color: #ebebeb;">
+                <div class="event-buy-now-cta ps-widget" ps-sku="' . $model->sku . '" ></div>
+                </div>
+              </div>';
+          } 
+          elseif ($language->language != 'es-us' && $language->language != 'en-us') {
+            // use url_builder to get the translated path
+            $term = _taxonomy_term_load_by_name_solr('Where to buy', 'url_builder');
+            $output .= '<span class = "model-link">';
+            if ($language->language == 'cn') {
+              // Mig-2428 : Remove buy-it button for models, china only
+              /*
+              if(!empty($solr_doc->sm_product_cta_web_card_lead_gen_coll[0])){
+                $cta = json_decode($solr_doc->sm_product_cta_web_card_lead_gen_coll[0], TRUE);
+                foreach($cta as $item){
+                  if(!empty($item['url']) && strpos($item['url'], 'detail.tmall.com')){
+                    $path = $item['url'];
+                  }
+                }
+              }
+              if(empty($path)){
+                $path = $term->ss_field_url;
+              }
+              $output .= l(t('Buy it'), $path, array('attributes' => array('class' => array('btn btn-blue', 'buy-now-cta'))));
+              */
+            }
+            else {
+              $from = $solr_doc->ss_field_url_title;
+              $path = !empty($term->field_url_title[$language->language][0]['value']) ? $term->field_url_title[$language->language][0]['value'] : 'where-to-buy';
+              $output .= l(t('Buy it'), $path, array('attributes' => array('class' => array('btn btn-blue', 'buy-now-cta', 'event-buy-now-cta')),
+              'query' => ['from' => $from]));
+            }
+            $output .= '</span>';
+          }
+          // If en-us and there is a fluke store link, render a hidden buy-now button that will be revealed if pricespider fails
+          if ($language->language === 'en-us' && !empty($model->fluke_store)) {
+            $output .= '<span class="model-link">';
+            $output .= l(t('Buy it'), $model->fluke_store, array('attributes' => array('class' => array('hide', 'btn', 'btn-blue', 'buy-now-cta', 'event-buy-now-cta'))));
+            $output .= '</span>';
+          }
+          if (isset($model->model_details)) {
+            // The first model should be open by default. 
+            if ($i == 0) {
+              $output .= '<div class="panel model-details" style="display: block;">';
+            }
+            else {
+              $output .= '<div class="panel model-details">';
+            }
+            $output .= igcommerce_utility_convert_links_to_alias($model->model_details);
+            $output .= '</div>';
+          }
+          $i++; // Increment after each model is added
+          $output .= '</div>'; //end .product-models
+        } // end of model foreach
+        $output .= '</div>'; //end #Product-models
+      } // end of if models are for current language
+    } // end of for each model
+    $output .= '</div></div></section>'; // Not sure where that extra closing div comes from, but w3c validator says you need it.
+  } // end of if is set
+  return $output;
+}
+
+function igcommerce_utility_products_get_banner($solr_doc)
+{
+
+    $banner = NULL;
+    $output = "<div id='fluke-product-display-banner'>";
+    $output .= "<div id='product-banner'>";
+
+    if (isset($solr_doc->ts_banner_desktop) && $solr_doc->ts_banner_desktop !== 'null') {
+        $output .= "Found a banner";
+    } else {
+      $url_builder_array = !empty($solr_doc->sm_url_path_builder[0]) ? json_decode($solr_doc->sm_url_path_builder[0]) : (!empty($solr_doc->sm_vid_URL_Builder[0]) ? $solr_doc->sm_vid_URL_Builder[0] : array());
+        foreach ($url_builder_array as $key => $url_builder) {
+            $url_builder_term = taxonomy_get_term_by_name($url_builder, 'url_builder');
+            if (sizeof($url_builder_term > 1)) {
+                foreach ($url_builder_term as $u_term) {
+                    $parents = taxonomy_get_parents_all($u_term->tid);
+                    if (sizeof($parents) > 1) {
+                        if ($parents[1]->name == $url_builder_array[$key + 1]) {
+                            if (sizeof($u_term->field_header_banner_vgr) > 0) {
+                                $banner = $u_term->field_header_banner_vgr;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    $banner_image = NULL;
+
+    if (isset($banner['und'][0]['value'])) {
+        $banner_object = field_collection_item_load($banner['und'][0]['value']);
+        if (isset($banner_object->field_header_banner_image_uri['und'][0]['url'])) {
+            $banner_image = "<img src='" . $banner_object->field_header_banner_image_uri['und'][0]['url'] . "' alt ='";
+            if (isset($banner_object->field_header_banner_image_uri['und'][0]['alt'])) {
+                $banner_image .= $banner_object->field_header_banner_image_uri['und'][0]['alt'];
+            }
+            $banner_image .= "'/>";
+        }
+    }
+
+    if (is_null($banner_image)) {
+        $banner_image = "<img src='" . variable_get('default_banner_image') . "' alt='" . t('Fluke Corporation') . "'/>";
+    }
+
+    $output .= $banner_image;
+    $output .= "</div>";
+    $output .= "</div>";
+
+    return $output;
+
+}
+
+
+function igcommerce_utility_products_get_features($solr_doc)
+{
+
+    if (isset($solr_doc->tm_features[0])) {
+        $output = "<div id='fluke-product-display-features'>";
+        $output .= "<h2 class='features-title'>" . t("Key features") . "</h2>";
+        $output .= "<div id='keyfeature_content'>"; //this wrapper id ties in the "readmore" functionality
+        $output .= $solr_doc->tm_features[0];
+        $output .= "</div>";
+        $output .= "</div>";
+        return $output;
+    } else {
+        return NULL;
+    }
+
+}
+
+function igcommerce_utility_products_get_awards($solr_doc)
+{
+
+    // @todo : remove when awards launches
+    // mig-1807 : Awards should not be visible until awards launch with-en-us
+    //return NULL;
+    //$output = NULL;
+
+    // Awards was intentionally removed from the product layout when we cut over
+    // to the tabbed layout. I commented it out in product-detail.tpl.php
+    // and commented out the call to this function in this file in function:
+    // igcommerce_utility_product_detail_page_render($solr_doc)
+    // I left the code in this function untouched, because Awards will probably
+    // come back some day. Also commented out the styling in
+    // _fluke-product-display-awards.scss -RRN MIG4282 9-6-18
+    if(!empty($solr_doc->bm_awards_available) && $solr_doc->bm_awards_available == true) {
+
+        $terms = taxonomy_get_term_by_name('Awards', 'url_builder');
+
+        $term = array_pop($terms);
+
+        $parents = taxonomy_get_parents_all($term->tid);
+
+        global $language;
+
+        $lang = $language->language;
+
+        $link = '/'.$lang;
+
+        $parents = array_reverse($parents);
+
+        foreach($parents as $item){
+            if($item->name === "Fluke IG"){
+                continue;
+            }
+
+            $link .= '/'.$item->field_url_title[$lang][0]['value'];
+        }
+
+        $output .= "<div id='fluke-product-display-awards'>";
+        $output .= "<div id='fluke-product-award-winner'>";
+        //$output .= "<a href='$link'><span class='fluke-icon fluke-icon-awards'></span><span>" . t("Award Winner") . '</span></a>';
+        $output .= "<span class='fluke-icon fluke-icon-awards'></span><span>" . t("Award Winner") . '</span>';
+        $output .= "</div>";
+        $output .= "</div>";
+    }
+
+    return $output;
+}
+
+function igcommerce_utility_products_top_cta($solr_doc){
+    $output = '';
+    global $language;
+
+    $buttons_added = 0; // Track the number of buttons added
+    $buy_now_added = FALSE;
+    $campaign_links = []; // Track the campaigns that were linked to
+
+    // Check if a there is a CTA associated with the product
+    if($cta = _pd_has_cta($solr_doc)) {
+        //Links to a buy now page
+        $buy_now_text_labels = ['Buy it', 'Buy now', 'Where to buy'];
+        //Links to Eloqua forms, etc.
+        $eloqua_text_labels = ['Request a demo', 'Contact me', 'Speak with a specialist', 'Get a free demo'];
+
+        $button_vocab = _taxonomy_terms_load_by_vocabulary_solr('cta_buttons', $language->language);
+
+        $button_text_translations = [];
+        $buy_now_texts = [];
+        $eloqua_texts = [];
+
+        foreach($button_vocab as $item){
+          $button_text_translations[$item->label] = $item->ss_field_content_title;
+          if(in_array($item->label, $buy_now_text_labels)){
+            $buy_now_texts[] = $item->ss_field_content_title;
+          }elseif(in_array($item->label, $eloqua_text_labels)){
+            $eloqua_texts[] = $item->ss_field_content_title;
+          }
+        }
+
+        $cta_order = ['left', 'right'];
+
+        foreach ($cta_order as $side) {
+            $data = $cta->{$side};
+          
+            if (!empty($data->button_text)) {
+
+                // Since China doesn't use where to buy page or price spider, expect a link to tmall.
+                if (in_array($data->button_text, $buy_now_texts) && $language->language != 'cn' && $buttons_added == 0) {
+                    // Button is of the wtb variety
+                    $output .= _cta_buy_now($data->button_text, $solr_doc, $data);
+                    $buy_now_added = TRUE;
+
+                    $buttons_added ++;
+                }elseif(in_array($data->button_text, $eloqua_texts)){
+                    // Button is a link to an eloqua form
+                    $output .= _cta_eloqua_links($data, $solr_doc);
+
+                  $buttons_added ++;
+                } else {
+                    // Make sure we don't add buttons without valid button text or a link
+                    // Also prevents problems detecting eloqua or where to buy links
+                    if(!empty($data->button_text) && !empty($data->url)) {
+                      // Button is a standard link
+                      // class to be used on button for event tracking
+                      $class = 'event-' . drupal_html_class($data->button_text) . '-cta';
+
+                      $output .= l($data->button_text, $data->url, array('attributes' => array('class' => array('btn', 'btn-blue', 'buy-now-cta', $class))));
+                      $buttons_added++;
+                      $campaign_links[] = $data->url;
+                    }
+                }
+            }
+        }
+    }
+
+    //MIG4346 - Pull Remove Buy CTA value from the product model.
+    // If the checkbox is checked, prevent a buy now cta from being added.
+    if (isset($solr_doc->tm_new_models[0])) {
+      $ctamodels = json_decode($solr_doc->tm_new_models[0]);
+
+      foreach ($ctamodels as $key => $models) {
+        if ($key == $language->language) {
+          foreach ($models as $key => $model) {
+            $remove_buy_cta = $model->remove_buy_now;
+          } 
+        } 
+      } 
+    } 
+
+    // Default behavior if the above produced no buttons
+    //MIG4346- This was not taking CTA_left_col Buy Now buttons into account, and preventing them from being added to both the Key Features AND model accordian.
+    //if($buttons_added == 0){ 
+    if($buttons_added < 2 && empty($remove_buy_cta)){
+        $output .= _cta_buy_now('Buy Now', $solr_doc, $cta);
+    }
+
+
+    // China default if there are not two buttons
+    if($buttons_added < 2 && $language->language === 'cn'){
+        $inquiry_link = 'http://assets.fluke.com.cn/campaign/NMKT_MULTI_RequestWBF_2013-04-19.html?utm_term=Contact_Us';
+        // Make sure we aren't adding a duplicate link when we add the default
+        if(!in_array($inquiry_link, $campaign_links)) {
+          $output .= l('询价及预约演示', $inquiry_link, array('attributes' => array('class' => array('btn', 'btn-blue', 'buy-now-cta'))));
+        }
+    }
+
+    if(!empty($output)){
+        $output = "<section id='fluke-product-display-ctas'>$output</section>";
+    }
+
+    return $output;
+}
+
+function _cta_buy_now($button_text, $solr_doc, $button_data) {
+  // class to be used on button for event tracking
+  $class = 'event-' . drupal_html_class($button_text) . '-cta';
+
+  $button_text = t($button_text);
+
+
+  $output = '';
+
+  // No CTA associated with a product, display default wtb button functionality
+  global $language;
+
+  $pricespider_locales = ['en-us', 'es-us'];
+
+  //Use pricespider for the specified locales
+  if (empty($button_data->url) && in_array($language->language, $pricespider_locales)) {
+    $output .= _top_cta_default_pricespider($solr_doc, $button_data, $language->language);
+  }else if(!empty($button_data->url)){
+    $output .= l($button_text,
+      $button_data->url,
+      array('attributes' => array('class' => array('btn btn-blue', 'buy-now-cta', $class)))
+    );
+
+  }else{
+        // link to the row wtb tool
+
+        // use url_builder to get the translated path
+        $term = _taxonomy_term_load_by_name_solr('Where to buy', 'url_builder');
+
+        global $language;
+
+        if($language->language == 'cn'){
+          // mig-2205 : Remove link to tmall homepage as the default option, china only
+          //$path = $term->ss_field_url;
+          //$output .= l($button_text, $path, array('attributes' => array('class' => array('btn btn-blue', 'buy-now-cta'))));
+
+        }else {
+          $path = !empty($term->field_url_title[$language->language][0]['value']) ? $term->field_url_title[$language->language][0]['value'] : 'where-to-buy';
+
+          $output .= l($button_text, $path, array('attributes' => array('class' => array('btn btn-blue', 'buy-now-cta', $class)),
+            'query' => ['from' => $solr_doc->ss_field_url_title]));
+
+        }
+    }
+
+    return $output;
+}
+
+function _cta_eloqua_links($button_data, $solr_doc){
+    if(empty($button_data->url)) {
+
+      switch ($button_data->button_text) {
+        case 'Speak with a specialist':
+        case 'Contact me':
+          $cra = "100000000";
+          break;
+        case 'Request a demo':
+        case 'Get a free demo':
+          $cra = "100000001";
+          break;
+        default:
+          $cra = '';
+      }
+
+      $model = _cta_get_model($solr_doc, $button_data);
+
+      $lrpf = !empty($button_data->lrpf) ? $button_data->lrpf : "";
+
+      $sku = !empty($model->sku) ? $model->sku : '';
+
+      global $language;
+
+      $eloqua_locale = cta_eloqua_locale($language->language);
+
+      $redir = $eloqua_locale['redir']; // language/locale specific redirect for thank you page
+
+      $locale = $eloqua_locale['eloqua_locale']; // the eloqua version of locale
+
+      $link = "http://a.fluke.com/IG-GLOBAL-MULTI-2017-DemoContactRequest-$locale-LP-Generic?lcid=85c9d7b6-6eb6-e611-80c4-00155dfe6b1a&lrpf=$lrpf&plt=200000000&cra=$cra&lsku=$sku&redir=$redir";
+    }else{
+      $link = $button_data->url;
+    }
+
+    $class = 'event-' . drupal_html_class($button_data->button_text) . '-cta';
+
+    
+    return l(t($button_data->button_text), $link, array('attributes' => array('class' => array('btn', 'btn-blue', 'buy-now-cta', $class))));
+}
+
+function cta_eloqua_locale($locale){
+    $locale = strtoupper($locale);
+    $locales = [
+        "EN"    => ['eloqua_locale' => 'USEN', 'redir' => 'https://www.fluke.com/en/fluke/thank-you-for-contacting-fluke'],
+        "EN-VN" => ['eloqua_locale' => 'VNEN', 'redir' => 'https://www.fluke.com/en-vn/fluke/thank-you-for-contacting-fluke'],
+        "EN-TH" => ['eloqua_locale' => 'THEN', 'redir' => 'https://www.fluke.com/en-th/fluke/thank-you-for-contacting-fluke'],
+        "EN-ID" => ['eloqua_locale' => 'IDEN', 'redir' => 'https://www.fluke.com/en-id/fluke/thank-you-for-contacting-fluke'],
+        "EN-US" => ['eloqua_locale' => 'USEN', 'redir' => 'https://www.fluke.com/en-us/fluke/thank-you-for-contacting-fluke'],
+        "KO-KR" => ['eloqua_locale' => 'krko', 'redir' => 'https://www.fluke.com/ko-kr/fluke/thank-you-for-contacting-fluke'],
+        "JA-JP" => ['eloqua_locale' => 'JPJA', 'redir' => 'https://www.fluke.com/ja-jp/fluke/thank-you-for-contacting-fluke'],
+        "ID-ID" => ['eloqua_locale' => 'IDID', 'redir' => 'https://www.fluke.com/id-id/fluke/thank-you-for-contacting-fluke'],
+        "ZH-CN" => ['eloqua_locale' => 'CNZH', 'redir' => 'https://www.fluke.com/zh-cn/fluke/thank-you-for-contacting-fluke'],
+        "CN"    => ['eloqua_locale' => 'CNZH', 'redir' => 'https://www.fluke.com/cn/fluke/thank-you-for-contacting-fluke'],
+        "ZH-TW" => ['eloqua_locale' => 'TWZH', 'redir' => 'https://www.fluke.com/zh-tw/fluke/thank-you-for-contacting-fluke'],
+        "VI-VN" => ['eloqua_locale' => 'VNVI', 'redir' => 'https://www.fluke.com/vi-vn/fluke/thank-you-for-contacting-fluke'],
+        "TR-TR" => ['eloqua_locale' => 'TRTR', 'redir' => 'https://www.fluke.com/tr-tr/fluke/fluke-ile-iletisim-kurdugunuz-icin-tesekkur-ederiz'],
+        "TH-TH" => ['eloqua_locale' => 'THTH', 'redir' => 'https://www.fluke.com/th-th/fluke/thank-you-for-contacting-fluke'],
+        "SV-SE" => ['eloqua_locale' => 'SESV', 'redir' => 'https://www.fluke.com/sv-se/fluke/tack-for-att-du-kontaktat-fluke'],
+        "RU-RU" => ['eloqua_locale' => 'RURU', 'redir' => 'https://www.fluke.com/ru-ru/fluke/thank-you-for-contacting-fluke'],
+        "BR-PT" => ['eloqua_locale' => 'PRPT', 'redir' => 'https://www.fluke.com/pt-br/fluke/obrigado-por-entrar-em-contato-com-a-fluke'],
+        "PT-PT" => ['eloqua_locale' => 'PTPT', 'redir' => 'https://www.fluke.com/pt-pt/fluke/obrigado-por-contactar-a-fluke'],
+        "PL-PL" => ['eloqua_locale' => 'PLPL', 'redir' => 'https://www.fluke.com/pl-pl/fluke/dziekujemy-za-kontakt-z-firma-fluke'],
+        "NO-NO" => ['eloqua_locale' => 'NONO', 'redir' => 'https://www.fluke.com/no-no/fluke/takk-for-at-du-kontaktet-fluke'],
+        "NL-BE" => ['eloqua_locale' => 'BENL', 'redir' => 'https://www.fluke.com/nl-be/fluke/dank-u-wel-voor-uw-bericht-aan-fluke'],
+        "NL-NL" => ['eloqua_locale' => 'NLNL', 'redir' => 'https://www.fluke.com/nl-nl/fluke/dank-u-wel-voor-uw-bericht-aan-fluke'],
+        "IT-IT" => ['eloqua_locale' => 'ITIT', 'redir' => 'https://www.fluke.com/it-it/fluke/grazie-per-avere-contattato-fluke'],
+        "FR-CH" => ['eloqua_locale' => 'CHFR', 'redir' => 'https://www.fluke.com/fr-ch/fluke/merci-de-contacter-fluke'],
+        "FR-CA" => ['eloqua_locale' => 'CAFR', 'redir' => 'https://www.fluke.com/fr-ca/fluke/merci-de-contacter-fluke'],
+        "FR-BE" => ['eloqua_locale' => 'BEFR', 'redir' => 'https://www.fluke.com/fr-be/fluke/merci-de-contacter-fluke'],
+        "FR"    => ['eloqua_locale' => 'FRFR', 'redir' => 'https://www.fluke.com/fr/fluke/merci-de-contacter-fluke'],
+        "FR-FR" => ['eloqua_locale' => 'FRFR', 'redir' => 'https://www.fluke.com/fr-fr/fluke/merci-de-contacter-fluke'],
+        "FI-FI" => ['eloqua_locale' => 'FIFI', 'redir' => 'https://www.fluke.com/fi-fi/fluke/kiitos-etta-otit-meihin-yhteytta'],
+        "ES-ES" => ['eloqua_locale' => 'ESES', 'redir' => 'https://www.fluke.com/es-es/fluke/gracias-por-ponerse-en-contacto-con-fluke'],
+        "ES-VE" => ['eloqua_locale' => 'vees', 'redir' => 'https://www.fluke.com/es-ve/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-UY" => ['eloqua_locale' => 'uyes', 'redir' => 'https://www.fluke.com/es-uy/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-AR" => ['eloqua_locale' => 'ares', 'redir' => 'https://www.fluke.com/es-ar/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-SV" => ['eloqua_locale' => 'sves', 'redir' => 'https://www.fluke.com/es-sv/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-GT" => ['eloqua_locale' => 'gtes', 'redir' => 'https://www.fluke.com/es-gt/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-EC" => ['eloqua_locale' => 'eces', 'redir' => 'https://www.fluke.com/es-ec/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-DO" => ['eloqua_locale' => 'does', 'redir' => 'https://www.fluke.com/es-do/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-CR" => ['eloqua_locale' => 'cres', 'redir' => 'https://www.fluke.com/es-cr/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-CO" => ['eloqua_locale' => 'coes', 'redir' => 'https://www.fluke.com/es-co/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-CL" => ['eloqua_locale' => 'cles', 'redir' => 'https://www.fluke.com/es-cl/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-MX" => ['eloqua_locale' => 'mxes', 'redir' => 'https://www.fluke.com/es-mx/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-BO" => ['eloqua_locale' => 'boes', 'redir' => 'https://www.fluke.com/es-bo/fluke/gracias-por-comunicarse-con-fluke'],
+        "ES-PE" => ['eloqua_locale' => 'pees', 'redir' => 'https://www.fluke.com/es-pe/fluke/gracias-por-comunicarse-con-fluke'],
+        "EN-GB" => ['eloqua_locale' => 'uken', 'redir' => 'https://www.fluke.com/en-gb/fluke/thank-you-for-contacting-fluke'],
+        // "EN-TT" => ['eloqua_locale' => 'tten', 'redir' => 'https://www.fluke.com/en-tt/fluke/thank-you-for-contacting-fluke'], As of 4-18-18 TT-EN has been removed. RRN MIG2348
+        "EN-SG" => ['eloqua_locale' => 'sgen', 'redir' => 'https://www.fluke.com/en-sg/fluke/thank-you-for-contacting-fluke'],
+        "EN-PH" => ['eloqua_locale' => 'phen', 'redir' => 'https://www.fluke.com/en-ph/fluke/thank-you-for-contacting-fluke'],
+        "EN-MY" => ['eloqua_locale' => 'enmy', 'redir' => 'https://www.fluke.com/en-my/fluke/thank-you-for-contacting-fluke'],
+        "EN-IN" => ['eloqua_locale' => 'inen', 'redir' => 'https://www.fluke.com/en-in/fluke/thank-you-for-contacting-fluke'],
+        "EN-IE" => ['eloqua_locale' => 'ieen', 'redir' => 'https://www.fluke.com/en-ie/fluke/thank-you-for-contacting-fluke'],
+        "EN-AU" => ['eloqua_locale' => 'auen', 'redir' => 'https://www.fluke.com/en-au/fluke/thank-you-for-contacting-fluke'],
+        "EN-CA" => ['eloqua_locale' => 'enca', 'redir' => 'https://www.fluke.com/en-ca/fluke/thank-you-for-contacting-fluke'],
+        "DE-AT" => ['eloqua_locale' => 'ATDE', 'redir' => 'https://www.fluke.com/de-at/fluke/danke-fuer-kontakt-fluke'],
+        "DE-DE" => ['eloqua_locale' => 'DEDE', 'redir' => 'https://www.fluke.com/de-de/fluke/danke-fuer-kontakt-fluke'],
+        "DE-CH" => ['eloqua_locale' => 'CHDE', 'redir' => 'https://www.fluke.com/de-ch/fluke/danke-fuer-kontakt-fluke'],
+        "CS-CZ" => ['eloqua_locale' => 'czcs', 'redir' => 'https://www.fluke.com/cs-cz/fluke/dekujeme-vam-ze-jste-se-obratili-na-spolecnost-fluke'],
+        "DA-DK" => ['eloqua_locale' => 'dkda', 'redir' => 'https://www.fluke.com/da-dk/fluke/tak-fordi-du-kontaktede-fluke'],
+        "ES-US" => ['eloqua_locale' => 'uses', 'redir' => 'https://www.fluke.com/es-us/fluke/gracias-por-comunicarse-con-fluke'],
+    ];
+
+    if(!empty($locales[$locale])){
+        return $locales[$locale];
+    }else{
+        return $locales['EN'];
+    }
+}
+
+/**
+ * Helps ..._products_top_cta.  Returns the cta if one is associated, or null if CTA isn't included with the product_display
+ *
+ * @param $solr_doc
+ * @return null
+ */
+function _pd_has_cta($solr_doc){
+    if(!empty($solr_doc->sm_product_cta_web_card_lead_gen_coll[0])){
+        $cta = json_decode($solr_doc->sm_product_cta_web_card_lead_gen_coll[0]);
+        if(!empty($cta->left->button_text) || !empty($cta->right->button_text)){
+            return $cta;
+        }
+    }
+
+    return NULL;
+}
+
+function _top_cta_default_pricespider($solr_doc, $cta = NULL, $lang){
+    // Use price spider
+    $model = _cta_get_model($solr_doc, $cta);
+
+    $output = "";
+    
+    $button_text = t('Buy now'); //@todo: is this the right button text for the default?  Is it translated by T or the taxonomy?
+
+    if($model){
+        // Display pricespider modal button
+        $sku = $model->sku;
+
+        $output = '<div class="pricespider">
+              <div id="top-cta-wtb-' . $sku . '" style="color: #ebebeb;">
+                <div class="event-buy-now-cta ps-widget" ps-sku="'.$sku.'" ></div>
+              </div>
+            </div>';
+
+      pricespider_headers();
+
+    }else{
+        // Generic WTB tool
+
+        //@todo: is this the correct/translated path and correct styling?
+
+        // use url_builder to get the translated path
+        $term = taxonomy_get_term_by_name('Where to buy', 'url_builder');
+
+        global $language;
+
+        $path = !empty($term->field_url_title[$language->language][0]['value']) ? $term->field_url_title[$language->language][0]['value'] : 'where-to-buy';
+
+        l($button_text, $path, array('attributes' => array('class' => array('btn', 'btn-blue', 'buy-now-cta', 'event-buy-now-cta'))));
+    }
+
+    return $output;
+}
+
+function pricespider_headers($wtb_page = FALSE){
+  global $language;
+
+  if($language->language === 'en-us' || $language->language === 'es-us') {
+
+    $key = $wtb_page ? '1606-59f299d330ed0900ee742346' : '1606-59f2999530ed0900ee742345';
+
+    $html = '<meta name="ps-key" content="'.$key.'" >'.PHP_EOL;
+    drupal_add_html_head(['#markup' => $html, '#type' => 'markup'], 'ps-key');
+    $html = '<meta name="ps-country" content="US">'.PHP_EOL;
+    drupal_add_html_head(['#markup' => $html, '#type' => 'markup'], 'ps-country');
+    $html = $language->language === 'en-us' ? '<meta name="ps-language" content="en">' : '<meta name="ps-language" content="es">'.PHP_EOL;
+    drupal_add_html_head(['#markup' => $html, '#type' => 'markup'], 'ps-lang');
+    $html ='<script src="//cdn.pricespider.com/1/lib/ps-widget.js" async ></script>'.PHP_EOL;
+    drupal_add_html_head(['#markup' => $html, '#type' => 'markup'], 'ps-script');
+  }
+}
+
+/**
+ * Pricespider block for where to buy page
+ *
+ * @return string
+ */
+function igcommerce_utility_product_pricespider_wtb(){
+  pricespider_headers(TRUE);
+
+  return '<div class="event-buy-now-cta ps-widget" ps-sku="" /></div>';
+}
+
+/**
+ * If a CTA has a specific model associated return that, otherwise return first model on product_display, or NULL if
+ * no models are associated with the product_display.
+ *
+ * @param $solr_doc
+ */
+function _cta_get_model($solr_doc, $button_data = NULL){
+    global $language;
+
+    if(!empty($button_data->model->sku)){
+        return $button_data->model;
+    }else if (!empty($solr_doc->tm_new_models[0])) {
+        // return the first model if one isn't associated with the CTA
+        $allmodels = json_decode($solr_doc->tm_new_models[0]);
+
+        //Return the first model with a valid sku
+        foreach($allmodels->{$language->language} as $item){
+            if(!empty($item->sku)){
+                return $item;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+function igcommerce_utility_products_get_slideshow($solr_doc) {
+  global $language;
+
+  if (!isset($solr_doc->is_product_slideshow)) {
+    return NULL;
+  }
+
+    if (isset($solr_doc->is_product_slideshow)) {
+      drupal_add_js(libraries_get_path('elevatezoom') . '/jquery.elevateZoom-3.0.8.min.js');
+  
+      // grab the en-us version of the slideshow because there shouldn't be any translations
+      $slideshow = fluke_solr_get_entity($solr_doc->is_product_slideshow, 'node', 'slideshow', 'en-us');
+      if (!empty($slideshow->sm_field_product_image_desktop)) {
+
+        foreach ($slideshow->sm_field_product_image_desktop as $banner) {
+          $desktop_banner[] = json_decode($banner, TRUE);
+        }
+
+        // we're using the slideshow images to populate the Facebook OpenGraph metadata for all countries but china.
+        if($language->language != 'cn') {
+          $fb_images = theme('facebook_metadata_product_images',  array('fb_image_set' => $desktop_banner));
+          drupal_add_html_head(['#markup' => $fb_images, '#type' => 'markup'], 'facebook-product-images');
+        }
+
+        return theme('product_slideshow', array('content' => $desktop_banner));
+//            $html .= '<div class="ig-product-flexslider" id="ig-product-flexslider">
+//          <ul class="slides">';
+//
+//            foreach ($desktop_banner['field_product_image_desktop'][LANGUAGE_NONE] as $val) {
+//                if (!empty($val['url']) && preg_match('/^\d*$/', $val['url']) < 1) {
+//
+//                    $s3_url = variable_get('s3_bucket_url', '');
+//                    $default_assets_url = 'data.fluke.com/sites/default/files';
+//
+//                    if (strpos($val['url'], $default_assets_url)) {
+//                        $val['url'] = str_replace($default_assets_url, $s3_url, $val['url']);
+//                        $val['url'] = str_replace("//http://", "http://", $val['url']);
+//                    }
+//
+//                    $image_url = igcommerce_utility_determine_toc_image($val['url'], FALSE, FALSE, $val['alt']);
+//                    //$image_url = str_replace( 'https://', '//', $image_url ); // Removed https:// with // for Slideshow image
+//
+//
+//                    $val['url'] = igcommerce_utility_s3_check($val['url']);
+//                    $html .= '<li data-thumb="' . $val['url'] . '" itemprop="image">';
+//
+//                    $html .= $image_url;
+//                    $html .= '</li>';
+//                }
+//                elseif ((!empty($val['url']) && preg_match('/^\d*$/', $val['url']) > 0)) {
+//                    $html .= '<li data-thumb="' . (isset($val['thumb']) ? $val['thumb'] : '//players.brightcove.net/5229431846001/default_default/index.html?videoId=' . $val['url']) . '"><div style="display: block; position: relative; max-width: 100%;"><div style="padding-top: 56.25%;"><iframe src="//players.brightcove.net/5229431846001/default_default/index.html?videoId=' . $val['url'] . '"
+//          allowfullscreen
+//          webkitallowfullscreen
+//          mozallowfullscreen
+//          style="width: 100%; height: 100%; position: absolute; top: 0px; bottom: 0px; right: 0px; left: 0px;" itemprop="image"></iframe></div></div></li>';
+//                }
+//            }
+//            $html .= '</ul></div>';
+      
+      }
+    }
+    return NULL;
+}
+
+/**
+ * Create content for the product overview section.
+ *
+ * There are three potential overview sections that can be included,
+ * check for any of them having content.
+ * The user can choose to not fill out the first overview sectio if they
+ * want the slideshow to appear at the top.
+ *
+ * @param array $solr_doc
+ *   Array of product information.
+ *
+ * @return string
+ *   Generated content HTML.
+ */
+
+function igcommerce_utility_products_get_overview($solr_doc) {
+
+  $output = NULL;
+
+  if ((isset($solr_doc->tm_overview[0]) && strlen($solr_doc->tm_overview[0]) > 0)
+    || (!empty($solr_doc->sm_field_slideshow_gallery[0]))
+    || (isset($solr_doc->tm_overview_bottom[0]))
+    ) {
+      $output = "<section id='fluke-product-display-overview-section'>";
+      $output .= '<h2>' . t('Product overview') . ': ' . $solr_doc->ss_field_content_title . '</h2>';
+      $output .= "<div id='fluke-product-display-overview'>";
+      $output .= "<div id='product-overview'>";
+      // Checkf for content in the main overview section
+      if (isset($solr_doc->tm_overview[0]) && strlen($solr_doc->tm_overview[0]) > 0) {
+        $output .= '<div id="overview_content" itemprop="description">';
+        $output .= $solr_doc->tm_overview[0];
+        $output .= '</div>';
+      }
+
+      $html = NULL;
+
+      // Check for content in the slideshow section.
+      if (!empty($solr_doc->sm_field_slideshow_gallery[0])) {
+        $data = json_decode($solr_doc->sm_product_overview_slideshow[0]);
+
+        if (count($data) > 0) {
+          $html .= '<div class="ig-overview-flexslider" id="ig-overview-flexslider"><ul class="slides">';
+        
+          foreach ($data as $val) {
+            if (!empty($val->url) && preg_match('/^\d*$/', $val->url) < 1) {
+              $image_url = igcommerce_utility_determine_toc_image($val->url, FALSE, FALSE, $val->alt);
+              $val->url = $image_url;
+              $html .= '<li data-thumb="h2">';
+              $html .= $image_url;
+              if(!empty($val->caption)){
+                $html .= "<p class='flex-caption-left'>$val->caption</p>";
+              }
+              $html .= '</li>';
+            } elseif ((!empty($val->url) && preg_match('/^\d*$/', $val->url) > 0)) {
+              $html .= '<li><div style="display: block; position: relative; max-width: 100%;"><div style="padding-top: 56.25%;"><iframe src="//players.brightcove.net/5229431846001/default_default/index.html?videoId=' . $val->url . '"
+          allowfullscreen
+          webkitallowfullscreen
+          mozallowfullscreen
+          style="width: 100%; height: 100%; position: absolute; top: 0px; bottom: 0px; right: 0px; left: 0px;"></iframe></div></div></li>';
+            }
+          }
+          $html .= '</ul></div>';
+        }
+      }
+
+      $output .= $html;
+      // Check for content in the overveiw bottom section.
+      if (isset($solr_doc->tm_overview_bottom[0])) {
+        $output .= $solr_doc->tm_overview_bottom[0];
+      }
+      $output .= "</div>"; // Close #product-overview
+      $output .= "</div>"; // Close #fluke-product-display-overview
+      $output .= "</section>"; // Close #fluke-product-display-overview-section
+    }
+
+  return $output;
+
+}
+
+function igcommerce_utility_products_get_specs($solr_doc) {
+  $custom = token_custom_load_multiple();
+  
+    $output = NULL;
+    if (isset($solr_doc->tm_specs[0]) &&
+        strlen($solr_doc->tm_specs[0]) > 0
+    ) {
+        //modal content is hidden by default
+        $output = '<section id="fluke-product-display-specs-section">';
+        $output .= '<h2>' . t('Specifications') . ': ' . $solr_doc->ss_field_content_title . '</h2>';
+        $output .= '<div id="fluke-product-display-specs">';
+        $output .= '<div id="product-specs">';
+        $output .= '<div id="specification_content">';
+
+
+        $output .= token_replace($solr_doc->tm_specs[0], array('custom' => $custom));
+        $output .= '</div>';
+        $output .= '</div>';
+        $output .= '</div>';
+        $output .= '</section>';
+        
+        //MIG2006 - Removed download the datesheet text link
+        // if(isset($solr_doc->tm_datasheets)) {
+        //   $notes = json_decode($solr_doc->tm_datasheets[0]);
+        //   if (sizeof($notes) > 0) {
+        //     foreach($notes as $note)
+        //     {
+        //       $url = $note->url;
+        //       $alt = $note->alt;
+        //       break;
+        //     }
+        //   }
+        //   $output .= '<div class="spec-download"><a class="btn btn-yellow" href="'.$url.'" alt="'.$alt.'" >' . t("Download the datasheet") . '</a></div>';
+        // }
+        
+    }
+
+    return $output;
+
+}
+
+function igcommerce_utility_products_get_footer($solr_doc)
+{
+    $content = '';
+    if (isset($solr_doc->tm_product_footer[0]) &&
+        strlen($solr_doc->tm_product_footer[0]) > 5
+    ) {
+        $content .= $solr_doc->tm_product_footer[0];
+    }
+
+    if(!empty($solr_doc->sm_disclaimer_description[0])){
+      $content .= '<div class="disclaimer">'.$solr_doc->sm_disclaimer_description[0].'</div>';
+    }
+    return !empty($content) ? $content : NULL;
+}
+
+
+function igcommerce_utility_products_get_alerts($solr_doc)
+{
+
+    $output = NULL;
+
+    if (isset($solr_doc->tm_alerts) && strlen($solr_doc->tm_alerts[0]) > 5) {
+        $alerts = json_decode($solr_doc->tm_alerts[0]);
+        $output = "<div id='fluke-product-display-alerts'>";
+        foreach ($alerts->alert as $alert) {
+            $output .= "<div class='fluke-product-display-alert'>";
+            $output .= $alert;
+            $output .= "</div>";
+        }
+        $output .= "</div>";
+    }
+
+    return $output;
+
+}
+
+
+function igcommerce_utility_products_get_replaced($solr_doc)
+{
+
+    $output = NULL;
+
+    if (isset($solr_doc->tm_replaced_by) &&
+        strlen($solr_doc->tm_replaced_by[0]) > 5
+    ) {
+        $lang_local = igcommerce_utility_get_local();
+        $replaced_by = json_decode($solr_doc->tm_replaced_by[0]);
+        $output = '<div id="fluke-product-display-replaced-by">';
+        $output .= '<div class="fluke-product-display-replaced-by-link" itemprop="isRelatedTo" itemscope itemtype="https://schema.org/Product">';
+        $output .= t("Fluke suggests:");
+        $output .= l($replaced_by->content_title,  $replaced_by->alias, array('attributes' => array('alt' => $replaced_by->content_title, 'itemprop' => 'name')));
+        $output .= '</div>';
+        $output .= '</div>';
+    }
+
+    return $output;
+
+}
+
+/**
+ * Create content for the product stars section.
+ *
+ * Uses Bazaarvoice for reviews. This has a javascript implementation that loads
+ * review stars in browser after page load. (Bazaarvoice refers to star ratings
+ * as "Aggregate Ratings"). This Javascript will also add star ratings to all
+ * the related products after page load.
+ * This function also generates the html that the javascript implemnation
+ * will populate on page load. This also handles the PHP implementation of
+ * bazaarvoice using bvseosdkinc that loads the SEO friendly version of reviews.
+ * The phpseosdk content is only presented to search engines, and not to end
+ * users.
+ *
+ * @param array $solr_doc
+ *   Array of product information.
+ *
+ * @return string
+ *   Generated content HTML.
+ */
+function igcommerce_utility_products_get_reviews_stars($solr_doc) {
+
+  $output = NULL;
+  global $language, $base_url;
+  $lang = $language->language;
+
+  // Bazaarvoice is currently only available in the us
+  if (isset($solr_doc->ss_field_url_title) && $lang == "en-us") {
+
+    // Adds all the php to support the Bazaarvoice SEO implementation
+    require_once('includes/bvseosdk.inc');
+
+    //Define the base and page URLs; ensure the protocol (http or https) matches the one used in the production site
+    $page = $base_url . request_uri();
+    $base = $base_url . '/' . request_path();
+
+    $bv = new BV(array(
+      'bv_root_folder' => '6594-en_US',
+      'subject_id' => $solr_doc->ss_field_url_title,
+      'cloud_key' => 'fluke-ad3c6d5153774406cacc9431d573fd04',
+      //page_url MUST include any and all URL parameters that were present in the page request; otherwise only page 1 of content can be indexed
+      'page_url' => $page,
+      //base_url is the shortest possible URL that will direct to this particular product page
+      'base_url' => $base,
+      //TODO: before go-live, set this to FALSE (points to reviews on productions server)
+      'staging' => FALSE,
+      //'bvreveal' => 'debug',
+    ));
+    
+    // After the page loads, the bv.js script populates the star and reviews sections
+    // drupal_add_js doesn't allow the addition of async, so we have to do it via drupa_add_html_head.
+    // There is a script in the theme layer that uses .filter to add <sup> to &copy; and &reg; symbols.
+    // That script can interfere with mmenu, which in turn interferes with bv.js loading in ie11.
+    // Check that first if you have ie11 problems.
+    if ($base_url === 'https://dev-igcommerce.pantheonsite.io') {
+      // Staging environment:
+      $bv_script = '<script async src="https://apps.bazaarvoice.com/deployments/Fluke/main_site/staging/en_US/bv.js"></script>' . PHP_EOL;
+    }
+    else {
+      // Production environment:
+      $bv_script = '<script async src="https://apps.bazaarvoice.com/deployments/fluke/main_site/production/en_US/bv.js"></script>' . PHP_EOL;
+    }
+    
+    drupal_add_html_head(['#markup' => $bv_script, '#type' => 'markup'], 'bv-script');
+
+    // There is a bug in bazaarvoice that causes the colobox modal to trigger the bazaarvoice summary rating styling
+    // I added this jquery to hide the review summary when somebody opens a colorbox modal. This is intended to
+    // be a temporary fix.
+    drupal_add_js('jQuery(document).ready(function () {
+        jQuery( ".cboxElement" ).click(function() {
+          jQuery("#fluke-product-display-reviews-stars").detach();
+        });
+     });', array(
+      'type' => 'inline',
+      'scope' => 'footer',
+      'weight' => 50,
+    ));
+
+    $output = '<div id="fluke-product-display-reviews-stars">';
+    $output .= '<div data-bv-show="rating_summary" data-bv-product-id="' . $solr_doc->ss_field_url_title . '">';
+    if (!empty($bv->reviews->getAggregateRating())) {
+      $output .= $bv->reviews->getAggregateRating();
+    }
+    $output .= '</div></div>';
+  }
+  return $output;
+}
+
+/**
+ * Create content for the product reviews section.
+ *
+ * Uses Bazaarvoice for reviews. There is a javascript implementation that loads
+ * reviews in browser. The javascript implementation for the reviews is
+ * instantiated in the function
+ * igcommerce_utility_products_get_reviews_stars() because it loads earlier on
+ * the page. This function generates the html that the javascript implemnation
+ * will populate on page load. This also handles the PHP implementation of
+ * bazaarvoice using bvseosdkinc that loads the SEO friendly version of reviews.
+ * The phpseosdk content is only presented to search engines, and not to end
+ * users.
+ *
+ * @param array $solr_doc
+ *   Array of product information.
+ *
+ * @return string
+ *   Generated content HTML.
+ */
+function igcommerce_utility_products_get_reviews($solr_doc)
+{
+
+    $output = NULL;
+    global $language, $base_url;
+
+    $lang = $language->language;
+
+    // Bazaarvoice is currently only available in the us
+    if (isset($solr_doc->ss_field_url_title) && $lang == "en-us") {
+
+        // Adds all the php to support the Bazaarvoice SEO implementation
+        require_once('includes/bvseosdk.inc');
+
+        // BV Configuration settings that the SDK uses to pull the right reviews
+        // For products with more than 30 reviews, the html presented to SEO bots
+        // will have a link to the next 30 reviews, this link will append
+        // variables to the url. The end user should never see these links.
+
+        //Define the base and page URLs; ensure the protocol (http or https) matches the one used in the production site
+        $page = $base_url . request_uri();
+        $base = $base_url . '/' . request_path();
+        $bv = new BV(array(
+            'bv_root_folder' => '6594-en_US',
+            'subject_id' => $solr_doc->ss_field_url_title,
+            'cloud_key' => 'fluke-ad3c6d5153774406cacc9431d573fd04',
+            //page_url MUST include any and all URL parameters that were present in the page request; otherwise only page 1 of content can be indexed
+            'page_url' => $page,
+            //base_url is the shortest possible URL that will direct to this particular product page
+            'base_url' => $base,
+            //TODO: before go-live, set this to FALSE (points to reviews on productions server)
+            'staging' => FALSE,
+            //'bvreveal' => 'debug',
+        ));
+
+        $output = '<section id="fluke-product-display-reviews-section">';
+        $output .= '<h2>' . t('Reviews') . ': ' . $solr_doc->ss_field_content_title . '</h2>';
+        $output .= '<div id="fluke-product-display-reviews">';
+        // The title "Reviews" comes in through the Bazaarvoice side, so we remove it here to prevent duplication.
+        // We can't "switch it off" on the bazaarvoice side because it's tied to the "write a review" button.
+        // $output .= '<h2 class="fluke-product-display-related-products-title">' . t('Reviews') . '</h2>';
+        $output .= '<div data-bv-show="reviews" data-bv-product-id="' . $solr_doc->ss_field_url_title . '">';
+        $bvreviews = $bv->reviews->getReviews();
+        if (!empty($bvreviews)) {
+            $output .= $bvreviews;
+        }
+        $output .= "</div>";
+        $output .= "</div>";
+        $output .= "</section>";
+    }
+    return $output;
+}
+
+
+function igcommerce_utility_products_theme() {
+    $module_path = drupal_get_path('module', 'igcommerce_utility_products');
+    $base = array(
+        'path' => $module_path . "/templates",
+    );
+    return array(
+        'product_accets' => $base + array(
+                'template' => 'product-accets',
+                'variables' => array('items' => NULL, 'total' => 0, 'accet_type' => NULL),
+            ),
+        'product_breadcrumbs' => $base + array(
+                'template' => 'product-breadcrumbs',
+                'variables' => array('blocks' => NULL, 'accessories_page' => NULL),
+                'page_arg' => NULL,
+            ),
+        'product_detail' => $base + array(
+                'template' => 'product-detail',
+                'variables' => array('content' => NULL, 'product_type' => NULL),
+            ),
+        'product_slideshow' => $base + array(
+                'template' => 'product-slideshow',
+                'variables' => array('content' => NULL),
+            ),
+        'product_top_sellers' => $base + array(
+                'template' => 'product-top-sellers-block',
+                'variables' => array('blocks' => NULL, 'accessories_page', NULL),
+                'page_arg' => NULL,
+            ),
+        'product_special_offers' => $base + array(
+                'template' => 'product-special-offers',
+                'variables' => array('content' => NULL),
+            ),
+        'product_resource' => $base + array(
+          'template' => 'product-resource',
+          'variables' => array('url' => NULL)
+        ),
+        'product_resources' => $base + array(
+          'template' => 'product-resources',
+          'variables' => array('items' => NULL, 'title' => NULL)
+        ),
+        'accessories_related_products' => $base + array(
+          'template' => 'accessories-related-products',
+          'variables' => array('content' => NULL)
+        ),
+        'product_video' => $base + array(
+          'template' => 'product-video',
+          'variables' => array('url' => NULL)
+        ),
+        'product_videos' => $base + array(
+          'template' => 'product-videos',
+          'variables' => array('items' => NULL, 'title' => NULL)
+        ),
+        'product_manual_link' => $base + array(
+          'template' => 'product-manual-link'
+        )
+    );
+}

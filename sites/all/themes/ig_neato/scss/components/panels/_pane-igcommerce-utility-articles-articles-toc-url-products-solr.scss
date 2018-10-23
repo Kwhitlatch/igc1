@@ -1,0 +1,45 @@
+// This is an oddball that govens related products on a few things.
+// If this template is used elsewhere, please leave a note.
+
+// Recommended Products on blog posts
+// /en-us/learn/blog/condition-monitoring/5-ways-condition-monitoring-can-improve-your-maintenance-program
+.pane-igcommerce-utility-articles-articles-solr-recommended-product,
+// Recent articles on blog articles.
+// /en-us/learn/blog/safety/photovoltaic-installation-standards-and-certification
+.pane-igcommerce-utility-articles-articles-solr-recent-article,
+// Webcard TOC Recommended products:
+// /en-us/learn/best-practices/measurement-basics/electricity
+.pane-igcommerce-utility-articles-articles-toc-url-products-solr,
+// Webcard related products too:
+// /en-us/learn/best-practices/measurement-basics/electricity/what-is-current
+.article-webcard,
+ {
+  clear: both;
+  h3.pane-title {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .toc-listing-item-wrapper,
+  .toc-article-related-resource-wrapper {
+    // Most of this styling biggybacks off of _toc-listings-item-wrapper.scss,
+    // it only overrides the styles for 4-up on desktop.
+    
+    //@extend %tile-story-simple;
+    // padding: 0;
+    // @include span-columns(12);
+     min-height: initial;
+    @include media($phone) {
+    //   // @include span-columns(6);
+     min-height: 220px;
+    //   // @include omega(even);
+    }
+    @include media($desk) {
+      @include omega-reset(even);
+      @include omega-reset(3n); 
+      @include span-columns(3);
+    }
+    h5 {
+      font-family: $base-font-family;
+    }
+  }
+}

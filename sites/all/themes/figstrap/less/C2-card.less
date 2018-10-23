@@ -1,0 +1,201 @@
+/**
+ * @file A1-article.less
+ * Styles pages of the UI pattern A1
+ *
+ * UI Templates can be found here: https://wiki.danahertm.com/display/flukewebdev/Templates
+ * Most articles will use the template "pascal" or "pascal-flipped" and will be
+ * wrapped in the class of ".pascal".
+ *
+ * TOC
+ * - Card Styles
+ * - General Styles
+ * - Card Header
+ * - Card Content
+ * - Card Footer
+ */
+/**
+* -  Card Styles
+* ----------------------------------------------------------------------------
+*/ 
+
+/* Default card styles, speced from Bootstrap 4 card class + some Fluke specs */
+.card {
+  background-color: @fluke-white;
+  border: 1px solid @fluke-lines-and-pipes;
+  display: block;
+  height: 90%;
+  margin-bottom: .75rem;
+  padding: 0 0 15px 0;
+  position: relative;
+  transition: opacity 0.2s ease;
+  min-height: 65px;
+}
+
+/* Modified minimum height for related resources - This item is only text and needs some extra height to look right */
+.toc-article-related-resource-wrapper .card{
+  min-height: 125px;
+}
+
+/* - Remove Navbar in overlay - issue due to page view being used for cards */
+#overlay  #navbar {
+  display: none;
+}
+
+/* - Remove Footer in overlay - issue due to page view being used for cards */
+#overlay #main-footer {
+  display: none
+}
+
+/**
+* - General Styles
+* ----------------------------------------------------------------------------
+*/ 
+
+/* - Remove Default row classes */
+.page-web-card {
+.view-article .row {
+  border-bottom: none;
+  padding: 0;
+}
+}
+
+#cboxContent {
+    background: transparent;
+    overflow: hidden;
+}
+
+/**
+* - Card Header
+* ----------------------------------------------------------------------------
+*/ 
+
+/* - No right and left padding for the header section of webcards*/
+.card-header{
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* - Header image 100% width*/
+.field-name-field-header-image-page img{
+  padding: 0;
+  width: 100%;
+  margin-top: 40px;
+}
+
+/* Caption found under header*/
+.field-name-field-caption{
+  font-size: @font-size-h6;
+  margin-bottom: 50px;
+}
+
+#cboxClose {
+    top: 0;
+    background: transparent;
+}
+#cboxClose{
+    background-image: none;
+    right: 0;
+    bottom: 0;
+    text-align: right;
+    font-size: 20px;
+    color: transparent;
+    padding-bottom: 5px;
+    font-family: fluke-icon-font;
+    &:after {
+      content: "\e915"; //.fluke-icon-close;
+      color: white;
+    }
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+/**
+* - Card Content
+* ----------------------------------------------------------------------------
+*/ 
+
+ .card-content{
+  padding: 0 8.25%; /* Percentage based padding based on 105px full screen. */
+  background: @fluke-white;
+}
+
+/* Primary and secondary CTA sized to spec. Clearfix in view to make sure wrapped correctly */
+.field-name-block-cta .btn a, .btn {
+  float: left;
+  margin: 0 15px 15px 0;
+  max-width: 285px;
+  width: 100%;
+}
+
+/* Additional padding needed over CTA block                                            */
+.view-display-id-block_3{
+  padding-bottom: 25px;
+}
+
+/**
+* - Card Footer
+* ----------------------------------------------------------------------------
+*/ 
+
+/* H6 found on related card footers. Matched visual design spec */
+.card .toc_article_card_title, .card .toc-article-related-product-title, 
+.card .toc-article-related-resource-title,
+.card h6{
+  padding: 5px 15px ;
+}
+
+/* Webcard background darkey shade of gray */
+ .card-footer{
+  background: @fluke-background;
+  border-top: 1px solid @fluke-lines-and-pipes;
+  padding: 0 8.25%; /* Percentage based padding based on 105px full screen. */
+}
+
+/* Removed h6 serif font in footer */
+ .card-footer h6, .flukestrap-layouts-footer .panel-panel h5{ 
+  font-family: @font-family-sans-serif;
+  font-weight: @headings-font-weight;
+}
+
+ h2.block-title, h2.pane-title {
+  .h3();
+  padding-bottom: 5px;
+  padding-top: 40px;
+}
+
+ .related-item{
+  padding-left: 0;
+  padding-right: 30px;
+ }
+
+ .node-type-toc .field-name-field-content-title{
+  .h1();
+ }
+
+.card img{
+  padding: 0;
+  width: 100%;
+}
+
+.card-footer .block_related_resources a{
+  display: block;
+  padding: 15px;
+}
+
+.container-related-links, 
+.view-display-id-url_builder_related_products, 
+.toc-article-related-product-see-spec, 
+.toc-article-related-product-download
+{
+  padding: 0 15px;
+}
+
+ .card-footer .col-sm-3{
+  padding-left: 0;
+  padding-right: 0;
+    @media (min-width: @screen-sm) {
+      padding-left: 0;
+      padding-right: 30px;
+    }
+ }

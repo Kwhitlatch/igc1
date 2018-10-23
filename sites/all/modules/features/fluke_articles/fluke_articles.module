@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Fluke Articles feature.
+ */
+
+include_once 'fluke_articles.features.inc';

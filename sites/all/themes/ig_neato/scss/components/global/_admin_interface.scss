@@ -1,0 +1,20 @@
+// admin/content
+body.page-admin-content {
+  table td {
+    padding: 1rem;
+  }
+}
+
+// Adjusts for the two-line admin bar when logged in
+html body.admin-menu {
+  margin-top: 100px !important;
+  @include media(608px) {
+    margin-top: 75px !important;
+  }
+  @include media($desk) {
+    margin-top: 50px !important;
+  }
+  @include media($screen-xl) {
+    margin-top: 29px !important;
+  }
+}

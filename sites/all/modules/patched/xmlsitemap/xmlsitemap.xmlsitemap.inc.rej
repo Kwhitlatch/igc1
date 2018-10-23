@@ -1,0 +1,16 @@
+***************
+*** 125,130 ****
+     */
+    public function getRootAttributes() {
+      $attributes['xmlns'] = 'http://www.sitemaps.org/schemas/sitemap/0.9';
+      if (variable_get('xmlsitemap_developer_mode', 0)) {
+        $attributes['xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance';
+        $attributes['xsi:schemaLocation'] = 'http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd';
+--- 125,131 ----
+     */
+    public function getRootAttributes() {
+      $attributes['xmlns'] = 'http://www.sitemaps.org/schemas/sitemap/0.9';
++     $attributes['xmlns:xhtml'] = 'http://www.w3.org/1999/xhtml';
+      if (variable_get('xmlsitemap_developer_mode', 0)) {
+        $attributes['xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance';
+        $attributes['xsi:schemaLocation'] = 'http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd';

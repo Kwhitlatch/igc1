@@ -1,0 +1,6 @@
+name = Fluke Brand Chooser
+description = Super fast loading brand chooser for fluke.com.  This page is built using npm, and optimized for speed. To support this, it completely bypasses the theme layer, and most
+of the images are inline svgs, with .gif fallbacks that live in the dam.  To update the page, you'll need to use node.js and recompile.  Check the readme.md in brand-chooser folder for more info.
+package = Fluke
+core = 7.x
+

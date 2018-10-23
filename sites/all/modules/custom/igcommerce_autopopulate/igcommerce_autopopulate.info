@@ -1,0 +1,3 @@
+name = "Igcommerce Autopopulate"
+description = module to autopopulate fields on content types and translation forms.
+core = "7.x"

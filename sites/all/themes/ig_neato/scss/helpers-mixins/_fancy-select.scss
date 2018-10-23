@@ -1,0 +1,61 @@
+// Used on Product TOC to style the filters.  Hides the default styling in all
+// browsers, and replaces it with our own fancy stuff.
+// Apply this mixin to the containing wrapper of the select.
+%fancy-select {
+  display: inline-block;
+  border: 1px solid #e5e5e5;
+  position: relative;
+  border-radius: 0px;
+  width: 33%;
+  background-color: white;
+  overflow: hidden;
+  select {
+    box-sizing: content-box;
+    background: transparent;
+    border: 0;
+    outline: 0;
+    line-height: 18px;
+    padding: 11px 15px;
+    // The 101% fixes in ie8 problem where the default dropdown arrow can't be hidden.
+    // In this case, it pushes it off the screen.
+    width: 101%;
+    margin-bottom: 0;
+    -webkit-user-select: none;
+    -moz-user-select: -moz-none;
+    -ms-user-select: none;
+    user-select: none;
+
+    -webkit-appearance: none;
+    -moz-appearance: radio-container;
+    appearance: none;
+  }
+  &,
+  > * {
+    cursor: pointer;
+  }
+ 
+  &:after {
+    content: "";
+    width: 0;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    margin-top: 2px;
+    border-width: 5px 5px;
+    border-style: solid;
+    pointer-events: none;
+    border-color: #656565 transparent transparent transparent;
+  }
+  &:before {
+    content: "";
+    width: 0;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    margin-top: -11px;
+    border-width: 5px 5px;
+    border-style: solid;
+    pointer-events: none;
+    border-color: transparent transparent #656565 transparent;
+  }
+}

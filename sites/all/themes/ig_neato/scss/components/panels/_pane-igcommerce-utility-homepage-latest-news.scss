@@ -1,0 +1,17 @@
+// Latest news ro-tater on the homepage. The section is built using a custom
+// block in igcommerce_utility.module. The html markup comes from 
+// modules/igcommerce_utility/templates/homepage_latest_news.tpl.php
+// There's a little dab of javascript that makes the ro-tater tate.
+// found in modules\custom\igcommerce_utility\js\homepage_latest_news.js
+.pane-igcommerce-utility-homepage-latest-news {
+  @extend %gray-background-text;
+  margin: 2rem $spacing-1;
+  padding: $spacing-1;
+  line-height: normal;
+  @include media($desk-xl) {
+    @include outer-container;
+  }
+  h3 {
+    display: inline;
+  }
+}

@@ -1,0 +1,63 @@
+// Switching to tbbb default accoridons has rendered most of this code irrlevent
+// May need to bring some of the list styling back in. -rrn 5-22-17
+
+// #fluke-product-display-resources,
+// .pane-product-page-view-all-accessories,
+// .pane-product-page-view-product-resources {
+//   .top-pick-accessories {
+//     padding-left: 0;
+//     margin-bottom: 1em;
+//     li {
+//       margin-bottom: 2em;
+//       @include span-columns(6);
+//       @include media(max-width $screen-sm) {
+//         &:nth-child(even) {
+//           margin-right: 0;
+//         }
+//       }
+//       @include media($screen-sm) {
+//         @include span-columns(3);
+//         margin-right: 2.43902%;
+//       }
+//     }
+//   }
+//   .acc-categories {
+//     clear: both;
+//   }
+//   .panel-heading {
+//     @extend %adds-toggle-plus;
+//     a[data-parent='#accordion'] {
+//       &.plus-minus { // Expands the plus-minus div to make the whole title clickable
+//         width: 100%;
+//         text-align: right;
+//         padding: 10px 5px 30px 0;
+//       }
+//     }
+//     display: block;
+//     position: relative;
+//     &:not(:first-of-type) {
+//       border-top: 1px solid white;
+//       @include media($screen-sm) {
+//         border-top: 1px solid $gray-c;
+//       }
+//     }
+//     .collapse-toggle {
+//       display: block;
+//       color: $black;
+//       width: 100%;
+//       text-align: left;
+//       @include media($screen-md){
+//         display: none;
+//       }
+//     }
+//   }
+//   // The resources section is populated with uls, unlike the accessories section
+//   .panel-collapse{
+//     display: none;
+//     @extend %all-list-unstyled;
+//     li {
+//       padding-bottom: .5rem;
+//     }
+//     padding-bottom: .5rem;
+//   }
+// }

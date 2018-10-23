@@ -1,0 +1,2 @@
+!function(o){Drupal.behaviors.igcommerce_utility_video={attach:function(i,t){function n(i){var t=o(window).width()>842?675:"95%",n=o(window).height()>700?630:"95%";o.colorbox.settings.height=n,o.colorbox.settings.width=t,i&&o.colorbox.resize({height:n,width:t})}o.colorbox.settings.onLoad=n(),o(window).resize(n(!0))}},Drupal.behaviors.fix_colorbox_video={attach:function(i,t){o("body").once("fix-colorbox-video",function(){o(document).bind("cbox_cleanup",function(i){o("div#cboxLoadedContent iframe",this).attr("src","")})})}}}(jQuery);
+//# sourceMappingURL=maps/video.js.map

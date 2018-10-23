@@ -1,0 +1,55 @@
+<?php
+
+function igcommerce_xmlsitemap_schema() {
+  $schema['igsitemap_links'] = array(
+    // Example (partial) specification for table "node".
+    'description' => 'Track urls by language and an identifier.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary key for the record',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'identifier' => array(
+        'description' => 'A hash identifying the source of the url.  Typically in the form of [entity]|[bundle]|[entity_id]',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'url' => array(
+        'description' => 'The url',
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 4048,
+      ),
+      'language' => array(
+        'description' => 'The content language iso code (example: en-us)',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'bucket' => array(
+        'description' => 'The sitemap collection to add it to',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'indexes' => array(
+      'identifier' => array(
+        'identifier',
+      ),
+    ),
+    'unique keys' => array(
+      'id' => array(
+        'id',
+      ),
+    )
+  );
+
+  return $schema;
+}

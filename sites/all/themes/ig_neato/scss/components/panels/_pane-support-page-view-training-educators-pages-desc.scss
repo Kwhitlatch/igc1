@@ -1,0 +1,93 @@
+// These are the pages under training/educators/
+// Mixin for centering and full width image
+%center-block-image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  margin-bottom: .5rem;
+}
+.pane-support-page-view-training-educators-pages-desc {
+  //Only affects the page /en-us/training/educators/program-overview
+  .hot-tubs,
+  .teaching-materials,
+  .student-discounts {
+    margin-bottom: 1.5rem;
+    img {
+      @extend %center-block-image;
+    }
+    @include span-columns(12);
+    @include media($phone) {
+      @include span-columns(4);
+    }
+  }
+  .educator-tools + p {
+    clear: both;
+  }
+  //Only affects the page /en-us/training/educators/education-program-loaner-tools
+  .tool-list {
+    &+ p {
+      clear: both;
+    }
+    .loaner-tool {
+      margin-bottom: 1.5rem;
+      img {
+        @extend %center-block-image;
+      }
+      @include span-columns(12);
+      @include media($phone) {
+        @include span-columns(3);
+        &:nth-child(4) {
+          margin-right: 0;
+        }
+        &:nth-child(5) {
+          clear: both;
+        }
+      }
+    }
+  }
+  //Only affects the page /en-us/training/educators/teaching-materials
+  .teaching-material {
+    float: left;
+    margin-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid $gray-e;
+    p {
+      float: left;
+    }
+    p strong,
+    &+ p {
+      clear: both;
+    }
+    img {
+      float: left;
+      margin-right: 1.5rem;
+      width: 50%;
+      @include media($phone) {
+        width: 25%;
+      }
+    }
+  }
+  //Only affects the page /training/educators/tool-discounts
+  .student-discount-tools {
+    .student-discount-tool {
+      img {
+        @extend %center-block-image;
+      }
+      margin-bottom: 1.5rem;
+      @include span-columns(12);
+      @include media($phone) {
+        @include span-columns(3);
+        &:nth-child(4n+4) {
+          margin-right: 0;
+        }
+        &:nth-child(4n+5) {
+          clear: both;
+        }
+      }
+    }
+    &+ p {
+      clear: both;
+    }
+  }
+}

@@ -1,0 +1,102 @@
+#{$all-button-inputs},
+%button,
+button,
+.button, .page-product div.ps-widget{
+  @include appearance(none);
+  -webkit-font-smoothing: antialiased;
+  background-color: $special-action-color;
+  border-radius: $base-border-radius;
+  border: 1px solid $yellow-dark;
+  color: $base-font-color;
+  cursor: pointer;
+  display: inline-block;
+  font-family: $base-font-family;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.2; // 18px
+  padding: 1.1rem 3rem; // Final button height should be 42px
+  text-decoration: none;
+  user-select: none;
+  vertical-align: middle;
+  white-space: normal;
+  text-align: center;
+
+  span.ps-button-label{
+    font-family: $base-font-family;
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.2; // 18px
+  }
+
+  // a {
+  //   color: $base-font-color;
+  // }
+
+  &:hover,
+  &:focus {
+    background-color: darken($special-action-color, 10%);
+    color: darken($body-text, 10%);
+    text-decoration: none;
+    outline: 0; // overrides default blue faux border in chrome
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+//This should not be needed, as the default button is yellow.
+// %button-primary,
+// .button-primary{
+//   @extend button;
+//   background-color: $color-primary;
+//   color: $black;
+//   &:hover{
+//     background: darken($color-primary, 10%);
+//   }
+// }
+
+%button-secondary,
+.button-secondary, .product-model .ps-widget{
+  @extend button;
+  color: white;
+  background-color: $color-secondary;
+  border-color: $blue-dark;
+  &:focus,
+  &:hover{
+    color: white;
+    background: darken($color-secondary, 10%);
+  }
+}
+
+.product-model .ps-widget .ps-button-label{
+  color: white;
+}
+
+%button-white,
+.button-white{
+  @extend %button;
+  color: $blue-medium;
+  background-color: $white;
+  border-color: $gray-d;
+  &:focus,
+  &:hover{
+    background: $gray-e;
+    color: $blue-dark;
+  }
+}
+
+// This is used on the webcards "was this helpful buttons"
+// The "Was this helpful button" has been removed, but I'm keeping
+// this code around in case we need it in the future. -RRN 3-4-18
+// %button-black {
+//   @extend %button;
+//   color: $white;
+//   background-color: $base-font-color;
+//   border-color: black;
+//   &:focus,
+//   &:hover{
+//     background: lighten($base-font-color, 10%);
+//     color: $white;
+//   }
+// }

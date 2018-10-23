@@ -1,0 +1,101 @@
+%adds-toggle-plus {
+  a[data-parent='#accordion'],
+  a[data-parent='#accordion-left'] { //Prevents W3C error for duplicate accordians on a page
+    height: 20px;
+    height:10px;
+    line-height: 30px;
+    position: absolute;
+    right: 0px; // Was 7px
+    text-decoration: none;
+    top: 0;
+    transition: visibility 2s, opacity 3s linear;
+    width: 10px;
+    &:after {
+      color: $gray-21;
+      position: absolute;
+      right: 20px;
+      content: '\f067';              //minus   f068
+      font-family: fluke-icon-font;
+    }
+    &.expanded {
+      &:after {
+        content: '\f068';
+      }
+    }
+  }
+}
+.custom-collapse {
+  .panel {
+    display: block;
+    border-bottom: 1px solid $gray-c;
+    .child-menu-item {
+      padding-bottom: 10px;
+    }
+    .panel-collapse {
+      display: none;
+    }
+  }
+}
+.custom-collapse {
+  .panel-heading {
+    position: relative;
+    h4 {
+      margin-bottom: 0;
+    //  font-size: 15px;
+      line-height: 1.3;
+      padding: 1rem 0;
+      font-weight: 700;
+    }
+    @extend %adds-toggle-plus;
+    a[data-parent='#accordion'],
+    a[data-parent='#accordion-left'] { //Prevents W3C error for duplicate accordians on a page
+      font-family: $heading-font-family;
+      color: $gray-21;
+      padding: 1rem 0;
+      line-height: 1.5;
+    }
+  }
+  a.plus-minus {}
+  .panel-collapse {}
+}
+/* This only affects dropdown toggles that live in content, NOT the sidenav */
+/* It expands the anchor to cover the title so that clicking the title opens it  */
+.flukestrap-layouts-content {
+  .custom-collapse {
+    margin-bottom: 45px;
+    .panel-heading {
+      position: relative;
+      h4 {
+        margin-bottom: 0;
+        font-size: $font-size-h3; //Was 2rem;
+        line-height: 1.3;
+        padding: 1rem 0;
+        font-weight: 700;
+      }
+      a[data-parent='#accordion'],
+      a[data-parent='#accordion-left'],
+      a[data-parent='#compare-accordion']{ //Prevents W3C error for duplicate accordians on a page
+        //border: 1px solid red;
+        font-family: $heading-font-family;
+        color: $gray-21;
+        padding: 1rem 0;
+        line-height: 1.5;
+        width: 100%;
+        height: 40px;
+        &:after {
+          font-size: $font-size-base;
+          color: $gray-21; //Was $action-color - I believe all toggles should be gray not blue per nws spec
+          position: absolute;
+          right: 0;
+          content: '\f067';              //minus   f068
+          font-family: fluke-icon-font;
+        }
+        &.expanded {
+          &:after {
+            content: '\f068';
+          }
+        }
+      }
+    }
+  }
+}

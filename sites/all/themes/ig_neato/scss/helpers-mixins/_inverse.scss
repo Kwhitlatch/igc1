@@ -1,0 +1,35 @@
+
+/*
+*
+*   When a selection is inverted, the links use white
+*
+*/
+
+%inverse,
+.inverse {
+  background: $inverse-bg;
+  a {
+    color: $white;
+    &:hover{
+      text-decoration: none;
+      color: $special-action-color;
+    }
+  }
+}
+
+/*
+*
+*   When a selection is inverted and is highlighted, the links use the
+*   special action color
+*
+*/
+
+%highlighted-link {
+  a {
+    color: $special-action-color;
+    &:hover{
+      text-decoration: none;
+      color: darken($special-action-color, .25);
+    }
+  }
+}

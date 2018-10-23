@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Contains install and update functions for GA Push.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function ga_push_uninstall() {
+  // Delete created variables.
+  variable_del('ga_push_default_method');
+  variable_del('ga_push_debug');
+}

@@ -1,0 +1,613 @@
+<?php
+
+function igc_compare_page_form($form, &$form_state, $summary = '', $category = '') {
+  global $language, $ig_original_path;
+  $lang = $language->language;
+
+  drupal_page_is_cacheable(FALSE);
+
+  drupal_add_js(drupal_get_path('module', 'igc_compare') . '/js/igc_compare_page.js');
+  drupal_add_js(drupal_get_path('module', 'igc_compare') . '/js/printThis-master/printThis.js');
+
+  global $base_url;
+
+  drupal_add_js([
+    'igc_compare' => [
+      'comparePrintCSS' => $base_url . '/' .drupal_get_path('module', 'igc_compare') . '/compare-print.css'
+    ]
+  ],
+    ['type' => 'setting']
+  );
+
+
+  if(!empty($summary)){
+    $form_state['summary'] = $summary;
+  }elseif(!empty($form_state['summary'])){
+    $summary = $form_state['summary'];
+  }
+
+  if(!empty($category)){
+    $form_state['category'] = $category;
+  }elseif(!empty($form_state['category'])){
+    $category = $form_state['category'];
+  }
+
+  $form['summary'] = [
+    '#markup' => $summary,
+  ];
+
+  $form['wrapper'] = [
+    '#prefix' => '<div id="compare-form-wrapper">',
+    '#suffix' => '</div>'
+  ];
+
+  if (!empty($_GET['selected'])) {
+    $selected = $_GET['selected'];
+    $selected = explode(',', $selected);
+    $form_state['selected'] = $selected;
+  } elseif (isset($form_state['selected'])) {
+    $selected = $form_state['selected'];
+  } else {
+    $selected = [];
+  }
+
+  if (!empty($form_state['triggering_element'])) {
+    if ($form_state['triggering_element']['#value'] == 'Remove') {
+      $parts = explode('-', $form_state['triggering_element']['#name']);
+      $selected[$parts[1]] = 0;
+      $form_state['selected'] = $selected;
+    } elseif ($form_state['triggering_element']['#type'] == 'select') {
+      $parts = explode('-', $form_state['triggering_element']['#name']);
+      $select_key = intval($parts[1]);
+
+      $selected[$select_key] = is_numeric($form_state['input'][$form_state['triggering_element']['#name']]) ? intval($form_state['input'][$form_state['triggering_element']['#name']]) : 0;
+      $form_state['selected'] = $selected;
+    }
+  }
+
+  if (empty($form_state['products'])) {
+
+    $products = igc_compare_fetch_products();
+    $form_state['products'] = $products;
+  } else {
+    $products = $form_state['products'];
+  }
+
+  $empty_cell = [
+    '#type' => '#markup',
+    '#markup' => '&nbsp;'
+  ];
+
+  $top_rows = [
+    'remove' => [0 => $empty_cell],
+    'image' => [0 => $empty_cell],
+    'title' => [0 => $empty_cell],
+    'buy-now' => [0 => $empty_cell],
+  ];
+
+  $tabs = [];
+
+  $product_json = [];
+
+  // Collects any notes that would appear at the very bottom (footer notes)
+  $notes = [];
+
+  for ($x = 0; $x <= 2; $x++) {
+
+    if (!empty($selected[$x]) && is_numeric($selected[$x]) && !empty($products[$selected[$x]])) {
+      $doc = $products[$selected[$x]];
+    } else {
+      $doc = NULL;
+    }
+
+    if (is_object($doc)  && $doc->bs_available_for_comparison) {
+
+      $top_rows['remove'][$x + 1] = [
+        'remove_link' => [
+          '#markup' => "<a class='compare-remove-link' data-target='remove-$x'>x Remove</a>",
+        ],
+        'hidden_button' => [
+          '#type' => 'button',
+          '#value' => t('Remove'),
+          '#name' => 'remove-' . $x,
+          '#executes_submit_callback' => FALSE,
+          '#limit_validation_errors' => [],
+          '#attributes' => array(
+            'onclick' => 'return (false);',
+            'class' => ['hide']
+          ),
+          '#ajax' => [
+            'wrapper' => 'compare-form-wrapper',
+            'method' => 'replace',
+            'callback' => 'igc_compare_ajax_callback'
+          ]
+        ]
+      ];
+
+      $url = '/'.$lang.'/'.igcommerce_utility_product_tocs_get_url($doc);
+
+      $image_data = json_decode($doc->ss_slideshow_main_img);
+
+      // get an optimized image
+      $image_urls = igcommerce_utility_get_images($image_data->url);
+
+      $image = "<img src='{$image_urls['field_large_url']}' alt='{$image_data->alt}'/>";
+
+      $top_rows['image'][$x + 1] = [
+        '#markup' => "<a href='$url'>$image</a>"
+      ];
+
+      // title and link to product.
+      $title = $doc->ss_field_content_title;
+      $top_rows['title'][$x + 1]['#markup'] = "<a href='$url'>$title</a>";
+
+      // buy now button
+      $top_rows['buy-now'][$x + 1]['#markup'] = _cta_buy_now('Buy Now',$doc, NULL);
+
+      $product_json[$x] = [
+        'id' => $doc->entity_id,
+        'image' => $image_urls['field_medium_url'],
+        'title' => $title,
+      ];
+
+    } else {
+
+      if(empty($doc->bs_available_for_comparison) && empty($selected[$x])){
+        $selected[$x] = 0;
+      }
+
+      $options = [0 => t('Select a product')];
+
+      $top_rows['remove'][$x + 1] = $empty_cell;
+      $top_rows['title'][$x + 1] = $empty_cell;
+      $top_rows['buy-now'][$x + 1] = $empty_cell;
+
+      foreach ($products as $product) {
+        $ent_id = !empty($product->entity_id) ? $product->entity_id : NULL;
+        if (!in_array($ent_id, $selected) && $product->bs_available_for_comparison) {
+          $options[$ent_id] = $product->ss_field_content_title;
+        }
+      }
+
+      $top_rows['image'][$x + 1] = [
+        '#type' => 'select',
+        '#name' => 'product-' . $x,
+        '#options' => $options,
+        '#ajax' => [
+          'wrapper' => 'compare-form-wrapper',
+          'method' => 'replace',
+          'callback' => 'igc_compare_ajax_callback'
+        ]
+      ];
+
+      $product_json[$x] = [];
+    }
+
+    if (!empty($doc->ts_comparison_data)) {
+
+      $data = json_decode($doc->ts_comparison_data);
+
+      if (!empty($data)) {
+
+        foreach ($data as $title => $data_cat) {
+          if($title === 'Notes'){
+            foreach($data_cat as $note_item){
+              $notes[$note_item] = $note_item;
+            }
+
+            continue;
+          }
+
+          if (isset($tabs[$title]['table'])) {
+            $rows = $tabs[$title]['table']['rows'];
+          } else {
+            $rows = [];
+          }
+
+          foreach ($data_cat as $data_row => $data_value) {
+            if (empty($rows[t($data_row)][0])) {
+              $rows[t($data_row)][0] = t($data_row);
+            }
+
+            // Yes values should show up as a checkmark
+            if(strtolower($data_value) == t('yes')){
+              $data_value = "<span class='fluke-icon fluke-icon-checkmark'>&nbsp;</span>";
+            }
+
+            $rows[t($data_row)][$x + 1] = $data_value;
+          }
+
+          $tabs[$title] = [
+            'title' => t($title),
+            'table' => ['rows' => $rows],
+          ];
+        }
+      }
+    }
+  }
+
+  //Fill in any gaps in the table
+  foreach ($tabs as &$tab) {
+    foreach ($tab['table']['rows'] as $key => $row) {
+      for ($y = 0; $y <= 2; $y++) {
+        if (!isset($row[$y + 1])) {
+          // For gaps have an empty cell, but for an empty column have nbsp, so we can distinguish in javascript
+          if(empty($selected[$y])){
+            $tab['table']['rows'][$key][$y + 1] = '&nbsp;';
+          }else {
+            $tab['table']['rows'][$key][$y + 1] = '';
+          }
+        }
+      }
+      // Keys will now have correct integer values, but they won't be ordered correctly, so sort by key
+      ksort($tab['table']['rows'][$key]);
+    }
+  }
+
+  if(count($notes)){
+    // Handle the footer notes table
+    $notes_rows = [];
+    foreach($notes as $note){
+      $notes_rows[] = [ 0 => "<p>$note</p>"];
+    }
+
+    $tabs[] = [
+      'title' => t('Notes'),
+      'table' => [
+        'rows' => $notes_rows,
+      ]
+    ];
+  }
+
+  $vars = [
+    'items' => $tabs,
+  ];
+
+  $utility = [
+    '#prefix' => '<div class = "utility-block clearfix">',
+    '#suffix' => '</div>',
+    'show-only' => [
+      '#type' => 'checkbox',
+      '#title' => t('Show only the differences')
+    ],
+    'printfriendly' => [
+      '#type' => 'button',
+      '#value' => t('Print'),
+      '#attributes' => ['class' => ['igc-compare-print-page']],
+      '#prefix' => '<div class="print-block">',
+      '#suffix' => '</div>'
+    ]
+  ];
+
+  $form['wrapper']['products'] = [
+    'items' => $top_rows,
+    '#theme' => 'controls_table',
+    '#tree' => TRUE,
+    '#prefix' => '<div id="compare-page-top">',
+    '#suffix' => '</div>'
+
+  ];
+
+  $form['wrapper']['utility_top'] = $utility;
+  $form['wrapper']['tabs']['#markup'] = theme('compare_accordian', $vars);
+  $form['wrapper']['utility_bottom'] = $utility;
+
+  $form['wrapper']['push-state'] = [
+    '#type' => 'hidden',
+    '#value' => './'.t('compare').'?selected='.implode(',', $selected),
+    '#attributes' => ['id' => 'igc-compare-push-state'],
+  ];
+
+  $form['wrapper']['selected-products'] = [
+    '#type' => 'hidden',
+    '#value' => json_encode($product_json),
+    '#attributes' => ['id' => 'igc-compare-selected-products'],
+  ];
+
+  $form['wrapper']['category'] = [
+    '#type' => 'hidden',
+    '#value' => $category,
+    '#attributes' => ['id' => 'igc-compare-category'],
+  ];
+
+  return $form;
+}
+
+function igc_compare_selection_setup($doc) {
+  if(igc_compare_lang_check()) {
+    drupal_add_js(drupal_get_path('module', 'igc_compare') . '/js/igc_compare.js');
+
+    if (!empty($doc->im_url_path_builder[0])) {
+      $url_builder_term = $doc->im_url_path_builder[0];
+
+      global $language;
+
+      drupal_add_js([
+        'igc_compare' => [
+          'termId' => $url_builder_term,
+          'comparePath' => '/' . $language->language . '/' . $doc->ss_path_alias_locale . '/' . t('compare')
+        ]
+      ],
+        ['type' => 'setting']
+      );
+    }
+  }
+}
+
+function igc_compare_ajax_callback($form, $form_state) {
+  return $form['wrapper'];
+}
+
+/**
+ * Returns true if the language is enabled for comparison, false if not
+ *
+ * @return bool
+ */
+function igc_compare_lang_check($lang = NULL){
+  global $language, $conf;
+
+  $compare_en_only = !empty($conf['igc_compare_en_only']) ? $conf['igc_compare_en_only'] : FALSE;
+
+  if($lang === NULL){
+    $lang = $language->language;
+  }
+
+  if(empty($compare_en_only) || strpos($lang, 'en') === 0){
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+function igc_compare_process_product_display($doc, $title, $url, $image) {
+
+  if(!empty($doc->bs_available_for_comparison) && igc_compare_lang_check()){
+    $nid = $doc->entity_id;
+
+    $text = t('Add this product to your comparison.');
+
+    // get an optimized image
+    $image_urls = igcommerce_utility_get_images($image->url);
+
+    return "<div class='compare-item'>
+              <label>
+                 <input 
+                    id='compare-item-$nid' 
+                    class='unprocessed'
+                    name='compare-item-$nid' 
+                    type='checkbox'
+                    data-nid='$nid'
+                    data-title='$title'
+                    data-image='{$image_urls['field_medium_url']}' 
+                    data-url='$url'/>
+                 $text
+              </label>
+            </div>";
+  } else {
+    return '';
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function igc_compare_ctools_plugin_directory($module, $plugin) {
+  if (($module == 'ctools') && ($plugin == 'content_types')) {
+    return 'plugins/content';
+  }
+}
+
+/**
+ * Implements hook_theme
+ */
+function igc_compare_theme() {
+  return [
+    'compare_accordian' => [
+      'variables' => ['items' => []],
+    ],
+    'controls_table' => [
+      'render element' => 'element'
+    ],
+    'too_many_modal' => [
+      'template' => 'igc_compare.too_many_modal',
+      'variables' => ['modal_title' => '', 'modal_body' => ''],
+    ],
+  ];
+}
+
+function theme_compare_accordian($variables) {
+  $output = '<div class="compare-collapse">';
+
+  $output .= '<div id="compare-accordion" class="panel-group-compare collapse in" aria-expanded="true">';
+
+  $items = $variables['items'];
+
+  foreach ($items as $item) {
+    $identifier = strtolower(drupal_clean_css_identifier($item['title']));
+
+    $output .= '<div class="panel panel-default">';
+
+    $output .= '<div class="panel-heading expanded-wrapper clearfix">';
+
+    $output .= '<a class="plus-minus expanded pull-right" data-target="#panel-body-' . $identifier . '" data-toggle="collapse" data-parent="#compare-accordion">';
+
+    $output .= "<h4 class='panel-title'>{$item['title']}</h4>";
+
+    $output .= '</a>';
+
+    $output .= '</div>';
+
+    $output .= '<div id="panel-body-' . $identifier . '" class="panel-body"> <div class="collapsible">';
+
+    $table_data = $item['table'];
+
+    $output .= theme('table', $table_data);
+
+    $output .= '</div></div>';
+
+    $output .= '</div>';
+  }
+
+  $output .= '</div>';
+
+  $output .= '</div>';
+  return $output;
+}
+
+function theme_controls_table($vars) {
+  $rows = [];
+  foreach ($vars['element']['items'] as $key => $item) {
+    if (substr($key, 0, 1) !== '#') {
+      foreach ($item as $index => $cell) {
+        if (substr($index, 0, 1) !== '#') {
+          $rows[$key][$index]['data'] = render($cell);
+        }
+      }
+    }
+  }
+
+  return theme('table', ['rows' => $rows]);
+}
+
+function igc_compare_fetch_products($toc = NULL) {
+  global $language, $ig_original_path;
+  $lang = $language->language;
+  $items = [];
+
+  if($toc === NULL) {
+    $toc_path = str_replace('/'. t('compare'), '', $ig_original_path);
+    $toc_path = str_replace($lang.'/', '', $toc_path);
+
+    $toc = igc_compare_toc_by_path_alias_locale($toc_path, $lang);
+  }
+
+  if (empty($toc->sm_field_product_list_sort_solr)) {
+    return $items;
+  }
+
+  $target_products_query = '';
+  $fields = 'entity_id,label,ss_slideshow_main_img,bs_available_for_comparison,ss_field_content_title,ts_comparison_data,ss_field_url_title,ss_language,sm_url_path_builder,ss_path_alias,ss_path_alias_locale,tm_new_models';
+
+  foreach ($toc->sm_field_product_list_sort_solr as $target_product) {
+    if (!empty($target_products_query) && is_numeric($target_product)) {
+      $target_products_query .= ' OR ' . $target_product;
+    }
+    if (empty($target_products_query)) {
+      $target_products_query = $target_product;
+    }
+  }
+  $target_products_query = 'entity_id:(' . $target_products_query . ')';
+
+  $options = array(
+    "sm_product_type" => "1533",
+    "ss_language" => $lang,
+    "bundle" => "product_display",
+  );
+  $query_params = array(
+    'q' => $target_products_query,
+    'filters' => $options,
+    'fl' => $fields,
+    'rows' => 300,
+  );
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, $query_params);
+
+  $response = fluke_solr_query($filters);
+
+  foreach ($response->response->docs as $doc) {
+    $items[$doc->entity_id] = $doc;
+  }
+
+  return $items;
+}
+
+function igc_compare_toc_by_path_alias_locale($path, $lang){
+
+  $options = array(
+    "ss_path_alias_locale" => $path,
+    "ss_language" => $lang,
+    "bundle" => "toc",
+  );
+  $query_params = array(
+    'filters' => $options
+  );
+
+  $query = fluke_solr_get_connection();
+  $filters = fluke_solr_add_filters($query, $query_params);
+
+  $toc_response = fluke_solr_query($filters);
+
+  if (empty($toc_response->response->docs)) {
+    return NULL;
+  }
+
+  return $toc_response->response->docs[0];
+}
+
+function igc_compare_get_bread($solr_doc)
+{
+  // The structured microdata in the breadcrumbs are based on google recomendations:
+  // https://developers.google.com/search/docs/data-types/breadcrumbs
+  $content = array();
+
+  if (!empty($solr_doc->im_url_path_builder)) {
+
+    $bc_array = [];
+    $ids = '';
+
+    $last = count($solr_doc->im_url_path_builder) - 1;
+
+    foreach ($solr_doc->im_url_path_builder as $index => $item) {
+      $ids .= $item;
+
+      if ($index != $last) {
+        $ids .= ' OR ';
+      }
+    }
+
+    global $language;
+    $lang = $language->language;
+
+    $options = [
+      "ss_language" => $lang,
+      "bundle" => "url_builder",
+      "entity_type" => "taxonomy_term",
+      "entity_id" => "($ids)"
+    ];
+
+    $fields = [];
+
+    $conn = fluke_solr_get_connection();
+
+    $filters = fluke_solr_add_filters($conn, array('filters' => $options, 'fl' => $fields, 'rows' => 10));
+    $response = fluke_solr_query($filters);
+
+    $docs = $response->response->docs;
+
+    $link = '/';
+
+    $proper_order = array_reverse($solr_doc->im_url_path_builder);
+
+    // Needs to be in the same order as the original field
+    foreach ($proper_order as $index => $item) {
+      foreach($response->response->docs as $doc){
+        if ($doc->label === 'Fluke IG') {
+          continue;
+        }
+        if($item === $doc->entity_id){
+          $link .= $doc->sm_field_url_title[0];
+
+          $bc_array[] = ['title' => $doc->sm_field_content_title[0], 'link' => $link];
+
+          $link .= '/';
+        }
+      }
+    }
+
+    $content['breadcrumb_array'] = $bc_array;
+    $content['title'] = t('Compare');
+    return theme('product_breadcrumbs', array('content' => $content));
+  }
+  return NULL;
+}

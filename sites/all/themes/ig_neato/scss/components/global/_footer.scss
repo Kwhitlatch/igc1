@@ -1,0 +1,227 @@
+//////////////////////////////////////////////////////////////////////////////////
+$footer-background: $gray-darker;
+$footer-color: $footer-primary-text;
+$footer-link-color: transparentize($footer-color, 0.6);
+$footer-disclaimer-color: transparentize($footer-color, 0.35);
+
+#site-footer {
+  clear: both;
+  background: $footer-background;
+  width: 100%;
+  ul:not(.contextual-links) {
+    padding: 0;
+    li {
+      list-style: none;
+      line-height: 1.5em;
+      span.nolink,
+      a {
+        text-decoration: none;
+        color: $gray-a;
+        display: block;
+        padding: .5rem 0;
+        @include media($phone) {
+          padding-right: 1rem;
+        }
+      }
+      a:hover {
+        color: $special-action-color;
+      }
+    }
+  }
+}
+
+.footer-top,
+.footer-bottom {
+  @include clearfix;
+  .container {
+    @include outer-container;
+  }
+}
+
+.footer-top {
+  // positioning first
+  @include media($desk) {
+    // Ensures pages with little content still fill the whole monitor on oddly sized desktops
+    min-height: 40vh;
+  }
+  .block-igcommerce-utility {
+    @include span-columns(12);
+    @include media($phone) {
+    @include span-columns(6);
+    }
+    @include media($tablet) {
+      @include span-columns(4);
+      margin: 0;
+      padding: 0;
+    }
+    @include media($desk) {
+      @include span-columns(2);
+    }
+  }
+  // then the rest, ok
+  @extend %p-t-2;
+  line-height: 1.5;
+  margin: 0;
+  padding: 3rem 1.5rem;
+  @include media($screen-lg) {
+    padding: 3rem 0;
+  }
+  /* Menu section titles*/
+  h2 {
+    font-weight: 300;
+    font-family: $sans-serif;
+    color: $white;
+  }
+  /* Menu section columns */
+  .block-igcommerce-utility {
+    @extend %p-t-2;
+    line-height: 1.5;
+    @include span-columns(12);
+    a:not(.btn):not(.fluke-icon) {
+      position: relative;
+      &:hover{
+        color: $special-action-color;
+      }
+    }
+    @include media($screen-xs) {
+      // @include span-columns(4);
+      width: 33%;
+      margin: 0;
+
+      /* Centers newsletter and social icons on tablet only */
+      &#block-igcommerce-utility-ig-footer-newsletters-signup,
+      &#block-igcommerce-utility-ig-footer-social-links {
+        clear: both;
+        float: none;
+        width: auto;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        display: table;
+      }
+    }
+    @include media($screen-sm) {
+      @include span-columns(2.3);
+      &#block-igcommerce-utility-ig-footer-newsletters-signup,
+      &#block-igcommerce-utility-ig-footer-social-links {
+        @include span-columns(2);
+        float: left;
+        clear: none;
+        @include shift(0);
+      }
+      &#block-igcommerce-utility-ig-footer-newsletters-signup {
+        @include span-columns(3);
+      }
+      @include media($screen-md) {
+        @include span-columns(2);
+        &#block-igcommerce-utility-ig-footer-newsletters-signup,
+        &#block-igcommerce-utility-ig-footer-social-links {
+          @include span-columns(2);
+        }
+        &#block-igcommerce-utility-ig-footer-newsletters-signup {
+          @include shift(2);
+        }
+        &#block-igcommerce-utility-ig-footer-social-links {
+          @include span-columns(1.5);
+          @include shift(.5);
+        }
+      }
+    }
+  }
+  /* Fluke newsletter signup */
+  #block-igcommerce-utility-ig-footer-newsletters-signup {
+    @extend %ul-unstyled;
+    h2 {
+      @extend .hide; /* This block has an empty title field that goofs up spacing */
+    }
+    ul.menu {
+      a {
+        @extend %button-secondary;
+        width: 100%;
+      }
+    }
+  }
+  /* Social media section */
+  // .block-views {
+  //   @extend %p-t-2;
+  // }
+  /* Positions social icons */
+  .view-social-links {
+    .view-content{
+      display: flex;
+      justify-content: space-around;
+      @include media($screen-xs) {
+        justify-content: flex-end;
+      }
+      @include media($screen-sm) {
+        flex-wrap: wrap;
+      }
+    }
+    /* Adds the gray box and hover functionality to the social media icons */
+    span.fluke-icon {
+      @extend %social-boxes;
+    }
+    /* Removes margin from last icon so it centers properly on tablet */
+    @include media(max-width $screen-sm) {
+      .views-row:last-of-type span.fluke-icon {
+        margin-right: 0;
+      }
+    }
+  }
+}
+
+.footer-bottom {
+  padding: 3rem 1.5rem;
+  @include media($screen-lg) {
+    padding: 3rem 0;
+  }
+  @extend %inverse;
+  @extend %p-y-2;
+  .slogan {
+    @include span-columns(12);
+    color: $white;
+    font-family: $heading-font-family;
+    font-weight: 300;
+    font-style: italic;
+    padding: 1em 0 2em;
+    #fluke-slogan {
+      font-weight: 700;
+      font-family: $sans-serif;
+      font-style: normal;
+    }
+  }
+  // On mobile, nav is a list, on desktop, nav becomes a left floating block list.
+  // We're "cheating" the desktop seperator pipes, by using a 1px border on <li>,
+  // and then setting the margin -11 px to hide it under the parent <ul> that has overflow: none.
+  // This keeps the first pipe in the row dynamically hidden even when the line wraps.
+  #footer-t-and-c {
+    ul.menu { 
+      @include media($screen-sm) {
+        display: inline-block;
+        overflow: hidden;
+        li {
+          border-left: 1px solid $gray-a; // creates faux-pipes
+          display: block;
+          float: left;
+          line-height: 1;
+          margin-bottom: 4rem;
+          margin-left: -11px; // this overlaps the border of the li's, hiding the first faux-pipe
+          padding-right: 10px;
+          a {
+            padding: 0 10px;
+          }
+        }
+      }
+    }
+  }
+}
+
+#copyright {
+  color: $gray;
+  @include span-columns(12);
+  padding-top: 2.5rem;
+}
+.disclaimer,
+.disclaimer p {
+  font-size: $font-size-xs;
+}

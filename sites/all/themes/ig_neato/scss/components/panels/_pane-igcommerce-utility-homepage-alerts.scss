@@ -1,0 +1,30 @@
+.pane-igcommerce-utility-homepage-alerts {
+  padding: 20px 0;
+  margin: 2rem $spacing-1;
+  @include media($desk-xl){
+    @include outer-container;
+   }
+  h4 {
+    display: inline-block;
+    margin-bottom: 0; // Ensures the lines wrap properly on mobile
+  }
+  #homepage-alerts-link a {
+    text-decoration: none; //Removes hover from icon
+    &:last-child:hover{
+      text-decoration: underline; //Doesn't remove hover from read more text
+    }
+  }
+  #homepage-alerts-notice {
+    display: inline-block;
+    @include icon(before, exclamation-triangle) {
+      font-size: $font-size-xl;
+      color: $color-primary;
+      text-shadow: -1px 2px 0 black,
+      0px -3px 0 black,
+      -3px 2px 0 black,
+      3px 2px 0 black,
+      0px -3px 0 black;
+      padding-right: .5em;
+    }
+  }
+}

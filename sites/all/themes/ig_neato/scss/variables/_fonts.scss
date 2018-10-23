@@ -1,0 +1,17 @@
+
+
+/* Icomoon fonts are designed to be cloud hosted - so it's a pain in the dick to 
+ * update these locally. You'll have to go to the icomoon browser app, update
+ * the font, go to the AWS link, paste the css here, update the url to point
+ * to the correct fonts path, and then download any external fonts from aws and 
+ * paste them into the folder in this theme.
+ *
+ * In 2017 there was an intermittent issue where icomoon icons were'nt displaying 
+ * properly. I suspect this was caused by setting the setting:
+ * Font->Preferences->Encode & embedd fonts in CSS
+ * option in the icomoon app. Toggling that setting switches
+ * the font between utf-8 encoding embedded in css, and alternately, breaking
+ * the font into 6 seperate font files. (woff, woff2, svg ect...)  
+ * If the problem persists, you may have to toggle that setting and add the other 
+ * 5 fonts to the fonts/icomoon folder. 
+ */

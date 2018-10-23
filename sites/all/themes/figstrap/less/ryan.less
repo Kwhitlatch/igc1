@@ -1,0 +1,165 @@
+/**
+ * This will let us swap out the default checkboxes with font-awesome icons
+ * once we have built a custom icon-font stack.
+ */
+//   input[type=checkbox] + label { cursor: pointer; }
+//   input[type=checkbox] { display:none; } /* to hide the checkbox itself */
+//   input[type=checkbox] + label:before {
+//     font-family: FontAwesome;
+//     display: inline-block;
+//   }
+
+//   input[type=checkbox] + label:before { 
+//     /* unchecked icon */
+//     content: "\f096";  
+//     /* space between checkbox and label */
+//     letter-spacing: 10px;  
+//     /* Icon outline. */
+//     //-webkit-text-stroke: 1px @beha-lines-and-pipes;  
+//   } 
+//   input[type=checkbox]:hover + label:before {
+//     color: red;
+//   }
+//   input[type=checkbox]:checked + label:before { 
+//     /* checked icon */
+//     content: "\f046"; 
+//     color: @beha-blue-link;
+//     -webkit-text-stroke: 0;
+// //background-color: red;
+// /* allow space for check mark */
+// letter-spacing: 5px;  
+// }
+
+// .flexBox {
+//   display:flex;
+//   flex-wrap:wrap;
+// }
+//   .flexbox .libby-overview { order:2; }
+//   .flexbox .libby-overview-links { order:1; }
+// @media (min-width: @screen-sm-min) {
+//   .flexbox .libby-overview { order:1; }
+//   .flexbox .libby-overview-links { order:2; }
+// }
+
+// .flexbox {
+//   display: flex;
+//   flex-wrap: wrap;
+//   /* Puts buy now button above product details on mobile */
+//   .libby-overview { order:2; }
+//   .libby-overview-links { order:1; }
+//   /* Puts buy now button below product details on desktop */
+//   @media (min-width: @screen-sm-min) {
+//     .libby-overview { order:1; }
+//     .libby-overview-links { order:2; }
+//   }
+// }
+
+/**
+ * This overrides the default bootstrap carousel styling.
+ * It was built for Recomended products in P3, but no longer used.
+ */
+// .carousel-control {
+//     /* Clears default bootstrap nav button background gradient. */
+//     &.left,
+//     &.right {
+//       background-image: none;
+//     }
+//     /* Uses font awesome to style carousel nav buttons. */
+//     .icon-prev,
+//     .icon-next {
+//       font-family: 'FontAwesome';
+//       color: @beha-lines-and-pipes;
+//       font-size: 20px;
+//        Product details are included in the slide, so this adjust arrow 
+//        * height so it looks centered with the image 
+//       top: 40%
+//     }
+//     /* fa-chevron-right substitued for right arrow. */
+//     .icon-next:before {
+//       content: "\f054";
+//     }
+//     /* fa-chevron-left substitued for left arrow. */
+//      .icon-prev:before {
+//       content: "\f053";
+//     }
+//  }
+
+#block-igcommerce-utility-ig-primary-nav {
+.top-lvl-1 ul.dropdown-menu {
+  width: auto;
+  height: 400px;
+}
+ul.dropdown-menu li {
+    /* Stipulate the height of each item so that 
+  vertical return = items * height */
+
+  //line-height: 1.2em;
+
+  /* Clear the default margins & padding 
+  so we can style the list from scratch */
+
+  // margin: 0;
+  // padding: 0;
+}
+
+/* Bring the first item of each column 
+back up to the level of item 1.
+Vertical return = items * height.
+Here, 5 items * 1.2em line-height = 6em */
+
+.top-lvl-0 ul li {
+  &.second-lvl-7
+  {
+    position: relative;
+    top: 0;
+    //margin-top: -300px;
+  }
+  &.second-lvl-9
+  {
+    margin-top: -300px;
+  }
+}
+/* horizontal position of each column */
+ul li.second-lvl-1,
+ul li.second-lvl-2,
+ul li.second-lvl-3,
+ul li.second-lvl-4,
+ul li.second-lvl-5,
+ul li.second-lvl-6,
+{
+  margin-left: 0rem;
+}
+ul li.second-lvl-7,
+ul li.second-lvl-8,
+{
+  margin-left: 20rem;
+}
+ul li.second-lvl-9,
+ul li.second-lvl-10,
+ul li.second-lvl-11,
+ul li.second-lvl-12,
+ul li.second-lvl-13,
+ul li.second-lvl-14,
+ul li.second-lvl-15,
+ul li.second-lvl-16,
+ul li.second-lvl-17,
+ul li.second-lvl-18,
+ul li.second-lvl-19,
+{
+  margin-left: 40rem;
+}
+}
+
+/* If li position is left static, Internet 
+Explorer disables hyperlinks in the list 
+in all but the final column.
+
+This rule will be processed only by 
+Internet Explorer because only IE believes 
+that there’s a level above HTML: */
+
+* html #block-igcommerce-utility-ig-primary-nav ul.dropdown-menu li
+{
+  position: relative;
+}
+

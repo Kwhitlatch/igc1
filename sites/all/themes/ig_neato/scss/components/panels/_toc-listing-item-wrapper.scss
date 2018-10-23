@@ -1,0 +1,30 @@
+// This is used across multiple templates, so it's broken out on it's own.
+// /en-us/products/electrical-testing 
+// /en-us/learn/online-courses
+// /en-us/where-to-buy/promotions-and-contests
+//
+// In other areas where the layout deviates from this default, it is explicitly overridden,
+// Such as related products, recent articles, recomended articles, and related articles.
+
+// .toc-listing-item-wrapper is usually found aroung tocs,
+// whereas .toc-article-related-resource-wrapper  is usually found in related products/resources
+
+// If your having trouble with the even/odd selectors, check that the surrounding 
+// wrapper doesn't have an extra element like a 'title' that's throwing off the count.
+.toc-listing-item-wrapper,
+.toc-article-related-resource-wrapper {
+  @include span-columns(12);
+  margin-bottom: 2em;
+  @include media($tablet) {
+    @include span-columns(6);
+    @include omega(even);
+  }
+  @include media($desk) {
+    @include omega-reset(even);   // reset the grid from above
+    @include span-columns(4);     // apply span
+    @include omega(3n);           // remove right margin from last column
+  }
+  h3 {
+    margin-top: .5em;
+  }
+}

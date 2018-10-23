@@ -1,0 +1,313 @@
+@font-face {
+  font-family: 'fluke-icon-font';
+  src:  url('../fonts/fluke-icon-font/fonts/fluke-icon-font.eot?pfutrk');
+  src:  url('../fonts/fluke-icon-font/fonts/fluke-icon-font.eot?pfutrk#iefix') format('embedded-opentype'),
+    url('../fonts/fluke-icon-font/fonts/fluke-icon-font.woff2?pfutrk') format('woff2'),
+    url('../fonts/fluke-icon-font/fonts/fluke-icon-font.ttf?pfutrk') format('truetype'),
+    url('../fonts/fluke-icon-font/fonts/fluke-icon-font.woff?pfutrk') format('woff'),
+    url('../fonts/fluke-icon-font/fonts/fluke-icon-font.svg?pfutrk#fluke-icon-font') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.fluke-icon {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'fluke-icon-font' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.fluke-icon-ac-current-frequency-iflex:before {
+  content: "\e927";
+}
+.fluke-icon-ac-current-frequency-shift:before {
+  content: "\e928";
+}
+.fluke-icon-ac-voltage:before {
+  content: "\e929";
+}
+.fluke-icon-capacitance:before {
+  content: "\e92a";
+}
+.fluke-icon-dc-current:before {
+  content: "\e92b";
+}
+.fluke-icon-dc-voltage:before {
+  content: "\e92c";
+}
+.fluke-icon-inrush:before {
+  content: "\e92d";
+}
+.fluke-icon-resistance-and-continuity:before {
+  content: "\e92e";
+}
+.fluke-icon-resistance-continuity-voltage:before {
+  content: "\e92f";
+}
+.fluke-icon-voltage-continuity:before {
+  content: "\e930";
+}
+.fluke-icon-zero:before {
+  content: "\e931";
+}
+.fluke-icon-quote-list:before {
+  content: "\e921";
+}
+.fluke-icon-virtual-demo:before {
+  content: "\e922";
+}
+.fluke-icon-price-quote-dollar:before {
+  content: "\e923";
+}
+.fluke-icon-product-demo:before {
+  content: "\e924";
+}
+.fluke-icon-quote-or-checklist:before {
+  content: "\e925";
+}
+.fluke-icon-quote-request:before {
+  content: "\e926";
+}
+.fluke-icon-demo:before {
+  content: "\e91d";
+}
+.fluke-icon-appnote:before {
+  content: "\e91e";
+}
+.fluke-icon-phase-sequence-active-indicator:before {
+  content: "\e920";
+}
+.fluke-icon-banana-plug:before {
+  content: "\e91f";
+}
+.fluke-icon-map-marker:before {
+  content: "\e918";
+}
+.fluke-icon-instagram:before {
+  content: "\e914";
+}
+.fluke-icon-select-arrows:before {
+  content: "\e911";
+}
+.fluke-icon-questions:before {
+  content: "\e912";
+}
+.fluke-icon-fluke-nation:before {
+  content: "\e909";
+}
+.fluke-icon-registration:before {
+  content: "\e001";
+}
+.fluke-icon-manual:before {
+  content: "\e002";
+}
+.fluke-icon-where-to-buy:before {
+  content: "\e003";
+}
+.fluke-icon-awards:before {
+  content: "\e012";
+}
+.fluke-icon-benefits:before {
+  content: "\e900";
+}
+.fluke-icon-career:before {
+  content: "\e901";
+}
+.fluke-icon-fluke-ig:before {
+  content: "\e902";
+}
+.fluke-icon-information:before {
+  content: "\e903";
+}
+.fluke-icon-manager-resources:before {
+  content: "\e904";
+}
+.fluke-icon-news:before {
+  content: "\e905";
+}
+.fluke-icon-recognition:before {
+  content: "\e906";
+}
+.fluke-icon-time-pay:before {
+  content: "\e907";
+}
+.fluke-icon-search-fa-search:before {
+  content: "\f002";
+}
+.fluke-icon-user:before {
+  content: "\f007";
+}
+.fluke-icon-home:before {
+  content: "\f015";
+}
+.fluke-icon-arrow-circle-o-up:before {
+  content: "\f01b";
+}
+.fluke-icon-print:before {
+  content: "\f02f";
+}
+.fluke-icon-fa-arrow-down:before {
+  content: "\f063";
+}
+.fluke-icon-chevron-left:before {
+  content: "\f053";
+}
+.fluke-icon-chevron-right:before {
+  content: "\f054";
+}
+.fluke-icon-check-circle:before {
+  content: "\f058";
+}
+.fluke-icon-fa-arrow-up:before {
+  content: "\f062";
+}
+.fluke-icon-fa-arrows-h:before {
+  content: "\f07e";
+}
+.fluke-icon-plus:before {
+  content: "\f067";
+}
+.fluke-icon-minus:before {
+  content: "\f068";
+}
+.fluke-icon-exclamation-triangle:before {
+  content: "\f071";
+}
+.fluke-icon-warning:before {
+  content: "\f071";
+}
+.fluke-icon-phone:before {
+  content: "\f095";
+}
+.fluke-icon-twitter:before {
+  content: "\f099";
+}
+.fluke-icon-facebook:before {
+  content: "\f09a";
+}
+.fluke-icon-facebook-f:before {
+  content: "\f09a";
+}
+.fluke-icon-globe:before {
+  content: "\f0ac";
+}
+.fluke-icon-fa-bars:before {
+  content: "\f0c9";
+}
+.fluke-icon-google-plus:before {
+  content: "\f0d5";
+}
+.fluke-icon-caret-down:before {
+  content: "\f0d7";
+}
+.fluke-icon-caret-up:before {
+  content: "\f0d8";
+}
+.fluke-icon-caret-right:before {
+  content: "\f0da";
+}
+.fluke-icon-envelope:before {
+  content: "\f0e0";
+}
+.fluke-icon-linkedin:before {
+  content: "\f0e1";
+}
+.fluke-icon-angle-double-up:before {
+  content: "\f102";
+}
+.fluke-icon-angle-double-down:before {
+  content: "\f103";
+}
+.fluke-icon-angle-left:before {
+  content: "\f104";
+}
+.fluke-icon-angle-right:before {
+  content: "\f105";
+}
+.fluke-icon-angle-up:before {
+  content: "\f106";
+}
+.fluke-icon-angle-down:before {
+  content: "\f107";
+}
+.fluke-icon-youtube:before {
+  content: "\f167";
+}
+.fluke-icon-vk:before {
+  content: "\f189";
+}
+.fluke-icon-weibo:before {
+  content: "\f18a";
+}
+.fluke-icon-file-pdf-o:before {
+  content: "\f1c1";
+}
+.fluke-icon-reddit-alien:before {
+  content: "\f281";
+}
+.fluke-icon-naver:before {
+  content: "\e91a";
+}
+.fluke-icon-tmall:before {
+  content: "\e91b";
+}
+.fluke-icon-youku:before {
+  content: "\e91c";
+}
+.fluke-icon-pin:before {
+  content: "\e917";
+}
+.fluke-icon-location:before {
+  content: "\e917";
+}
+.fluke-icon-map:before {
+  content: "\e917";
+}
+.fluke-icon-marker:before {
+  content: "\e917";
+}
+.fluke-icon-corner-bracket:before {
+  content: "\e908";
+}
+.fluke-icon-close:before {
+  content: "\e915";
+}
+.fluke-icon-loop:before {
+  content: "\e90a";
+}
+.fluke-icon-checkmark:before {
+  content: "\e90b";
+}
+.fluke-icon-bubbles:before {
+  content: "\e90c";
+}
+.fluke-icon-search:before {
+  content: "\e90d";
+}
+.fluke-icon-add-to-shopping-cart:before {
+  content: "\e90e";
+}
+.fluke-icon-circle-cross-reversed:before {
+  content: "\e913";
+}
+.fluke-icon-my-account:before {
+  content: "\e916";
+  color: #a7a6a6;
+}
+.fluke-icon-shopping-cart:before {
+  content: "\e919";
+}
+.fluke-icon-zoom-in:before {
+  content: "\e90f";
+}
+.fluke-icon-circle-cross:before {
+  content: "\e910";
+}

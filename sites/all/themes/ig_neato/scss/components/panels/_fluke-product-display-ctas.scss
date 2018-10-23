@@ -1,0 +1,35 @@
+#fluke-product-display-ctas {
+  display: inline-block;
+  margin-bottom: 2em;
+  max-width:none;
+  order: -1; // Moves cta's above the rest of the feature data on mobile only.
+  width: auto;
+  @include extended-background($white);
+  padding-bottom: 4em;
+  @include media($screen-sm) {
+    padding-bottom: 3em;
+    @include remove-extended-background();
+    @include span-columns(12); //Changed to 12 to fix both buttons on same line in desktop
+  }
+  a, div.ps-widget {
+    clear:both;
+    margin-bottom: $spacing-1;
+    &.buy-now-cta {
+      @extend %button;
+   }
+    &.demo-cta {
+      @extend %button-secondary; // blue button
+    }
+    // Full width on mobile and table, half width on desktop
+    @include span-columns(12);
+    @include media($screen-md) {
+      @include span-columns(6);
+    }
+  }
+  .ps-widget{
+    display: none !important;
+  }
+  .ps-widget.ps-enabled{
+    display: block !important;
+  }
+}

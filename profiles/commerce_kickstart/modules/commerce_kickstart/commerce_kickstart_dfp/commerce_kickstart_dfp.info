@@ -1,0 +1,10 @@
+name = Commerce Kickstart DFP
+description = Provides in-distribution content for Commerce Kickstart.
+core = 7.x
+package = Commerce Kickstart
+
+; Information added by Drupal.org packaging script on 2018-04-25
+version = "7.x-2.54"
+core = "7.x"
+project = "commerce_kickstart"
+datestamp = "1524675638"

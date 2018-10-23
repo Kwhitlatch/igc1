@@ -1,0 +1,177 @@
+/**
+ * @file S1-section.less
+ * Styles pages of the UI pattern S1
+ *
+ * Use this files for the TOC pages (Product, Announcements, Recalls)
+ */
+
+ /* custom-collapse surrounds the button that contains the sidebar menu on mobile and tablet. */
+ .custom-collapse {
+  /* Adds minus/plus symbol after the toggleable slide menu */
+  .plus-minus {
+    padding: 14px 15px 12.5px; // "Icebergs" the clickable area.
+    font-family: "fluke-icon-font";
+    color: @fluke-blue-link;
+    text-decoration: none;
+    &:after {
+      content: "\f068"; // Minus
+    }
+    &.collapsed:after {
+      content: "\f067"; // Plus
+    }
+  }
+  /* Hamburger button that appears on Mobile and tablet */
+  .icon-bar {
+    /* Height of first bar from top of container div. */
+    margin-top: 5px;
+    background-color: @fluke-black;
+    display: block;
+    height: 3px;
+    width: 15px;
+    + .icon-bar {
+      /* how far the meat is from the top bun, and the bottom bun is from the meat in the hamburger bar */
+      margin-top: 3px;
+    }
+  }
+  /* Styeles the sidebar button that appears on mobile/tablet */
+  .btn {
+    font-family: @headings-font-family;
+    color:  black;
+    background-color: @fluke-white;
+    font-size: 17px;
+    margin: 15px 0;
+    text-align: left;
+    padding: 9px 15px; // Space to the left of text "Toggle navigation".
+  }
+  /* The sidbar nav lives inside an accordian tag */
+  #accordian {
+    @media (min-width: @screen-md-min) {
+      display:block;
+      padding-left: 0px;
+    }
+  }
+  h4 {
+    font-size: 17px;  
+    font-family: @headings-font-family;
+    display: inline-block;
+    width: 80%; //This leaves room for the "plus" after the title
+    padding: 12.5px 0; // "Icebergs" the clickable div
+    font-weight: @subheadings-font-weight;
+  }
+  .panel-body {
+    font-family: @font-family-sans-serif;
+    font-size: 14px;
+    padding: 0;
+  }
+  .panel-default > .panel-heading + .panel-collapse > .panel-body {
+    border-top: 0; //overides default bootstrap panel styles
+  }
+  .panel + .panel {
+    margin-top: 0;
+  }
+  .panel-default,
+  .panel-heading {
+    /* Overrides default panel styling */
+    border: 0;
+    box-shadow: none;
+    background-color: transparent;  
+  }
+  .child-menu-item {
+    padding-bottom: 10px;
+  }
+  .panel-default {
+    border-bottom: 1px solid @fluke-lines-and-pipes;
+  }
+  .panel-heading {
+    padding: 0;
+  }
+  .panel-title a {
+    color: @fluke-body-text;
+  }
+  .active {
+    font-weight: 700; //TODO: Can we remove this?
+  }
+  } /* End custom-collapse */
+
+/** 
+ * As of 3-8-16, the Beha Product TOC page is generated programatically via 
+ * fluke_utility.module. Rather than add classes to the images programatically
+ * it's easier to add the styling here via less mixins.
+ */
+.toc-item-image img {
+  .img-responsive;
+  .center-block;
+}
+.toc-items {
+  padding-bottom: 35px;
+}
+
+/** 
+ * This class is added via javascript through fluke-utility.js to the sidebar nav that turns into
+ * a dropdown nav on mobile and tablet.  It had to be done this way, due
+ * to how bootstrap mobile padding works.
+ */
+ .mobile-nav-gray-bg {
+  background-color: @fluke-sidebar-background;
+  padding: 7.5px 15px;
+  margin-bottom: 15px;
+}
+
+/** 
+ * This replaces the TOC hacks above, by adding a clear to every 3rd column 
+ * in the Product TOC, counter starts at the 4th column. This prevents 
+ * the columns from stacking badly when the subtitles are different lengths.
+ */
+ @media (min-width: @screen-sm-min){  
+  .pane-fluke-utility-product-category-toc {
+    div .view-content> div:nth-of-type(3n + 4)
+    {
+      clear: both;
+    }
+  }
+}
+
+/**
+ * The article and Recalls page use a view to populate the sidebar nav
+ * with a list of articles. The class is added via the view, along
+ * with the hidden-xs & hidden-sm tags. 
+ */
+ .section-side-navbar {
+  ul {
+    font-family: @headings-font-family;
+    font-size: 17px;
+    padding-left: 0px; // Removes default list indentation.
+    list-style: none; // Removes bullets.
+    li {
+      border: 0;
+      border-bottom: 1px solid #ccc; // Line that seperates articles.
+      padding: 15px 0;
+      &:last-child {
+        border-bottom: none; // Removes underline from last item.
+      }
+    }
+  }
+  a {
+   color: @fluke-body-text;
+   &:hover {
+    text-decoration: none; // Removes underline on hover
+    color: @fluke-blue-hover;
+  }
+}
+}
+
+/**
+ * Adds row padding and dividing lines between articles/recalls
+ * on the recalls and articles toc page.
+ */
+.view-article {
+  .row {
+    border-bottom: 1px solid #efefef; //TODO: Convert color to fluke palette
+    padding: 30px 0; //TODO: Replace with spacing utility mixin.
+  }
+  &.views-row-last {
+    .row {
+      border-bottom: none; // Removes underline from last item.
+    }
+  }
+}

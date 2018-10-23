@@ -1,0 +1,4 @@
+name = Fluke import content
+description = Utility module to import content and related translations.
+core = "7.x"
+package = Fluke

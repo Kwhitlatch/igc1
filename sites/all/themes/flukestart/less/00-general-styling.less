@@ -1,0 +1,245 @@
+/** 
+ * @file 00-general-styling.less
+ * Styling that affects all pages.
+ **
+ * Any styles that affect multiple types of pages should go here.
+ *
+ * TOC
+ * - General Tags
+ * - Banner image
+ * - Breadcrumbs
+ * - Views
+ * - Buttons
+ * - Admin Menu
+ */
+
+
+/** ===== General Tags ==== ********/
+/**
+/** Styles for general HTML tags **/
+
+
+html,body {
+  height:100%;
+}
+
+body {
+  background: @fluke-white;
+  color: @fluke-body-text;
+  font-family: @font-family-sans-serif;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
+}
+
+body.front {
+  background: @fluke-header-background;
+}
+
+h1,h2,h3{
+  color: @fluke-body-text;
+  font-family: @headings-font-family;
+  line-height: @headings-line-height;
+}
+
+h1{
+  font-size: @font-size-h1;
+}
+
+h2{
+  font-size: @font-size-h2;
+}
+
+h3{
+  font-size: @font-size-h3;
+}
+
+p {
+  color: @fluke-body-text;
+  font-family: @font-family-sans-serif;
+}
+
+
+/** ===== Banner image ==== *************************************/
+/**
+/** Banner image found on all pages. Change background 
+/** URL on specific .less file if more images are provided . **/
+
+
+#zone-menu-wrapper{
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  -webkit-background-size: cover;
+  -webkit-transform: translate3d(0,0,0); //OS X Scrollbar hiding behind element
+  background-size: cover;
+  background: url(http://dev-fluke-store.pantheonsite.io/sites/all/themes/flukestart/images/store-home-slider-1920x750.jpg) no-repeat center bottom; 
+  height:290px;
+}
+
+.front #zone-menu-wrapper{
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  -webkit-background-size: cover;
+  -webkit-transform: translate3d(0,0,0); //OS X Scrollbar hiding behind element
+  background-size: cover;
+  background: url(http://dev-fluke-store.pantheonsite.io/sites/all/themes/flukestart/images/store-home-slider-1920x750.jpg) no-repeat center bottom; 
+  height:auto;
+}
+
+/** ===== Breadcrumbs ==== *********************************************/
+/**
+/** Easy Breadcrumb module - only should be on product and TOC pages **/
+
+
+#block-easy-breadcrumb-easy-breadcrumb{
+  margin-bottom: 40px;
+}
+
+#block-easy-breadcrumb-easy-breadcrumb{
+  
+  .easy-breadcrumb_segment{
+    color: @fluke-body-text;
+    font-family: @headings-font-family;
+    font-size: 13px;
+    font-weight: 300;
+    text-decoration: none;
+  }
+  
+  .easy-breadcrumb .easy-breadcrumb_segment a, a:hover{
+    color: @fluke-body-text;
+    text-decoration: none;
+  }
+  
+  .easy-breadcrumb_segment-title  {
+    color: @fluke-body-text;
+    font-family: @headings-font-family;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  
+  .easy-breadcrumb_segment-separator{
+    color: @fluke-button-hover;
+    font-size: 17px;
+  }
+  
+  .easy-breadcrumb_segment-separator:last-of-type{
+    color: @fluke-yellow;
+  }
+
+}
+
+#section-header #zone-user-wrapper {
+  background: none;
+}
+
+
+/** ===== Views ==== *************/
+/**
+/** Styles for specific Drupal commerce views or view elements. **/
+
+
+//== Drupal View Header Area styles 
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  background-color: #fff;
+  margin-bottom: 0;
+}
+
+//==  Taxonomy title to inherit h2 styles 
+.view-collection-products .view-header .taxonomy-title,
+.view-collection-taxonomy-term .view-header .taxonomy-title {
+  color: @fluke-body-text;
+  font-family: @headings-font-family;
+  text-decoration: none;
+  text-shadow: none;
+}
+
+//== Taxonomy title to inherit h2 styles 
+a:link, a:visited {
+  color: @link-color;
+  text-decoration: none;
+}
+
+a:hover {
+  color: @link-hover-color;
+}
+
+
+
+
+/** ===== Buttons ==== *****************/
+/**
+/** CTA Style over-rides for buttons **/
+
+
+/* Removing Blue Glow from input focus */
+input[type=text]:focus, textarea:focus, input[type=submit]:focus {
+  border: none;
+  box-shadow: none;
+  margin: none;
+  padding: none;
+}
+
+//** Product CTA - Based on Fluke IG Visual Designs */
+.node-product-type .field-type-commerce-product-reference 
+form.commerce-add-to-cart .form-submit {
+  -khtml-border-radius: 0;
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  background: @fluke-yellow;
+  border-radius: 0;
+  color: @fluke-body-text;
+  font-family: @font-family-sans-serif;
+  font-size: @font-size-h3;
+  height: 40px;
+  max-width:285px;
+  width: 100%;
+  padding: 0px;
+}
+
+.node-product-type .field-type-commerce-product-reference 
+form.commerce-add-to-cart .form-submit:hover {
+  background: lighten(@fluke-yellow, 10%);
+}
+
+/** ===== Admin Menu ==== *****************/
+/**
+/** Positioning and color for commerce kickstart menu **/
+
+//== Changing admin menu color and position
+body.toolbar #toolbar{
+  margin-top: 114px;
+  background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(@fluke-yellow), to(@fluke-yellow));
+  background-image: -webkit-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: -moz-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: -ms-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: -o-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: linear-gradient(to bottom, @fluke-yellow, @fluke-yellow);
+  max-width:2000px !important;
+}
+
+//== hanging admin menu color and position
+body.toolbar #toolbar div.toolbar-menu {
+  background-color: rgba(0, 0, 0, 0.5);
+  background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(@fluke-yellow), to(@fluke-yellow));
+  background-image: -webkit-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: -moz-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: -ms-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: -o-linear-gradient(top, @fluke-yellow, @fluke-yellow);
+  background-image: linear-gradient(to bottom, @fluke-yellow, @fluke-yellow);
+  max-width:2000px !important;
+
+
+}
+
+//== Dialog position change to account for floating nav.
+//== #overlay-container{
+//==   margin-top: 75px;
+//== }
+
+body.toolbar #toolbar-home a span {
+    display: none;
+}
+
+body.toolbar div.toolbar-menu #toolbar-user, body.toolbar #toolbar ul.menu-depth-2 {
+    padding-top: 0px;
+}

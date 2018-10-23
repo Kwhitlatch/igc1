@@ -1,0 +1,94 @@
+<?php
+
+function fluke_dev_schema() {
+  $schema = [];
+  
+  $schema['301_validate'] = array(
+    'description' => 'TODO: please describe this table!',
+    'fields' => array(
+      'src' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+      'dest' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+      'response' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+  );
+  
+  $schema['301_delete'] = array(
+    'description' => 'TODO: please describe this table!',
+    'fields' => array(
+      'url' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'char',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+    ),
+  );
+
+  $schema['301_report'] = array(
+    'description' => 'TODO: please describe this table!',
+    'fields' => array(
+      'src' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'char',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'dest' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'char',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'id' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'char',
+        'length' => '40',
+        'not null' => FALSE,
+      ),
+    ),
+  );
+  
+  $schema['301_duplicates'] = array(
+    'description' => 'TODO: please describe this table!',
+    'fields' => array(
+      'src' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'dest' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'id' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'char',
+        'length' => '40',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'dupe_id' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'char',
+        'length' => '40',
+        'not null' => FALSE,
+      ),
+    ),
+  );
+
+
+  return $schema;
+}

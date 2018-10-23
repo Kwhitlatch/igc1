@@ -1,0 +1,4 @@
+name = Fluke import URL builder
+description = Utility module to import URL Builder terms and their translations
+package = Fluke
+core = "7.x"

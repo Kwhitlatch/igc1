@@ -1,0 +1,83 @@
+/*
+
+Tiles are small contained blocks of content that link to somewhere else
+
+The tiles are outlined as such...
+
+Product Text Only
+Tile Story Teaser
+Tile Story Expanded
+Tile Story Simple
+Tile Story Image Title
+Tile Misc Text
+
+Component           Tile Product    Tile Product    Tile Story  Tile Story    Tile Story    Tile Story    Tile Misc
+                      Simple          Text Only       Teaser        Expanded      Simple          Image Title     Text
+border                yes           yes           no          no            no            no            no
+Rich Media (image)    yes           no            yes         yes           yes           yes           no
+Primary Title       yes-linked    yes-linked    yes         yes           yes           yes           no
+Supporting text       no            no            yes         yes           no            no            yes
+Additional text       no            no            no          no            yes           no            yes
+Actions               two links       primary title   yes         no            no            no            yes
+Direction           vertical        vertical        horizontal  horizontal    vertical        vertical        vertical
+
+Where Used            Recommended     Recommended     Top stories   Top stories   Recent Articles Front page    Sidebar teasers
+                      products        Resources       items         items         / Recent Stories  articles      Blog
+                                                                                  Article Pges
+                                                                                  News pages
+*/
+
+%tile-simple{
+
+  .field-name-field-content-title,
+  .related-product-title{
+    font-family: $heading-font-family;
+    @extend h3;
+    margin-bottom: 1em;
+
+  }
+  .field-name-field-summary,
+  .related-product-summery{
+
+  }
+  .field-name-field-toc-featured-image-for-col{
+
+    max-width:100%;
+    img{
+      max-width: 100%;
+      height:auto;
+    }
+  }
+
+}
+
+
+%tile-product-expanded{
+  @extend %tile-simple;
+  padding: 0 1em;
+  img{
+    max-width: 100%;
+    height:auto;
+    display: block;
+    margin: 0 auto;
+    margin-bottom: 2em;
+
+  }
+  .button{
+    @include span-columns(6);
+  }
+}
+
+
+
+%tile-story-simple{
+  border: $gray-e solid 1px;
+  padding: $spacing-1;
+  margin-bottom: $spacing-1;
+}
+
+%tile-story-expanded{}
+
+%tile-product-text-only{}
+
+%tile-product-simple{}

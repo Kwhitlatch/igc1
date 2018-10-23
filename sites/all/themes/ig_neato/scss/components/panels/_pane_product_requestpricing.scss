@@ -1,0 +1,33 @@
+//div[class*='pane-product-page-view-panel-pane-2'] {
+// Removed variable and refrence to class that doesn't exist anymore. 4/4/17
+// Not sure what this does - can we kill it? rrn 5-22-17
+
+// div.pane-igcommerce-utility-products-product-cta-button {
+//   width: 100%;
+//   display: inline-block;
+//   order: -1;
+//   margin-bottom: 2em;
+//   @include extended-background($white);
+//   max-width:none;
+//   width: auto;
+//   padding-bottom: 3em;
+//   .panel-pane{
+//     width: auto;
+//   }
+//   @include media($screen-sm) {
+//     @include remove-extended-background();
+//     display: block;
+//     @include span-columns(12); 
+//   }
+//   @include media($screen-md) {
+//     @include span-columns(8); 
+//   }
+//   .btn {
+//     @include button($special-action-color, 1em);
+//     margin-bottom: $spacing-1;
+//     text-align: center;
+//     color: black;
+//     width: 100%;
+//     display: inline-block;
+//   }
+// }

@@ -1,0 +1,35 @@
+// Styles the pricespider pop-up on the product page. These are slated to be moved
+// to a more current version or pricespider in april of 2018, so you may be able 
+// to remove this file completely.  RRN 4-2-18
+
+.ps_PopupContainerStyle {
+  // Fixes bug: background color is black on hover for product pop-up: MIG1687
+  background-color: white !important;
+  // Fixes bug: Advert banner cutoff in product pop-up: MIG1686
+  .ps_PopupContainerContentSlidesWrapperStyle {
+    height: 710px !important;
+    min-height: 710px !important;
+  }
+}
+
+// Removes errant underlines on the where-to-buy page: MIG1705
+.ps_ProductLookupSearchBarStyle,
+.ps_FooterStyle,
+.ps_FooterCellStyle {
+  border-top: 0 !important;
+}
+.ps_ProductLookupSearchBarStyle {
+  border-bottom: 0 !important;
+}
+// Fixes Active tab underlines on where-to-buy page
+.ps_TabContainerSelectedTabStyle {
+    border-bottom: 2px solid #eaeaea;
+}
+
+.ps_ProductLookupSearchLabelStyle {
+  width: auto !important;
+  padding: 5px 15px 5px 0 !important;
+}
+.ps_ProductLookupClearButtonStyle {
+  margin-top: 8px !important;
+}

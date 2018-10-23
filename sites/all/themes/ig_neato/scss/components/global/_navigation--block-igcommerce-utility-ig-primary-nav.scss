@@ -1,0 +1,489 @@
+
+// Keeps the navbar above the content
+.main-container {
+  // There is a yellow border below the main nav that disappears on mobile
+  margin-top: 85px;
+  @include media($desk-lg) {
+    margin-top: 95px;
+  }
+}
+// This is the yellow band below the main navbar, hidden on mobile.
+.topbar {
+  display: none;
+  @include media($desk-lg) {
+    background: url('data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAA8AAD/4QMfaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLwA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/PiA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJBZG9iZSBYTVAgQ29yZSA1LjYtYzE0MCA3OS4xNjA0NTEsIDIwMTcvMDUvMDYtMDE6MDg6MjEgICAgICAgICI+IDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+IDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjlBMjYwMjdBQjZBOTExRTdBOTk3REVCQzY1RTNFODNEIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjlBMjYwMjc5QjZBOTExRTdBOTk3REVCQzY1RTNFODNEIiB4bXA6Q3JlYXRvclRvb2w9IkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE4IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSIxNThCNjI1MkVGNDA3ODc5OUU1MDA0NjNBNjg3MTI0RCIgc3RSZWY6ZG9jdW1lbnRJRD0iMTU4QjYyNTJFRjQwNzg3OTlFNTAwNDYzQTY4NzEyNEQiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7/7gAOQWRvYmUAZMAAAAAB/9sAhAAGBAQEBQQGBQUGCQYFBgkLCAYGCAsMCgoLCgoMEAwMDAwMDBAMDg8QDw4MExMUFBMTHBsbGxwfHx8fHx8fHx8fAQcHBw0MDRgQEBgaFREVGh8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAUAdwDAREAAhEBAxEB/8QAbwABAQEBAAAAAAAAAAAAAAAAAAECBwEBAQEBAQAAAAAAAAAAAAAAAAIBBgcQAAEDAgQDCAICAwAAAAAAAAEAESExQVFhAhJxgaHwkbHBIjJCA9Hh8VJiI0MRAQEBAQAAAAAAAAAAAAAAAAABESH/2gAMAwEAAhEDEQA/AOhEAGa1BXirsAggEChkFBHFniQ1wgEmx4G7IMgsQGrIYOIxIWsbJpEaZ5FY0jCkiMUE3SRVpENHNMFEF3keoIAeWFJBmiA/SnBA0OINMUoG4eRM4IDmOqCsBeBDZFSJZiXbmqBwL4z4ILxgUN1IjWmeJ/CoC+FUELQ8kAj+EFExj6SbPZBCHGVA5RI5DOBQ7iYZkUoPOxQGdsM0DxPiECo9TEm+YQV4m+NlIx9uvRo+vX9ms7dGkHVrIDsNIc0VybcZT6/s0/Z9en7dE/XrA1aSQ0EQlmXCNAi5pZY1SC5Fc1IEsAwcGIzVDH16zrOo7To2naHaQIcAEwVtmMbcNuDhpa6hoCAIoOiCg0aTTzQCQODIBJczA8EAaj+EEDC7XsqFIIDcXUgQCCQ4IugXxCCSbdmQUPeo+SCU1SLQGsghpwxnNUL6psMApAwR2lAkTBFRigEFoVBPmgO46t+EEcEsLB0B7CbuQgsvQEWUiQMhV+5UJsyir+SaNcZbG6kRwAS7fhUBMB7eCCMRaRQWZBQGJIHtobTVABaTar4IDa3kQ7HBkEciaMb58kFfTVppFwgOwxZAfaSXkdyASGmogoEGhkw98ZQBa8tggAaQ5FSLXQASWMiJOdLIE06iEAsS1yKcEFckcUA6ga/KR5pgkG9BBu6Cthdq49yCFqyxE8UEAJicKR4BAckw4NWzQWQZuHQMCKVGCACzkh7oFJMjVRskDVXhQVQDAYlsAgrnhhzUikMXuyDDjc5jhmqGtIDbcISg3ICqCwS1Kh7qRKkOgUIJGWnBAbNjjcIAg8aoBALNwCCHR6zqOogkAbXgMSYB4qt4NTgpEoTh4oAg9XVCk2v0UiFsHtniqEDBzeMkGrsz+LKRCMosEFgMTB5oM+nTqc2DFUKCQSbC2SkRy0Q3OFQAAT2lBQX1F7eakGIEqgJxnuUjLBmlqu89ypJ6YRRq9o64oLO7P/JAGbe2eCAGb04erggBoxYu6CC7/tA174bbSWQUP8vbtnjKBp2/lALud1NsoA92bJRC/wDsdm+O5BfHpkgF9uv+sN+kFLugz8/T7v4QNPu5+aBG049UF9MKQhjVnhUBdpZnjFBLnyxQUNDYlkANuGMszoLottxQZNcu1EFjcUFFttHL98qQ1Py6uqD07hw5qRIcV/SoT4B6sg0GYNTJSJE1ZoZUEMaUlBTmpD0tNUDS8dUAux/qgl5q10AM0u78lQ0KFSGp9xanV0Cdxfmgpb40QSNkdMEE1NDVa+KBp2vPt+W1v4VUNTPHaFIp9o7XQSZ3V+WDoKHYPRu1EGSzhBfFpQJ28pVChtx/rn+0GRbdVBRv5/oKRn/nlt51VD//2Q==') repeat;
+    height:10px;
+    display: block;
+  }
+}
+
+#navbar {
+  height: 85px;
+  z-index: 20;
+  @include transition(height .25s ease-in-out);
+  position: absolute;
+  // This class is added by the stickynav module on scroll.
+  &.stickynav-active {
+    // Makes the nav sticky only on tablet and desktop.
+    @include media($screen-sm) {
+      position: fixed;
+      margin-top: 0;
+    }
+  }
+  // Keeps desktop nav links and icons floated right
+ .main-nav-desktop-set {
+    float: right;
+    // globe icon in the main nav
+    a {
+      &.search-opener,
+      &.language-picker {
+        padding: 18px 3vw;     
+        font-size: 3rem;
+        @include media($desk-wide) {
+          font-size: 2rem;
+          line-height: 75px;
+          padding: 0 1.6vw;
+        }
+        display: inline-block;
+
+        transition: color 0.1s linear;
+        // keeps the nav from breaking its container on ultra-wide screens
+        @include media($desk-xl) {
+          padding: 0 2rem;
+        }
+        &:active, 
+        &:focus, 
+        &:hover {
+          text-decoration: none;
+          cursor: pointer;
+        }
+        &.active,
+        &:hover {
+          color: $yellow;
+        }
+      }
+    }
+  }
+  /* Logo container */
+  .navbar-header {
+    max-height:85px;
+    padding: 15px 0;
+    width: 160px;
+    display: inline-block;
+    float: left;
+  }
+  .navbar-collapse {
+    display: none;
+    @include media($desk-wide) {
+      display: inline-block;
+      .region-navigation {
+        #block-igcommerce-utility-ig-primary-nav {
+        }
+        #block-search-form {
+          display: inline-block;
+          float: right;
+        }
+      }
+    }
+  }
+  // Adding the navbar-btn class prevents this logo styling from interfering 
+  // with bootstrap promotional pages that use a similar nav structure.
+  a.navbar-btn {
+    position: relative;
+    display: inline-block;
+    svg {
+    height: 55px;
+    width: 183px;
+    }
+    @include media($desk-lg) {
+      margin-left: 1em;
+    }
+    @include media($desk-xl) {
+      margin-left: 0;
+    }
+    img {
+      display: none;
+    }
+  }
+}
+#block-igcommerce-utility-ig-primary-nav {
+  display: inline-block;
+  float: none;
+  a {
+    font-size: 1.6rem;
+    font-weight: $medium-font-weight;
+    text-align: center;
+  }
+  ul.nav {
+    //line-height: 85px; // Removed because it breaks the nav in ie
+    text-align: center;
+    margin: 0;
+    padding-left: 0;
+    li.dropdown {
+      display: inline-block;
+      &:active,
+      &:focus,
+      //&:focus-within, mig3974 - preventing dropdown in IE/Edge
+      &:hover,
+       {
+        background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJCAYAAAA7KqwyAAAAa0lEQVQoFWN0tjdmwAMYgXL/8cgzMOGTBMpFALEGPjX4DAgBalwExPvxGYLLAJDm5UDMAsQSQIzTEGwGIGsG6gUDnIagG4BNM15DkA3ApxmnITADQJqXATHIz4QAindABsA0sxLSiSQPNwQA7CQQFyJEWX4AAAAASUVORK5CYII=) no-repeat center bottom;
+        > a.active-trail {
+          background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJCAYAAAA7KqwyAAAAa0lEQVQoFWN0tjdmwAMYgXL/8cgzMOGTBMpFALEGPjX4DAgBalwExPvxGYLLAJDm5UDMAsQSQIzTEGwGIGsG6gUDnIagG4BNM15DkA3ApxmnITADQJqXATHIz4QAindABsA0sxLSiSQPNwQA7CQQFyJEWX4AAAAASUVORK5CYII=) no-repeat center bottom;
+          //line-height: 85px; // Removed because it breaks the nav in ie  
+        }
+      }
+      > a {
+        white-space: nowrap;
+        line-height:85px;
+        position: relative;
+        display: block;
+        padding: 0 1.6vw;
+        // keeps the nav from breaking its container on ultra-wide screens
+        @include media($desk-xl) {
+          padding: 0 2rem;
+        }
+        &:hover > ul,
+        //&:focus-within > ul, mig3974 - preventing dropdown in IE/Edge
+        &:focus > ul {
+          display: block;
+        }
+        &.active-trail {
+          //yellow
+          background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJCAYAAAA7KqwyAAABRUlEQVQoFU2SS07DQBBEy5OZfJREZOkj+Bos2XvB+VjER0CsfB02SJAEHJw44ZUnIFq22tOf6qoeFx/PaxVBugxSmEjXq1QUUveN55klXZ3vjuQJxKg/2zzsFPpzbhoueN6+l4409ycagh5Pg6ozNenWOGHIfwsXN1F8hsGF6Z7g4tVCdQx6mgS1MKredqaWmbrHA22BKUqgzmc5GPmGak2u4Y3TpBLfblZFhZcZpJRZ+xys9wjtzw50Iw+qkdVYrhmZHecS4BY21YE6mGl6kxQIarnILACokdAAGjtADc4Sx2JyJbmWc2X6fxK8xP3XGKjR3jA1uuluOUrW+yEXG4ybKvEtrCqYjhZGOklu3sIm+hq90BPAtuVcWrCfMZ4nlwxpKRt3Uuxf1jWIW5CTNdvm0/wfeKHey+/SvA/X+FoBfkXG/Q96H5IlV9M+AAAAAABJRU5ErkJggg==) no-repeat center bottom;      
+          //line-height: 85px; // Removed because it breaks the nav in ie
+        }
+        // Adds the yellow underline to highlited top level items
+        // &:before,
+        // &:after {
+        //   position: absolute;
+        //   content: '';
+        //   width: 100%;
+        //   display: none;
+        // }
+        // Makes the background gray
+        // &:before{
+        //   top: 0;
+        //   bottom: 0;
+        //   height: 100%;
+        //   width: 100%;
+        //   left: 0;
+        //   background: #333;
+        //   z-index: -1;
+        // }
+        &:after {
+          bottom: 0;
+          height: 3px;
+          left: 0;
+          /* Brand highlight color underline on Hover for parent items */
+          background: $special-action-color;
+        }
+      }
+      /* Keeps the parent styled correctly when hovering over the child. */
+      &:hover a:before,
+      &:focus a:before,
+      //&:focus-within a:before, mig3974 - preventing dropdown in IE/Edge
+      &:hover a:after,
+      &:focus a:after {
+        display: block;
+      }
+      &:hover a,
+      //&:focus-within a, mig3974 - preventing dropdown in IE/Edge
+      &:focus a {
+        color: $special-action-color;
+      }
+
+      /* The dropdown menu before anything happens */
+      ul.dropdown-menu { 
+        overflow: hidden;
+        max-height: 0;
+        padding: 0;
+        padding-top: 0;
+        position: absolute;
+      }
+      &:hover,
+      //&:focus-within, mig3974 - preventing dropdown in IE/Edge
+      &:focus,
+      &.accessability-tab { //Used to apply hover/focus via jquery when navigation with tab key
+        ul.dropdown-menu {
+          text-align: left;
+          // We went with a darker background to use the exsisiting indicator triangels from the old site
+          background: rgba(54,54,54,0.95);
+          //background: rgba($background-color-darkest, .9);
+          line-height: initial;
+          max-height: 1000px;
+          width: auto;
+          z-index: 1;
+          padding: 3.5rem 2rem;
+          // padding-top: 2em;
+          //@include transition(padding-top .125s ease-in, max-height .5s ease-out); 
+          //Removed max-height transition to prevent text from appearing before menu
+          // mig3974 Removed hover transition to prevent animation when tabbing
+          //@include transition(padding-top .125s ease-in);
+          .nav-column {
+            list-style-type: none;
+            &>ul {
+                padding-left: 0;
+            }
+            li {
+              a {
+                font-size: 1.4rem;
+                color: $white;
+                &:hover,
+                //&:focus-within, mig3974 - preventing dropdown in IE/Edge
+                &:focus {
+                  color: $special-action-color;
+                }
+              }
+              ul li a {
+              }
+            }
+          }
+        }
+
+        /* Specifics for each of the menus */
+        /* Products */
+        &:first-of-type .dropdown-menu {
+          width:100%;
+          padding-bottom: 0;
+          max-width: $max-width;
+          left: 0;
+          //margin-left: -50%;
+          //margin-left: -200px;
+          //min-width: 1000px;
+          flex-wrap: wrap;
+          display: flex;
+          @include media($screen-lg) {
+            /* 100% limits the width to the parent ul, the 120 extends it below the search bar. */
+            // width:120%;
+            //margin-left: -200px;
+            @include center-item($max-width);
+            width: $max-width;
+          }
+          .nav-column {
+            width: 33%;
+            display: inline-block;
+            @include media($desk) {
+              width: 20%;
+
+              &:last-child{
+                border-left: 1px solid $background-color-dark;
+                padding-left: 25px;
+              }
+            }
+          }
+        }
+        /* Learn*/
+        &:nth-of-type(2) .dropdown-menu {
+           min-width: 250px; // This fixes a weird arrow wrapping issue only found in Edge
+        }
+         /* Support */
+        &:nth-of-type(3) .dropdown-menu {
+          // in some langagues like it-it, there's an odd middle breakpoint where 
+          // grandchild flyouts are pushed off the page. (Up to 1500px)
+          @include media($desk-lg) {
+            right: 20%;
+          }
+          @include media(1600px) {
+            right: inherit;
+          }
+        }
+        /* Where to Buy */
+        &:nth-of-type(4) .dropdown-menu {
+        }
+
+        // 2nd and third level for all but products
+        &:not(:first-of-type) .dropdown-menu {
+          padding-right: 0; /* The single column lists have padding on the li instead, so the flyout doesnt' disappear when mousing over */
+          overflow: visible;
+          li.second-lvl {
+            list-style: none;
+            position: relative; /* Required to keep the sub-menus in the right spot */
+            padding-right: 2em;
+            &.second-lvl-thermal-imaging-for-solutions a{ // Prevent small column size with new ti category.
+              white-space: nowrap;
+            }
+            &:not(.second-lvl-no-child) {
+              @include icon(after, chevron-right) {
+                color: white;
+                background: none!important;
+                //padding-top: .2rem; // This breaks menus that have flyouts that are directly above one-another.
+                font-size: 1rem;
+                padding-left: 1rem;
+                float: right;
+              }
+              &:hover,
+              //&:focus-within, mig3974 - preventing dropdown in IE/Edge
+              &:focus {
+                @include icon(after, chevron-right) {
+                  color: $color-primary;
+                }
+              }
+            }
+            width: 100%;
+            line-height: 2em;
+            &:hover ul,
+            //&:focus-within ul, mig3974 - preventing dropdown in IE/Edge
+            &:focus ul {
+              display: block;
+              /* This keeps 3rd level child items from clipping */
+              overflow: visible;
+              box-shadow: 0 0 5px $background-color-darkest;
+              margin-left: -2px;
+            }
+            /* Keeps 2nd level colored while hovering over 3rd level */
+            &:hover > a,
+            //&:focus-within > a, mig3974 - preventing dropdown in IE/Edge
+            &:focus > a {
+              color: $special-action-color;
+            }
+            a {
+              font-size: 1.4rem;
+              /* 700 is too much - Got complaints this made the text look "fuzzy" */
+              font-weight: $medium-font-weight;
+              line-height: 2;
+              &:after {
+                display: none;
+              }
+            }
+
+          /* Third Level for all but "products" */
+          ul {   
+            left: 100%;
+            top: -2.7rem; //Keeps the text of the first sub-nav item aligned with parent item
+            overflow: hidden;
+            max-height: 0;
+            padding: 0;
+            padding-top: 0;
+            position: absolute;
+            li {
+              display: block;
+              float: none;
+              clear: both;
+              width: 100%;
+              line-height: 1.75;
+              a {
+                font-size: 1.3rem;
+                font-weight: $medium-font-weight;
+              }
+            }
+          }
+          &:hover,
+          //&:focus-within, mig3974 - preventing dropdown in IE/Edge
+          &:focus {
+            ul {
+              white-space: nowrap; 
+              text-align: left;
+              background: rgba(54,54,54,0.95);
+              line-height: initial;
+              max-height: 1000px;
+              //width: inherit;
+              z-index: 1;
+              padding: 2em;
+              padding-top: 2em;
+              //Removed max-height transition to prevent text from appearing before menu
+              //@include transition(padding-left .125s ease-in, max-height .5s ease-out);
+              @include transition(padding-left .125s ease-in);
+            }
+          }
+        }
+      }
+      //mig3974 added hover avter accessability-tab class to prevent animation when hitting tab 
+      &:hover { //Used to apply hover/focus via jquery when navigation with tab key
+        ul.dropdown-menu {
+          @include transition(padding-top .125s ease-in);
+        }
+      }
+
+          /* Second and third level for products section only, it displays differently */
+          &:first-of-type .dropdown-menu {
+            /* The last column under products, its oddball stuff that doesnt belong with other products */
+            .nav-column:last-of-type li.second-lvl > a {
+              color: white;
+              &:hover {
+                color: $yellow;
+              }
+            }
+            li.second-lvl {
+              list-style: none;
+              > a {
+                color: $color-primary;
+                font-weight: $medium-font-weight; //700 is too much - Got complaints this made the text look "fuzzy"
+                line-height: 2;
+              }
+              &.second-lvl-no-child {
+                margin-bottom: 3.5rem;
+              }
+              ul {                         
+                position: initial;
+                background: none;
+                display: block;
+                width: 100%;
+                margin-bottom: 3.5rem;
+                padding: 0;
+                li {
+                  display: block;
+                  float: none;
+                  clear: both;
+                  width: 100%;
+                  line-height: 1.75;
+                  a {
+                    font-size: 1.3rem;
+                    font-weight: $medium-font-weight;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+/* 
+ * This fixes long languages on desktop medium only, 
+ * it reduces the space between the nav items.
+ */ 
+ #block-igcommerce-utility-ig-primary-nav {
+  ul.nav {
+    &#de-ch-nav, // Swiss German
+    &#de-at-nav, // Austria German
+    &#nl-be-nav, // Belgium Dutch
+    &#nl-nl-nav, // Netherlands Dutch
+    &#da-dk-nav, // Denmark Danish
+    &#de-de-nav { // Germany German
+      li.dropdown > a {
+        @include media(max-width $screen-lg) {
+          padding: 0 .75vw;
+        }
+        @include media($screen-lg) {
+          padding: 0 1.5rem;
+        }
+      }
+    }
+  } 
+}
+.i18n-de-ch,
+.i18n-de-at,
+.i18n-nl-be,
+.i18n-nl-nl,
+.i18n-da-dk,
+.i18n-de-de {
+  #navbar .main-nav-desktop-set > a {
+    &.search-opener,
+    &.language-picker {
+        @include media(min-width $screen-md, max-width $screen-lg) {
+          padding: 0 .75vw;
+        }
+      // @include media(min-width $screen-md, max-width $screen-lg) {
+      //   padding: 0 1vw;
+      // }
+    }
+  }
+}
+
+// Only display the second link to where to buy on mobile, hide it on desktop
+@include media(min-width $screen-md) {
+  #block-igcommerce-utility-ig-primary-nav .second-lvl-where-to-buy{
+    display: none;
+  }
+}

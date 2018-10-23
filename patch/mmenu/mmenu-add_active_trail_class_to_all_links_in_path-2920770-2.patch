@@ -1,0 +1,51 @@
+diff --git a/mmenu.module b/mmenu.module
+index fc710c3..5ba5555 100644
+--- a/mmenu.module
++++ b/mmenu.module
+@@ -1159,6 +1159,10 @@ function template_preprocess_mmenu(&$variables) {
+       }
+
+       if (!isset($mmenu_tree[$mmenu_block['delta']])) {
++        if (_mmenu_get_active_trail()) {
++          $menu_parameters['active_trail'] = _mmenu_get_active_trail();
++        }
++
+         $tree = menu_build_tree($mmenu_block['delta'], $menu_parameters);
+         $mmenu_tree[$mmenu_block['delta']] = $tree;
+       }
+@@ -1280,6 +1284,10 @@ function theme_mmenu_tree(array $block = array(
+     if ($cur_path == $menu_path) {
+       $li_class[] = 'active-trail';
+     }
++    // Set a class if the link is in the active trail.
++    if ($item['link']['in_active_trail']) {
++      $li_class[] = 'active-trail';
++    }
+     // Gets the classes from the menu attributes.
+     if (isset($item['link']['options']['attributes']['class'])
+       && count($item['link']['options']['attributes']['class']) > 0) {
+@@ -1466,3 +1474,24 @@ function mmenu_check_enabled_callback(array $enabled_callback) {
+ function mmenu_enabled_callback() {
+   return TRUE;
+ }
++
++/**
++ * Get active trail for the menu_build_tree() function.
++ *
++ * This helps to add active-trail classes to all links in the trail.
++ */
++function _mmenu_get_active_trail() {
++  $active_trail = menu_get_active_trail();
++  $active_trail_mlids = array();
++  foreach ($active_trail as $active_trail_item) {
++    if (isset($active_trail_item['mlid'])) {
++      $active_trail_mlids[] = $active_trail_item['mlid'];
++    }
++  }
++  if (count($active_trail_mlids)) {
++    return $active_trail_mlids;
++  }
++  else {
++    return FALSE;
++  }
++}

@@ -1,0 +1,17 @@
+name = Tax Meas Data
+description = Tax Meas Data
+core = 7.x
+package = Fluke Features
+version = 7.x-1.0
+dependencies[] = features
+dependencies[] = taxonomy
+dependencies[] = uuid
+dependencies[] = uuid_features
+features[features_api][] = api:2
+features[taxonomy][] = data
+features[uuid_term][] = 12b89885-1654-47e9-9200-5a7c602a8988
+features[uuid_term][] = 2c5ff478-872f-4278-8060-10e6a004c736
+features[uuid_term][] = 831cf8ba-5edd-49e0-91d0-256d6cd99056
+features[uuid_term][] = adb03547-2271-41cf-af20-8e5f284df6f7
+features[uuid_term][] = c6e5497c-1f52-4b8e-8424-6ce8af4c04a4
+features[uuid_term][] = cbb90121-b22e-4951-a062-0a4a3bd6ec07

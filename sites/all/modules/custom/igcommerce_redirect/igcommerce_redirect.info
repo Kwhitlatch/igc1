@@ -1,0 +1,4 @@
+name = IG Commerce Redirect
+description = Custom 301 redirect for IG
+core = "7.x"
+package = IG Commerce

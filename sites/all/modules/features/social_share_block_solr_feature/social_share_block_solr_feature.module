@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Social Share Block Solr Feature feature.
+ */
+
+include_once 'social_share_block_solr_feature.features.inc';

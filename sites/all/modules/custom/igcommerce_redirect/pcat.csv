@@ -1,0 +1,56 @@
+Filter,tid,Taxonomy term
+bmm,2132,Bench instruments
+cal,2114,Calibration tools
+CALMM,2061,Products
+CALSW,2138,http://us.flukecal.com/products/calibration-software
+clmp,2121,Clamp meters
+CSTORTCL,2118,Temperature calibrators
+DAQ,2133,Data acquisition
+EGT,2123,Earth ground 
+ELT,2124,Electrical testers 
+ELW,2121,Clamp meters
+fbt,2120,Battery Analyzers 
+hma,2122,Digital multimeters
+iaq,2109,Building infrastructure
+IAQ,2111,Indoor air quality
+IAQ_AT,2111,Indoor air quality
+IAQ_HVAC,2110,HVAC tools
+iaq_hvac,2111,Indoor air quality
+ind,2124,Electrical testers 
+INFTHE,2152,IR thermometers 
+INFTHE,2152,IR Themometers
+insul,2125,Insulation testers
+irw,2151,IR Windows
+ldmt,2112,Laser distance meters
+LDMT,2112,Laser disatance meters
+ldmt,2112,Laser distance meters 
+LDMT ,2112,Laser distance meters
+LEAD,2105,Accessories - Test Leads
+level,2113,Laser levels
+loopcal,2115,mA loop calibrators
+loopcal,2115,mA loop calibrators 
+LOOPcal ,2115,mA loop calibrators 
+MD_CME,2061,Products
+opinsul,2125,Insulation testers
+PAT,2129,Portable appliance testers
+pcl,2114,Calibration tools
+PHASE1,2127,Power quality analyzers
+PHASE3,2126,Power and energy loggers
+PMELEcal,2114,Calibration tools
+PMELESTD,2061,Products
+PQPA,2126,Power and energy loggers 
+PQT,2127,Power quality analyzers
+pqttop,2127,Power quality analyzers
+PRESScal,2117,Pressure calibrators 
+PRTP,2146,Temperature measurement
+scm,2134,Portable oscilloscopes
+THE,2660,Contact themometers
+thetop,2146,Temperature measurement
+thetop,2146,Temperature measurement 
+thg,2147,Infrared Cameras
+topinsul,2125,Insulation testers
+wrls,2130,Wireless Testers
+AP_PQ,2238,https://live-igcommerce.pantheonsite.io/en-us/training/training-library
+pqttop,2126,Power and energy loggers 
+AP_DMM,2238,https://live-igcommerce.pantheonsite.io/en-us/training/training-library
+AP_THERMO,2238,https://live-igcommerce.pantheonsite.io/en-us/training/training-library

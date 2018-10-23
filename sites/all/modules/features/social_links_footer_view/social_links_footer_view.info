@@ -1,0 +1,11 @@
+name = Social Links Footer View
+description = View that generates the social links in the footer
+core = 7.x
+package = Fluke Features
+version = 7.x-1.0
+dependencies[] = views
+dependencies[] = views_content
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = social_links
+features_exclude[dependencies][ctools] = ctools

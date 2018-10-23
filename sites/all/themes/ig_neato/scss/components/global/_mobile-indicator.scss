@@ -1,0 +1,9 @@
+#mobile-indicator {
+  display: none;
+}
+
+@media (max-width: 1033px) {
+  #mobile-indicator {
+    display: block;
+  }
+}

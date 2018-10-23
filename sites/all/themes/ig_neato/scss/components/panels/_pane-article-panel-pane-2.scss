@@ -1,0 +1,43 @@
+// What does this do? If you know - please leave a comment. RRN 5-16-17 
+
+// After 1 year of waiting - i removed this styling. It came into the world with
+// Erins Ward new theme implementation on 10-3-16 at commit 51fa1273fd and 
+// left the world on 5-21-18 -RRN.
+
+// div[class*='pane-article-panel-pane-2']{
+//   padding: 0 1em;
+//   @include media($desk-xwide){
+//     padding: 0 auto;
+//   }
+//   .pane-content{
+//     @include outer-container;
+//     padding: 2em 0;
+
+//     .view-content{
+//       @extend %tile-simple;
+
+
+//       @include span-columns(12);
+//       }
+
+//       .views-row{
+//         h2{
+//           @extend h3;
+//         }
+//         @include span-columns(12);
+
+
+//         @include media($phone){
+//           @include span-columns(6);
+
+//         }
+//         @include media($desk){
+//           @include span-columns(3);
+
+//       }
+//     }
+//   }
+
+// }
+
+

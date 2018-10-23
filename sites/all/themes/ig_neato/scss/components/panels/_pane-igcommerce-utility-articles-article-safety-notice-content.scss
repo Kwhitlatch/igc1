@@ -1,0 +1,14 @@
+.pane-igcommerce-utility-articles-article-safety-notice-content {
+  h2 {
+    @extend %h3;
+  }
+  #quicktabs-safety_notice {
+    margin-top: 15px;
+  }
+  li {
+    border-bottom: 1px solid #ccc;
+    .safety-notice-item {
+      padding-top: 12px;  
+    }
+  }
+}

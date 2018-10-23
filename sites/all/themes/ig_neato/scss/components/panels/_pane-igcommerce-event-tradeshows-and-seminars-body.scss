@@ -1,0 +1,45 @@
+// Styles for tradeshow/events page "training/tradeshows-seminars"
+// The production version of this page is drastically different than the initial
+// design. Scss got an extensive overhail 3-14-18 -rrn
+
+.pane-igcommerce-event-tradeshows-and-seminars-body {
+  // No events message *Is this from an older iteration?Maybe it can be removed? 3-14-18
+  // .event-empty { 
+  //   @extend h3;
+  //   font-weight: 700;
+  //   padding: $spacing-1 0;
+  // }
+  a.btn.event-cta {
+    width: auto;
+    @include media($screen-xs) {
+      hyphens: none;
+    }
+  }
+  #quicktabs-container-ts_and_seminars {
+    overflow-x: scroll; // Allows for table scrollbars on mobile
+    @include media($screen-sm) {
+      overflow-x: visible;
+    }
+    table {
+      min-width: 768px; // Allows for table scrollbars on mobile
+      table-layout: auto; // Lets the table determine it's own cell widths on load
+      td{
+        vertical-align: top;
+      }
+      th {
+        hyphens: none; // Keeps the table titles from wrapping weird
+      }
+      p.register-info{
+        white-space: nowrap;
+      }
+    }
+  }
+  //Mailto icon before Hands-on workshop links
+  a.mailto-workshop {
+    &:before {
+      font-family: 'fluke-icon-font' !important;
+      content: "\f0e0";
+      padding-right: 0.75rem;
+    }
+  }
+}

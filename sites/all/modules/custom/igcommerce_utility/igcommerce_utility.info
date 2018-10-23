@@ -1,0 +1,8 @@
+name = IG Commerce Utility
+description = Utility module for IG commerce.
+core = "7.x"
+package = IG Commerce
+
+dependencies[] = language_hierarchy
+dependencies[] = token
+scripts[] = js/mmenu_mobile.js

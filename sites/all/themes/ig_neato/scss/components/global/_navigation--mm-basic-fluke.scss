@@ -1,0 +1,295 @@
+// Formerly Styled the off-screen mobile menu's added via the mmenu module
+// The mmenu module provides .scss files that we can modify, so I moved the 
+// majority of the styling to the file _mm-basic.scss.  What remains here is for
+// the custom navbar buttons that trigger the mmenu.
+
+// Hides the navbar button on desktop
+#navbar {
+  .mm-menu.mm-current,
+  .mm-menu.mm-offcanvas {
+    display: block!important;
+  }
+  #mmenu {
+    display: inline-block;
+    @include media($desk-wide) {
+      display: none;
+    }
+  }
+}
+// Close button added to the menu. The code is added to the GUI in the footer.
+.mm-footer .navbar-toggle {
+  background: $gray-dark;
+  border: none;
+  color: white;
+  padding: 17px;
+  position: fixed;
+  right: $spacing-1;
+  top: $spacing-1;
+  &:after {
+    content: "\e915";
+    font-family: fluke-icon-font;
+  }  
+}
+
+// Hamburger button that appears on the main nav in mobile/tablet
+#mmenu {
+  button {
+    border: none;
+    background: transparent;
+    padding: 18px 3vw;
+    border-radius: 0;
+    vertical-align: inherit; // overrides some defaults inherited from button
+    .fluke-icon {
+      line-height: 1.5;
+      font-size: 3rem;
+      color: white;
+    }
+  }
+  .navbar-toggle.active{
+  span.fluke-icon-fa-bars{
+    &:before{
+      color: $yellow;
+    }
+  }
+}
+}
+
+#mmenu_right {
+  margin-top:85px; //Moving both mmenus under the nav for consistency
+}
+
+// This fixes a bug - MIG4285
+// if the browser is on a sub-page and the user tries to use the top-nav to navigate around, the category that is currently selected is missing/hidden/the same color as the background.
+// Repro:In mobile mode, navigate to https://www.fluke.com/en-us/productsPull-down the hamburger and navigate up one level to the main menu.Note that "Products" is missing. (See screenshot)
+.mmenu-nav.mm-basic > .mm-list li.mm-selected > a {
+  background: transparent;
+}
+/* Blocker */
+/* What does this do? */
+// #mm-blocker {
+//   background: #000 !important;
+//   opacity: 0.5;
+//   -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+//   filter: alpha(opacity=50);
+// }
+// The button that appears on the main nav
+
+// .mmenu-nav.mm-basic {
+//   background-color: $gray-very-dark; // Prev rgba($background-color-darkest, .75);
+//   a {
+//     color: $white;
+//   }
+//   .mm-header {
+//     height: 85px; // 70px
+//     border-color: transparent;
+//     color: $white;
+//     line-height: 70px;
+//     background: $gray-very-dark ; //$background-color-darkest
+// //    padding-top: 185px;
+//     position: relative;
+//     img {
+//       position: absolute;
+//       top: 1em;
+//       left: 1em;
+//     }
+//   }
+//   &.mm-vertical li.mm-opened > ul {
+//     padding-left: 0;
+//     & > li > ul > li {
+//       padding-left: 1em;
+//     }
+//   }
+//   .mmenu-mm-list-level-2
+//   .second-lvl {
+//     padding-left: .5em;
+//   }
+//   &.mm-vertical li {
+//   }
+//   .mm-list > li > a.mm-subopen {
+//     &:after {
+//       top: 10px;
+//     }
+//   }
+//   .mm-list {
+//     .mm-subopen {
+//     //background: $country-picker-inactive;
+//     width: 100%;    //Added
+//     &:before {
+//     }
+//       @include icon(after, angle-right, true); //replaced plus
+//       font-size: $font-size-h2; //added font size
+//       &:after {
+//         @include transform(rotate(0deg));
+//         border: none;
+//         top: 10px;
+//       }
+//       &:active { 
+//         background: rgba($gray-medium, .5);
+//       }
+//     }
+//   }
+// }
+// .mmenu-block-title {
+//   display: inline-block;
+//   padding-left: .5em;
+// }
+// .mmenu-nav.mm-basic.mm-vertical li.mm-opened {
+//   > ul li {
+//   }
+//   > a {
+//     &.mm-subopen {
+//       @include icon(after, minus);
+//       color: $special-action-color;
+//       &:after {
+//         @include transform(rotate(0deg));
+//       }
+//     }
+//     &:not(mm-subopen) {
+//       color: $special-action-color;
+//       @include icon(before, angle-down);
+//     }
+//   }
+// }
+// li.mobile-top-lvl > a {
+//   &:before {
+//     content: ''!important;
+//   }
+// }
+// .mmenu-nav.mm-basic > .mm-list li {
+//   border-top: none;
+//   border-bottom: 1px solid $gray-darkest;
+//   line-height:$spacing-3; //Prev 40px
+//   &:last-child {
+//     border-bottom: none;
+//   }
+//   a {
+//     //display: inline; //toggling this off makes a parent without children clickable across the whole li
+//   }
+// }
+// .mmenu-nav {
+//   .mobile-second-lvl {
+//     a {
+//       padding-left: 25px;
+//       //@include icon(before, angle-right); //Removed icon
+//       &:before {
+//         margin-left: -8px;
+//         padding-right: 8px;
+//       }
+//       &:not(.mm-subopen) {
+//         color: $white;
+//       }
+//     }
+//   }
+// }
+
+
+
+
+// /* Menu nav */
+// .mmenu-nav:not(.mm-menu) {
+//   display: none;
+// }
+// /* Moves Menu item panel under header */
+// .mmenu-nav.mm-basic.mm-hasheader > .mm-panel {
+//     padding-top: 95px;
+// }
+// /* Mobile Navigation Styles */
+// .mm-menu.mm-hasheader li.mm-subtitle {
+//   display: block;
+//   background: $gray-very-dark !important;
+//   border-bottom: none;
+// }
+// .mm-menu .mm-list > li > a.mm-subclose {
+//   background: none;
+//   color: $gray-very-dark;
+//   text-shadow: none;
+//   &:before {
+//     border-color: transparent;
+//   }
+// }
+// //Move first list down below header + search
+// .mm-menu .mm-list { 
+//   margin: $spacing-3 0 0;
+//   padding: 0;
+// }
+// //Lines up title with < and X icons
+// .mmenu-nav.mm-basic > .mm-header .mm-title {
+//   font-size: $font-size-h3;
+//   font-family: $headings-font-family;
+//   font-weight: $headings-font-weight;
+//   position: absolute;
+//   top: 125px;
+//   right: $spacing-1; 
+//   text-align: right;
+//   padding: 0;
+//   margin-right: 1.5rem;
+// }
+// //Adds additional spacing to search widget
+// //Search block added to MMenu header area. 
+// .mmenu-search{
+//   position: absolute;
+//   z-index: 10;
+//   width: 100%;
+//   padding: 15px;
+//   top: 75px;
+//   input {
+//     border: none;
+//     border-radius: 30px;
+//     font: inherit;
+//     line-height: 30px;
+//     outline: none;
+//     display: block;
+//     height: 30px;
+//     margin: 0;
+//     background: rgba(255, 255, 255, 0.3);
+//     color: rgba(255, 255, 255, 0.6);
+//     &[type="submit"]{
+//       display: none;
+//     }
+//   }
+// } 
+// //Close button - This is added in the module footer.
+// //TODO: Move to the proper "header" section. I couldn't get that + title and back simultaniously.
+
+// //Remove default MMenu footer styles
+// .mmenu-nav.mm-basic > .mm-footer {
+//   background: none;
+// }
+// //Prev submenu button
+// .mmenu-nav.mm-basic > .mm-header .mm-prev {
+//   left: $spacing-1;
+//   top: 12.5rem;
+//   border-color: $white;
+//   // Makes the back arrow a little bigger
+//   &:before {
+//     border-color: white;
+//     border-width: 3px;
+//   }
+// }
+// // All menu tiers the same font size with sliding menus
+// #mmenu_right li:not(.mobile-top-lvl) {
+//   font-size: 1.6rem;
+//   background: #373737; // Matches Lang Chooser
+//   margin: 0 15px 0;
+// }
+// // Removed rogue bottom border under top level menu. 
+// //TODO: Find source without !important
+// .mm-list > li.mmenu-collapsed {
+//   border-bottom: none !important;
+//   margin: 0 $spacing-1 0;
+// }
+// //Adjust counter size
+// .mmenu-nav.mm-basic em.mm-counter {
+//   color: $white;
+//   right: $spacing-3;
+//   font-size: 1.6rem; 
+//   z-index: 3;
+// }
+//Add logo to header
+
+// li.mobile-second-lvl {
+//   margin: 0 $spacing-1 0;
+// }
+// .mmenu-nav.mm-basic > .mm-list li > a:not(.mm-subopen):not(.mm-subclose):not(.mm-fullsubopen) {
+//   padding: 10px 17px;
+// }

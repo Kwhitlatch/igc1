@@ -1,0 +1,176 @@
+/** 
+ * @file 00-global-variables.less
+ * Defines global variables and mixins.
+ *
+ * Style loosly adheres to Drupal CSS standards https://www.drupal.org/node/1887862
+ * This file is for variables that are not specifically used to override
+ * bootstrap variables. Those should go in variable-overrides.less
+ *
+ * TOC
+ * - Fluke Colors
+ * - Typography
+ * - Media Queries
+ * - Forms
+ * - Modals
+*/
+
+// Roboto Slab for Headers
+@import url(http://fonts.googleapis.com/css?family=Roboto+Slab:400,700);
+
+//== Colors
+//
+//== Fluke Brand Colors
+
+//== shades of gray
+@fluke-white:               #fff; 
+@fluke-black:               #000; 
+@fluke-box-shadows:         #f7f7f7; 
+@fluke-background:          #fff;
+@fluke-sidebar-background:  #ddd;
+@fluke-lines-and-pipes:     #ccc;
+@fluke-gray-links:          #a7a7a7;
+@fluke-menu-item:           #336699;
+@fluke-button-hover:        #666;
+@fluke-body-text:           #333;
+@fluke-head-foot:           #333;
+@fluke-header-background:   #212121;
+@fluke-sidebar:             #eaeaea;
+
+//== colors
+@fluke-yellow:              #ffc20e ; //main palette yellow - primary brand color
+@fluke-yellow-hover:        darken(@fluke-yellow, 10%); //darker yellow
+@fluke-blue-link:           #336699; //blue
+@fluke-blue-hover:          darken(@fluke-blue-link, 10%); //darker blue
+
+//== social media colors
+@youtube:                   #ff3333; //youtube red
+@google-plus:               #dd4c39; //google+ dark red
+@facebook:                  #3b5998; //facebook blue
+@linkedin:                  #4875b4; //linkedin blue
+@twitter:                   #33ccff; //twitter blue
+@reddit:                    #ff5700; //reddit orange red
+
+//## OVERRIDDEN Gray and brand colors for use across Bootstrap.
+@brand-primary:         	@fluke-yellow;
+
+//== Scaffolding
+//
+//## Settings for some of the most global styles.
+
+//** Background color for `<body>`.
+@body-bg:               	@fluke-background;
+
+//** Global text color on `<body>`.
+@text-color:            	@fluke-body-text;
+
+//** Global textual link color.
+@link-color:            	@fluke-blue-link;
+
+
+//** Link hover color.
+@link-hover-color:      	@fluke-blue-hover;
+
+//** Link hover decoration.
+@link-hover-decoration: none;
+
+//== Typography
+//
+//## Font, line-height, and color for body text, headings, and more.
+
+@font-family-sans-serif:   "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+
+@font-size-base:          	13px;
+
+@font-size-h1:            	floor((@font-size-base * 2.1)); // ~27px
+@font-size-h2:            	floor((@font-size-base * 1.8)); // ~23px
+@font-size-h3:            	ceil((@font-size-base * 1.3)); // ~17px
+@font-size-h4:            	ceil((@font-size-base * 1.1)); // ~15px
+@font-size-h5:            	@font-size-base;
+@font-size-h6:            	ceil((@font-size-base * 0.85)); // ~12px
+
+//** Unit-less `line-height` for use in components like buttons.
+@line-height-base:        	1.5; // 13/19.5
+@headings-font-family:    	"Roboto Slab", Helvetica, "Helvetica Neue", Arial, sans-serif;
+@headings-font-weight:    	inherit;
+@headings-line-height:    	1.3;
+
+@subheadings-font-family:   "Roboto Slab", Helvetica, "Helvetica Neue", Arial, sans-serif;
+@subheadings-font-weight:   300;
+@subheadings-line-height:   1.3;
+
+@border-radius-base:        0px;
+@border-radius-large:       0px;
+@border-radius-small:       0px;
+
+@btn-default-color:         @fluke-white;
+@btn-default-bg:            @fluke-blue-link;
+// Red Button.
+
+@btn-primary-color:         @fluke-white;
+@btn-primary-bg:            @fluke-yellow;
+// Black Button.
+@btn-info-bg:               @fluke-black;
+@btn-info-color:            @fluke-white;             
+
+//== Media queries breakpoints
+//
+//## Define the breakpoints at which your layout will change, adapting to different screen sizes.
+
+// Small screen / tablet
+@screen-sm:                 768px;
+
+// Medium screen / desktop
+@screen-md:                 1033px;
+
+// Large screen / wide desktop
+@screen-lg:                 1280px;
+
+//== Container sizes
+//
+//## Define the maximum width of `.container` for different screen sizes.
+
+//== Navs
+//
+//#
+
+//=== Shared nav styles
+@nav-link-hover-bg:          				@fluke-white;
+
+//== Pills
+@nav-pills-active-link-hover-bg:            darken(@fluke-background, 10%);
+@nav-pills-active-link-hover-color:         @fluke-yellow;
+
+//== Form states and alerts
+//
+//## Define colors for form feedback states and, by default, alerts.
+
+// This overrides the default alert-info styling, it is used in the 
+// "Only avaliable in UK" alert on the product page.
+@state-info-text:                			@text-color;
+@state-info-bg:                  			@fluke-sidebar;
+@state-info-border:              			transparent;
+
+//== Modals
+//
+//##
+
+//** Modal backdrop opacity
+@modal-backdrop-opacity:     .8;
+
+@modal-lg:                   772px;
+@modal-md:                   772px;
+@modal-sm:                   300px; // not overridden, just here for easy reference
+
+
+//== Wells
+//
+//##
+
+@well-bg:                    @fluke-sidebar-background;
+
+//== Type
+//
+//##
+
+//** Horizontal line color.
+@hr-border:                  @fluke-lines-and-pipes;

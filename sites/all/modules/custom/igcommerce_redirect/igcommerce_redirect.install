@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function igcommerce_redirect_enable() {
+  // When Redirects 404 is enabled, we set it to be the default site_404 page.
+  variable_set('igcommerce_redirect_404_site_404', variable_get('site_404', ''));
+  variable_set('site_404', 'igcommerce_redirect_404');
+}
+
+/**
+ * Implements hook_disable().
+ */
+function igcommerce_redirect_disable() {
+  // When Redirects 404 is disabled we return site_404 to original state.
+  variable_set('site_404', variable_set('igcommerce_redirect_404_site_404', ''));
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function igcommerce_redirect_uninstall() {
+  // Clean up after ourselves when the module is uninstalled.
+  variable_del('igcommerce_redirect_404_site_404');
+}

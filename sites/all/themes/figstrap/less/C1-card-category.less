@@ -1,0 +1,240 @@
+/**
+ * @file A1-article.less
+ * Styles pages of the UI pattern A1
+ *
+ * UI Templates can be found here: https://wiki.danahertm.com/display/flukewebdev/Templates
+ * Most articles will use the template "pascal" or "pascal-flipped" and will be
+ * wrapped in the class of ".pascal".
+ *
+ * TOC
+ * - Overlay
+ * - General Styles
+ * - Card TOC Header
+ * - Card TOC Content
+ * - Card TOC Footer
+ */
+
+
+/**
+* - Overlays
+*
+* We use the overlay_paths module to display front-end content in admin overlays
+* ----------------------------------------------------------------------------
+*/
+
+#cboxWrapper {
+  -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
+  background: transparent;
+  border-radius: 0px;
+}
+
+#cboxMiddleLeft, #cboxMiddleRight, 
+#cboxTopLeft, #cboxTopCenter, #cboxTopRight, 
+#cboxBottomLeft, #cboxBottomCenter, #cboxBottomRight{
+  width: 0;
+  height: 0;
+}
+
+#cboxWrapper .container{
+  width: 100% !important;
+  margin-right: 0;
+  margin-left: 0; 
+}
+
+
+/**
+* - General Styles
+* ----------------------------------------------------------------------------
+*/ 
+
+/* Article TOC styles */
+.toc-listing-item-wrapper{
+  .make-md-column(4);
+  padding-left: 0;
+  margin-bottom: 30px;
+}
+
+
+.toc-listing-item-wrapper img{
+  width: 100%;
+  max-width: 285px;
+  max-height: 190px; /* TODO: Remove. This is temporary due to placeholder images. */
+  object-fit: cover; /* Added to restrict images to spec height. Should be fine due to mostly BG images. */
+}
+
+.toc-listing-title-h3{
+  font-size: @font-size-h3;
+  font-weight: @subheadings-font-weight;
+  margin: 15px 0 15px 0;
+}
+
+.view-display-id-article_toc_header_h1{
+  margin-bottom: 20px;
+}
+
+
+.field-type-text-with-summary{
+  margin-bottom: 40px;
+}
+
+/**
+* - Card Header
+* ----------------------------------------------------------------------------
+*/ 
+
+/* Margin below the banner image found on all pages */
+.flukestrap-layouts-header{
+  display: none;
+  /* Hide banner on mobile */
+      @media (min-width: @screen-md-min) {
+      display: block;
+    }
+}
+
+/**
+* - Card Content
+* ----------------------------------------------------------------------------
+*/ 
+
+.flukestrap-layouts-content, .flukestrap-layouts-sidebar
+{
+  padding-top: 70px;
+}
+
+/* Prevents card collection card links from having normal link */
+.toc_article_card_small a:hover,
+.toc_article_card_medium a:hover,
+.toc_article_card_large a:hover,
+.toc_article_card_small a,
+.toc_article_card_medium a,
+.toc_article_card_large a  {
+  text-decoration: none;
+  color: @fluke-body-text;
+}
+
+/* Prevents card collection card links from having normal link */
+.toc_article_card_small .card,
+.toc_article_card_medium .card,
+.toc_article_card_large .card {
+  min-height: 290px;
+}
+
+/* Card Collection hover state. The whole card is a link, and fades on hover */
+.toc_article_card_small .card:hover,
+.toc_article_card_medium .card:hover,
+.toc_article_card_large .card:hover {
+  opacity: .7;
+  transition: opacity 0.2s ease;
+}
+
+/* Bootstrap mixin for all small cards */
+.toc_article_card_small{
+  .make-md-column(2); /* Replaces .col-md-3; */
+  padding-bottom: 22px;
+  overflow: hidden;
+  padding-left: 0;
+  padding-right: 0;
+      @media (min-width: @screen-sm) {
+      padding-left: 0;
+      padding-right: 30px;
+    }
+}
+
+/* Bootstrap mixin for all medium cards */
+.toc_article_card_medium{
+  .make-md-column(4); /* Replaces .col-md-2; */
+  padding-bottom: 22px;
+  overflow: hidden;
+  padding-left: 0;
+  padding-right: 0;
+      @media (min-width: @screen-sm) {
+      padding-left: 0;
+      padding-right: 30px;
+    }
+}
+
+/* Bootstrap mixin for all large cards */
+.toc_article_card_large{
+  .make-md-column(8); /* Replaces .col-md-2; */
+  padding-bottom: 22px;
+  overflow: hidden;
+  padding-left: 0;
+  padding-right: 0;
+      @media (min-width: @screen-sm) {
+      padding-left: 0;
+      padding-right: 30px;
+    }
+}
+
+/* Non-serifed header fonts found on card collections */
+.toc_article_card_title{
+  color: @fluke-body-text;
+  font-family: @headings-font-family;
+  font-size: @font-size-h3;
+  line-height: @font-size-h2;
+  margin-top: 10px;
+}
+
+/* Card Collections styles that differ from related 'cards' found elsewhere */
+.toc_article_card_small .card,
+.toc_article_card_medium .card,
+.toc_article_card_large .card {
+  border: 0px solid @fluke-lines-and-pipes;
+  box-shadow: 1px 1px 5px 0px rgba(0,0,0,0.15);
+  -webkit-box-shadow: 1px 1px 5px 0px rgba(0,0,0,0.15);
+  -moz-box-shadow: 1px 1px 5px 0px rgba(0,0,0,0.15);
+}
+
+/**
+* - Card Footer
+* ----------------------------------------------------------------------------
+*/ 
+
+/* Z-index to make sure column mixin doesn't make links unclickable */
+.toc-article-related-product-wrapper, .toc-article-related-resource-wrapper{
+  .make-md-column(2); /* Replaces .col-md-2; */
+  z-index: 1;
+  padding-left: 0;
+  padding-right: 0;
+      @media (min-width: @screen-sm) {
+      padding-left: 0;
+      padding-right: 30px;
+    }
+}
+
+/* Styles to restrict card header images. They should all be the same styles, and crop if outside of spec */
+.toc-article-related-product-wrapper img, .toc_article_card_image_small img, 
+.toc_article_card_image_medium img, .toc_article_card_image_large img{
+  height: 170px; /* TOC card height should all match, 170px per spec */
+  object-fit: cover; /* Added to restrict images to spec height. Should be fine due to mostly BG images. */
+  object-position: top;
+  width: 100%;
+}
+
+/* Card Collection TOC full width footer, white background */
+.flukestrap-layouts-footer{
+  background: @fluke-white;
+}
+
+.toc-article-related-product-wrapper{
+  margin-bottom: 40px;
+}
+
+.toc-article-related-resource-wrapper{
+  margin-bottom: 85px;
+}
+
+/* Footer 'Specification subject to change' styling */
+.view-id-card_footer_specifications{
+  float: left;
+  font-size:@font-size-h6;
+  margin: 40px 0 20px 0;
+}
+
+/* Card Footer Oracle id styling. */
+.field-name-field-card-id{
+  float: left;
+  font-size:@font-size-h6;
+  margin: 40px 0 20px 5px;
+}

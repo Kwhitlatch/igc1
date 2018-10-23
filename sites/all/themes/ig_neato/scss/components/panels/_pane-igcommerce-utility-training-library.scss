@@ -1,0 +1,57 @@
+//Affects the traing library search, example - en-us/training/training-library
+
+//Search page filters
+div.pane-igcommerce-utility-training{
+  //Filter by type heading, matches navigation sidebar
+  h3{
+    padding: .7rem 4rem .7rem 2rem; //Pulled from navigation--sidebar.scss
+  }
+  margin: 0 0 $spacing-1; //Adds a bit of whitespace below the gray sidebar if no search results exist.
+  padding: $spacing-1 0; // Adds some padding below sidebar navigation and remove filter button
+}
+
+//Search help text 'Cant find what you're looking for
+div.search-help{
+  @include span-columns(12);
+  padding-top: $spacing-1;
+}
+
+// 9 Column search area
+.block-igcommerce-utility-training{
+  .row {
+    clear: both;
+  }
+  .training-library-list-item {
+    width: 100%;
+  }
+  // Training Library Result Items
+  // TODO: Combine any list items to a helper class (Search, Manual, Training Library)
+  .training-library-list-items{
+    //Removes extra padding in the training library h3 titles
+    .doc-title, .video-title{
+      padding: 0;
+    }
+    .doc-desc, {
+      margin-bottom: 12px;
+    }
+    //Thumbnail image container for Demos tab
+    .training-video-thumbnail{
+    @include span-columns(12);
+    padding-top: 12px;
+    margin-bottom: 12px;
+    @include media($tablet) {
+      @include span-columns(4);
+      }
+    }
+    //Demos Tab Header and description
+    .training-video-copy{
+    @include span-columns(12);
+    padding-top: 12px;
+    margin-bottom: 12px;
+    @include media($tablet) {
+      @include span-columns(8);
+        margin-right: 0;
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "igcommerce-utility-admin-theming",
+  "version": "1.0.0",
+  "description": "\u0016Utility module for IG commerce Administration theme overrides.  The admin theme is commerce_kickstart_admin - which is already a subtheme of Shiny. Since we can't make a subtheme of a subtheme, we override the styles using this lightweight custom module.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-autoprefixer": "^3.1.1",
+    "gulp-livereload": "^3.8.1",
+    "gulp-plumber": "^1.1.0",
+    "gulp-sass": "^2.3.2",
+    "gulp-sass-glob": "^1.0.6",
+    "gulp-sourcemaps": "^2.2.0"
+  }
+}

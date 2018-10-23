@@ -1,0 +1,14 @@
+diff --git a/apachesolr_multilingual.module b/apachesolr_multilingual.module
+index 51e3166..4dc1db7 100644
+--- a/apachesolr_multilingual.module
++++ b/apachesolr_multilingual.module
+@@ -92,7 +92,8 @@ function apachesolr_multilingual_apachesolr_index_documents_alter(&$documents, $
+       $active_languages = apachesolr_multilingual_language_list();
+       $active_langcodes = array_keys($active_languages);
+ 
+-      if (LANGUAGE_NONE == $document->ss_language && LANGUAGE_NONE == $entity->language) {
++      $entity_language = entity_language($entity_type, $entity);
++      if (LANGUAGE_NONE == $document->ss_language && (LANGUAGE_NONE == $entity_language || is_null($entity_language))) {
+         // language-neutral
+         $document->ss_language = $settings['apachesolr_multilingual_map_language_neutral'];
+ 

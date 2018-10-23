@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the MMenu Configuration feature.
+ */
+
+include_once 'mmenu_configuration.features.inc';

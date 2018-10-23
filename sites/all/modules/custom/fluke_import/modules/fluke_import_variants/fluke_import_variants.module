@@ -1,0 +1,392 @@
+<?php
+
+/**
+ * implementation of hook_menu()
+ */
+function fluke_import_variants_menu(){
+
+  $items['admin/fluke/import/product-variants'] = array(
+    'title' => t('Import Product Variants'),
+    'description' => 'Import product variants',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fluke_import_variants_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+);
+
+  return $items;
+
+}
+
+/**
+ * implementation of hook_form()
+ */
+function fluke_import_variants_form($form, $form_state){
+
+  $form['upload-csv-file'] = array(
+    '#title' => t('Upload product variants CSV file'),
+    '#type' => 'managed_file',
+    '#required' => TRUE,
+    '#upload_location' => 'public://tmp/',
+    '#upload_validators' => array(
+      'file_validate_extensions' => array('csv'),
+    )
+  );
+
+  $form['btn-import'] = array(
+    '#value' => t('Import'),
+    '#type' => 'submit',
+  );
+
+  return $form;
+
+}
+
+/**
+ * implementation of hook_form_submit()
+ */
+function fluke_import_variants_form_submit($form, $form_state){
+
+  $uri = db_query("SELECT uri FROM {file_managed} WHERE fid = :fid", array(
+    ':fid' => $form_state['values']['upload-csv-file'],
+  ))->fetchField();
+
+  $filename = $form_state['complete form']['upload-csv-file']['#file']->filename;
+
+  if(!empty($uri)) {
+    if(file_exists(drupal_realpath($uri))) {
+      // Open the csv
+      $handle = fopen(drupal_realpath($uri), "r");
+      // Go through each row in the csv and run a function on it. In this case we are parsing by '|' (pipe) characters.
+      // If you want commas are any other character, replace the pipe with it.
+      $i = 0;
+      $keyArr = array();
+      $output = array();
+      while (($data = fgetcsv($handle, 0, ',', '"')) !== FALSE) {
+        if($i == 0){
+          $keyArr = $data;
+          $keys = array();
+          foreach ($keyArr as $key => $value) {
+            $keys[] = preg_replace('/[^A-Za-z0-9\-]/', '', $value);
+          }
+        }
+        if($i > 0){
+          foreach($data as $key => $value ) {
+            if ($key == 0 && strlen($value) < 1) {
+               break;
+            } else {
+              $output[$i][$keys[$key]] = $value;
+            }
+          }
+        }
+        $i++;
+      }
+      _fluke_create_variants($output);
+    }
+  }
+  return "Done";
+}
+
+function _fluke_create_variants($data) {
+
+  global $user;
+
+  foreach($data as $details) {
+    //check if PID exist in target language locale
+
+    if (isset($details['pid'])) {
+       $query = new EntityFieldQuery();
+       $query->entityCondition('entity_type', 'node')
+         ->entityCondition('bundle', 'product_display')
+         ->fieldCondition('field_product_id_pcat', 'value', $details['pid'], '=')
+         ->addMetaData('account', user_load(1));
+       $result = $query->execute();
+    } else {
+       drupal_set_message("There wasn't a PID column in the spreadsheet, can't import");
+       break;
+    }
+
+    if ($result) {
+
+      $node = NULL;
+
+      foreach($result['node'] as $n) {
+        $node = node_load($n->nid);
+      }
+
+      if(is_object($node)){
+        $translation = array(
+          'translate' => 0,
+          'status' => 1,
+          'language' => $details['language'], // here is the language you're translating to
+          'source' => 'en-us', // here is the source language
+        );
+
+        $handler = entity_translation_get_handler('node', $node);
+
+        $values = array();
+
+        if (isset($details['url']) && strlen($details['url']) > 1) {
+          $values['field_urlpathproducts']  = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['url'],
+               )
+             )
+           );
+        }
+
+        if (isset($details['URLName']) && strlen($details['URLName']) > 1) {
+          $values['field_url_title'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['URLName'],
+               )
+             )
+           );
+        }
+
+        if (isset($details['title']) && strlen($details['title']) > 1) {
+          $values['title'] = array (
+              '0' => array(
+                'value' => $details['title'],
+               )
+           );
+        }
+
+        if (isset($details['metaTitle']) && strlen($details['metaTitle']) > 1) {
+           $values['field_custom_meta_head_element'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['metaTitle'],
+               )
+             )
+           );
+         }
+
+
+        if (isset($details['metaDesc']) && strlen($details['metaDesc']) > 1) {
+           $values['field_short_description_summary'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['metaDesc'],
+               )
+             )
+           );
+         }
+
+
+        if (isset($details['displayTitle']) && strlen($details['displayTitle']) > 1) {
+           $values['field_content_title'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['displayTitle'],
+               )
+             )
+           );
+         }
+
+        if (isset($details['overview']) && strlen($details['overview']) > 1) {
+           $values['field_overview'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['overview'],
+               )
+             )
+           );
+         }
+
+        if (isset($details['features']) && strlen($details['features']) > 1) {
+          $values['field_features'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['features'],
+               )
+             )
+           );
+        }
+
+        if (isset($details['techSpecs']) && strlen($details['techSpecs']) > 1) {
+          $values['field_specs'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'value' => $details['techSpecs'],
+               )
+             )
+           );
+        }
+
+        if (isset($details['opco']) && strlen($details['opco']) > 1) {
+          $opco_term  = taxonomy_get_term_by_name($details['opco'], 'opco');
+          if (sizeof($opco_term) > 0) {
+            $opco_tid = NULL;
+            foreach($opco_term as $opco_t) {
+              $opco_tid = $opco_t->tid;
+            }
+            if (!is_null($opco_tid)) {
+              $values['field_opco'] = array (
+                  '0' => array(
+                    'tid' => $opco_tid,
+                   )
+               );
+            }
+          }
+        }
+
+        if (isset($details['productCategory']) && strlen($details['productCategory']) > 1) {
+          $prodcat_term  = taxonomy_get_term_by_name($details['productCategory'], 'product_category');
+          if (sizeof($prodcat_term) > 0) {
+            $prodcat_tid = NULL;
+            foreach($prodcat_term as $prodcat_t) {
+              $prodcat_tid = $prodcat_t->tid;
+            }
+            if (!is_null($opco_tid)) {
+              $values['field_product_category'] = array (
+                  '0' => array(
+                    'tid' => $prodcat_tid,
+                   )
+               );
+            }
+          }
+        }
+
+        if (isset($details['urlbuilder']) && strlen($details['urlbuilder']) > 1) {
+          $values['field_url_builder'] = array (
+            $details['language'] => array(
+              '0' => array(
+                'tid' => $details['urlbuilder'],
+               )
+             )
+           );
+        }
+
+        $handler->setTranslation($translation, $values);
+
+        entity_get_controller('node')->resetCache(array($node->nid));
+        field_attach_update('node', $node);
+        drupal_set_message("Node: " . $details['displayTitle'] . ' was translated into ' . $details['language']);
+        fluke_import_variants_translate($node, $details);
+      } else{
+        drupal_set_message("The node with CID of: " . $details['cid'] . ' did not exist in en-us, no translation performed');
+      }
+
+  }
+ }
+}
+
+function fluke_import_variants_check_existing($node, $product_id, $language) {
+
+      if (sizeof($node->field_product) == 0) {
+          $node->field_product[$language][] = array('product_id' => $product_id);
+      } else {
+         if (isset($node->field_product[$language]) && fluke_import_variants_key_value_pair_exists($node->field_product[$language],
+                                                         'product_id',
+                                                         $product_id)) {
+         } else {
+            $node->field_product[$language][] = array('product_id' => $product_id);
+         }
+      }
+
+      node_save($node);
+
+      drupal_set_message("Added/updated models (product id $product_id) for $node->title  nid: $node->nid Language: $language");
+
+}
+
+function fluke_import_variants_key_value_pair_exists(array $haystack, $key, $value) {
+    return array_key_exists($key, $haystack) &&
+           $haystack[$key] == $value;
+}
+
+
+function fluke_import_variants_translate($node, $data) {
+
+    if (isset($data['modelOracle1']) && strlen($data['modelOracle1']) > 1) {
+      $product_id = fluke_import_variants_translate_model($data['modelName1'],
+                                            $data['modelDetail1'],
+                                            $data['modelDesc1'],
+                                            $data['modelOracle1'],
+                                            $data['modelPrice1'],
+                                            $data['language']);
+      fluke_import_variants_check_existing($node, $product_id, $data['language']);
+    }
+
+    if (isset($data['modelOracle2']) && strlen($data['modelOracle2']) > 1) {
+      $product_id = fluke_import_variants_translate_model($data['modelName2'],
+                                            $data['modelDetail2'],
+                                            $data['modelDesc2'],
+                                            $data['modelOracle2'],
+                                            $data['modelPrice2'],
+                                            $data['language']);
+      fluke_import_variants_check_existing($node, $product_id, $data['language']);
+    }
+
+    if (isset($data['modelOracle3']) && strlen($data['modelOracle3']) > 1) {
+      $product_id = fluke_import_variants_translate_model($data['modelName3'],
+                                            $data['modelDetail3'],
+                                            $data['modelDesc3'],
+                                            $data['modelOracle3'],
+                                            $data['modelPrice3'],
+                                            $data['language']);
+      fluke_import_variants_check_existing($node, $product_id, $data['language']);
+    }
+
+    if (isset($data['modelOracle4']) && strlen($data['modelOracle4']) > 1) {
+      $product_id = fluke_import_variants_translate_model($data['modelName4'],
+                                            $data['modelDetail4'],
+                                            $data['modelDesc4'],
+                                            $data['modelOracle4'],
+                                            $data['modelPrice4'],
+                                            $data['language']);
+      fluke_import_variants_check_existing($node, $product_id, $data['language']);
+    }
+
+}
+
+
+function fluke_import_variants_translate_model($name, $detail, $desc, $oracleID, $price, $lang) {
+
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'commerce_product')
+         ->propertyCondition('status', 1)
+         ->propertyCondition('type', 'product')
+         ->propertyCondition('sku', $oracleID);
+//         ->propertyCondition('language', $lang);
+
+      $result = $query->execute();
+
+      if (!$result) {
+        $cp = commerce_product_new('product');
+        $cp->is_new = TRUE;
+        $cp->revision_id = NULL;
+        $cp->uid = 1;
+        $cp->status = 1;
+        $cp->created = $cp->changed = time();
+        $cp->sku = $oracleID;
+        $cp->title = $name;
+        $cp->language = $lang;
+        $cp->field_content_title[$lang][0]['value'] = $name;
+        $cp->field_model_details[$lang][0]['value'] = $detail;
+        $cp->field_long_description[$lang][0]['value'] = $desc;
+        $cp->commerce_price = array('und' => array(0 => array( 'amount' => $price, 'currency_code' => 'USD')));
+        commerce_product_save($cp);
+
+      } else {
+
+        foreach ($result['commerce_product'] as $product) {
+          $cp = commerce_product_load($product->product_id);
+          $cp->changed = time();
+          $cp->title = $name;
+          $cp->language = $lang;
+          $cp->field_content_title[$lang][0]['value'] = $name;
+          $cp->field_model_details[$lang][0]['value'] = $detail;
+          $cp->field_long_description[$lang][0]['value'] = $desc;
+          $cp->commerce_price = array('und' => array(0 => array( 'amount' => $price, 'currency_code' => 'USD')));
+          commerce_product_save($cp);
+        }
+      }
+
+      return $cp->product_id;
+
+}
+

@@ -1,0 +1,24 @@
+diff --git a/sites/all/modules/patched/apachesolr/apachesolr.module b/sites/all/modules/patched/apachesolr/apachesolr.module
+index 1ef49e6..4ea979b 100644
+--- a/sites/all/modules/patched/apachesolr/apachesolr.module
++++ b/sites/all/modules/patched/apachesolr/apachesolr.module
+@@ -1216,10 +1216,19 @@
+   if (isset($environments)) {
+     return $environments;
+   }
++  
+   // Use cache_get to avoid DB when using memcache, etc.
+   $cache = cache_get('apachesolr:environments', 'cache_apachesolr');
+   if (isset($cache->data)) {
+     $environments = $cache->data;
++    
++    // Added by Gray so that we can override in settings.php
++    global $conf;
++    if (!empty($conf['apachesolr_server_url'])) {
++      foreach ($conf['apachesolr_server_url'] as $env => $url) {
++        $environments[$env]['url'] = $url;
++      }
++    }    
+   }
+   elseif (!db_table_exists('apachesolr_index_bundles') || !db_table_exists('apachesolr_environment')) {
+     // Sometimes this function is called when the 'apachesolr_index_bundles' is

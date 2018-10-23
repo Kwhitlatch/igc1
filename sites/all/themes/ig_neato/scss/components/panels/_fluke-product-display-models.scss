@@ -1,0 +1,124 @@
+// Product model displays
+// The readmore button styling is in _fluke-product-display-readmore.scss
+
+#fluke-product-display-models {
+  #ig-product-models {
+    float: left; // keeps this parent from collapsing, so readmore.js works
+    width: 100%; // Products with only 1 model collapse without this. MIG2162
+  }
+  .show-more-models {
+    float: left; // keeps readmore button from covering all content
+  }
+  // The product model section only displays as Flex below 1033px. Below that,
+  // the buy button is pushed below the hidden description, so that when it 
+  // toggles open it pushes the buy button down. MIG-1246. RRN 5-25-18
+  .product-model {
+    @include span-columns(12);
+    display: flex;
+    flex-direction: column;
+    margin-right: 0;
+    padding-bottom: 10px;
+    @include media($screen-md) {
+      display: block;
+    }
+    &:not(:first-of-type) {
+      @extend %p-t-1;
+      border-top: 2px solid $white;
+      @include media($screen-md) {
+        border-top: 1px solid $gray-c;
+      }
+    }
+  }
+  .model-name {
+    font-family: $roboto;
+    padding-right: 10px;
+    @extend %h5;
+    font-weight: 700;
+    margin-bottom: 5px;
+    position: relative;
+    @include span-columns(12);
+    .fluke-icon {
+      position: absolute;
+      top: 3px; //Changed from 0 to center model + with model name
+      right: 0px;
+      font-size: 1.3rem;
+      color: $action-color;
+      &:before{
+        content: "\f067";
+        font-weight: 700;
+      }
+      @include transition(all .3s ease-in-out);
+      @include media($screen-md) {
+        right: 15px;
+      }
+    }
+  }
+  .model-desc {
+    b {
+      font-weight: 400;
+    }
+    margin-bottom: 5px;
+    padding-left: 0;
+    @include span-columns(12);
+    width: 90%; //Prevents long titles from falling under +/-
+    p {
+      margin-bottom: 0;
+    }
+  }
+  // This is the buy it button
+  .pricespider,
+  .model-link {
+    order: 3;
+    @include span-columns(12);
+    @include media($screen-sm) {
+      @include span-columns(10);
+    }
+    @include media($screen-md) {
+      @include span-columns(4);
+      margin-right: 0;
+    }
+    a, div.ps-widget {
+      // Keeps the button from smooshing when there's no name for the cta
+      // /en-us/product/building-infrastructure/indoor-air-quality-testing/fluke-985
+      min-width: 145px;
+      float: left;
+      width: 100%;
+    }
+    .buy-now-cta, div.ps-widget {
+      //@extend %button; MIG1986 Changed Buy now buttons to blue
+      @extend %button-secondary; 
+    }
+    .where-to-buy {
+      @extend %button-secondary; 
+    }
+  }
+   .accordion {
+    order: 1;
+    @include span-columns(12);
+    @include media($screen-md) {
+      @include span-columns(8); 
+    }
+    &:hover {
+      cursor: pointer;
+    }
+  }
+  .accordion.active .fluke-icon {
+    @include transition(all .3s ease-in-out);
+    &:before {    
+      content: "\f068";
+    }
+  }
+  // The details that are shown/hidden
+  .panel.model-details {
+    @include span-columns(12);
+    display: none;
+    padding-top: .5rem;
+    order: 2;
+  }
+  .ps-widget{
+    display: none !important;
+  }
+  .ps-widget.ps-enabled{
+    display: block !important;
+  }
+}

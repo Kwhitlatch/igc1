@@ -1,0 +1,150 @@
+@font-face {
+  font-family: 'regulation-certification';
+  src:  url('../fonts/regulation-certification/fonts/regulation-certification.eot?yt038g');
+  src:  url('../fonts/regulation-certification/fonts/regulation-certification.eot?yt038g#iefix') format('embedded-opentype'),
+    url('../fonts/regulation-certification/fonts/regulation-certification.woff2?yt038g') format('woff2'),
+    url('../fonts/regulation-certification/fonts/regulation-certification.ttf?yt038g') format('truetype'),
+    url('../fonts/regulation-certification/fonts/regulation-certification.woff?yt038g') format('woff'),
+    url('../fonts/regulation-certification/fonts/regulation-certification.svg?yt038g#regulation-certification') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.safety-icon {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'regulation-certification' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-RCM:before {
+  content: "\e900";
+}
+.icon-C_RU_US:before {
+  content: "\e00f";
+}
+.icon-C_RU:before {
+  content: "\e010";
+}
+.icon-RU:before {
+  content: "\e02e";
+}
+.icon-C_UL_LIST:before {
+  content: "\e011";
+}
+.icon-C_UL_US:before {
+  content: "\e012";
+}
+.icon-C_UL:before {
+  content: "\e013";
+}
+.icon-UL:before {
+  content: "\e031";
+}
+.icon-UL_LIST_950Z:before {
+  content: "\e030";
+}
+.icon-CE_0102:before {
+  content: "\e014";
+}
+.icon-CE_0344:before {
+  content: "\e015";
+}
+.icon-CE:before {
+  content: "\e016";
+}
+.icon-China_RoHS_40_10:before {
+  content: "\e017";
+}
+.icon-China_RoHS_40:before {
+  content: "\e018";
+}
+.icon-China_RoHS_e:before {
+  content: "\e019";
+}
+.icon-CMC:before {
+  content: "\e01a";
+}
+.icon-CSA_C_US-LR110460:before {
+  content: "\e01b";
+}
+.icon-CSA_C_US_221839:before {
+  content: "\e01c";
+}
+.icon-CSA_C_US_C1:before {
+  content: "\e01d";
+}
+.icon-CSA_C_US_LR110460:before {
+  content: "\e01e";
+}
+.icon-CSA_C_US:before {
+  content: "\e01f";
+}
+.icon-CSA_C22_2_231:before {
+  content: "\e020";
+}
+.icon-CSA_C22_2_1010:before {
+  content: "\e021";
+}
+.icon-CSA_NRTLC:before {
+  content: "\e022";
+}
+.icon-CSA:before {
+  content: "\e023";
+}
+.icon-ETL_Safety:before {
+  content: "\e024";
+}
+.icon-EX:before {
+  content: "\e025";
+}
+.icon-FM_Approved:before {
+  content: "\e026";
+}
+.icon-HART_Protocol:before {
+  content: "\e027";
+}
+.icon-KC:before {
+  content: "\e028";
+}
+.icon-MSHA:before {
+  content: "\e029";
+}
+.icon-N10140:before {
+  content: "\e02a";
+}
+.icon-NSF:before {
+  content: "\e02b";
+}
+.icon-PCEC:before {
+  content: "\e02c";
+}
+.icon-PCT_GOST:before {
+  content: "\e02d";
+}
+.icon-TUV_SUD:before {
+  content: "\e02f";
+}
+.icon-VDE_0411:before {
+  content: "\e032";
+}
+.icon-VDE_GS:before {
+  content: "\e033";
+}
+.icon-VDE:before {
+  content: "\e034";
+}
+.icon-iecex:before {
+  content: "\e000";
+}
+.icon-inmetro:before {
+  content: "\e001";
+}

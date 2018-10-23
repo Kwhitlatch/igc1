@@ -1,0 +1,122 @@
+// The standardized table is intended to become the global standard.
+
+// It is used on product spec tables that are semantically correct. (i.e. not brought over from legacy systems)
+// The usage guide can be found here: https://codepen.io/RyanRayNeff/pen/oqjYKz?editors=1100#0
+%standardized-table {
+  border-collapse: collapse;
+  caption-side: bottom;
+  width: 100%;
+  margin-bottom: 30px;
+  th,
+  tr td {
+    padding: 0.2rem 0.4rem;
+    border: 1px solid #cccccc;
+    line-height: 1.5;
+    vertical-align: middle;
+  }
+  th {
+    text-align: left;
+    font-weight: 700;
+  }
+  thead th {
+    background-color: #ccc;
+  }
+  [aria-label] {
+    text-align: center;
+  }
+  caption {
+    text-align: left;
+    font-size: 1.4rem; /* =14px */
+  }
+}
+// Zebra-striping
+//
+// Default zebra-stripe styles (alternating gray and transparent backgrounds)
+%table-striped {
+  > tbody > tr:nth-of-type(even) {
+    background-color: $gray-f;
+  }
+}
+
+// Hover effect
+//
+// Placed here since it has to come after the potential zebra striping
+
+%table-hover {
+  > tbody > tr:hover {
+    background-color: $gray-c;
+  }
+}
+ 
+// Responsive tables
+//
+// Wrap your tables in `.table-responsive` and we'll make them mobile friendly
+// by enabling horizontal scrolling. Only applies <768px. Everything above that
+// will display normally.
+//
+// As of 5-24-18 the % table-responsive mixin isn't used on this site. This
+// might come in handy in the future.
+
+%table-responsive {
+  overflow-x: auto;
+  min-height: 0.01%; // Workaround for IE9 bug (see https://github.com/twbs/bootstrap/issues/14837)
+
+  @media (max-width: $screen-sm) {
+    width: 100%;
+    margin-bottom: ($base-line-height * 0.75);
+    overflow-y: hidden;
+    border: 1px solid $gray-c;
+
+    // Tighten up spacing
+    > .table {
+      margin-bottom: 0;
+
+      // Ensure the content doesn't wrap
+      > thead,
+      > tbody,
+      > tfoot {
+        > tr {
+          > th,
+          > td {
+            white-space: nowrap;
+          }
+        }
+      }
+    }
+
+    // Special overrides for the bordered tables
+    > .table-bordered {
+      border: 0;
+
+      // Nuke the appropriate borders so that the parent can handle them
+      > thead,
+      > tbody,
+      > tfoot {
+        > tr {
+          > th:first-child,
+          > td:first-child {
+            border-left: 0;
+          }
+          > th:last-child,
+          > td:last-child {
+            border-right: 0;
+          }
+        }
+      }
+
+      // Only nuke the last row's bottom-border in `tbody` and `tfoot` since
+      // chances are there will be only one `tr` in a `thead` and that would
+      // remove the border altogether.
+      > tbody,
+      > tfoot {
+        > tr:last-child {
+          > th,
+          > td {
+            border-bottom: 0;
+          }
+        }
+      }
+
+    }
+  }
+}

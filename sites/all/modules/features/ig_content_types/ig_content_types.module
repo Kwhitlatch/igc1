@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the IG content types feature.
+ */
+
+include_once 'ig_content_types.features.inc';

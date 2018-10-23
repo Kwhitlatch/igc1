@@ -1,0 +1,16 @@
+// Product display yellow alert box in the features section, only appears
+// if a "replaced by" product has been selected in the ECM
+// This is similar to _fluke-product-display-alerts.scss
+
+#fluke-product-display-replaced-by {
+    @include span-columns(12);
+    @include flash($alert-color);
+    font-size: 1.5em;
+    border-left: 4px solid darken($alert-color, 65%);
+    padding: 1.5rem 2rem;
+    .fluke-product-display-replaced-by-link {
+      @include icon(before, exclamation-triangle) {
+        padding-right: 1rem;
+      }
+    }
+}

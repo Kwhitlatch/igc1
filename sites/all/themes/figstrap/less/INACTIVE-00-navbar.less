@@ -1,0 +1,542 @@
+/**
+* @tb-megamenu-black-override.less
+* Styles the megamenu nav bar
+*
+* This file was origionally derived from tb-megamenu-black.css
+* There's plenty of stuff here that can be removed, you will
+* need to run a diff.
+*
+*/
+
+// Since we are using megamenu, we have to slice out the default padding
+// that accomodates bootstraps menus
+body.admin-menu.navbar-is-fixed-top {
+  padding-top: 0 !important;
+}
+
+/* TODO: This Makes the main navbar "sticky" for both desktop sizes */
+// Turn this back on after all pages have a banner
+#navbar {
+  @media (min-width: @screen-md-min) {
+    .navbar-fixed-top;
+   // margin-top: 30px;
+  }
+  position: relative !important; //TODO: This makes the navbar float. turn it off when the time is ripe.
+} 
+
+
+/* Background for the language selector, only visible on md & lg. */
+#page-header{
+  @media (min-width: @screen-md-min) {
+    background-color: rgba(40,40,40,0.75);
+    height: 30px;
+    display: none;
+    //position: fixed; //TODO: This makes the navbar float. turn it off when the time is ripe.
+    width: 100%;
+    z-index: 2;
+  }
+}
+
+.language-selector {
+  float: right;
+  height: 30px;
+  width: 130px;
+}
+
+.language-selector .form-group{
+ overflow: hidden;
+ background: url(../../../../../sites/default/files/arrow_down.svg) no-repeat right transparent;
+ background-size:10px auto;
+ width: 130px;
+ font-size: 16px;
+ line-height: 1;
+ border: none;
+ border-radius: 0;
+ height: 30px;
+ -webkit-appearance: none;
+ position: relative;
+}
+
+.language-selector .form-group select {
+  background: transparent;
+  width: 130px;
+  padding: 6px 5px 5px 25px;
+  font-size: 12px;
+  line-height: 1;
+  border: 0;
+  border-radius: 0;
+  height: 30px;
+  -webkit-appearance: none;  /*Removes default chrome and safari style*/
+  -moz-appearance: none;  /*Removes default style Firefox*/
+  color: #ccc;
+}
+
+
+.language-selector .form-group:before {
+  content: "\f0ac";
+  font-family: 'FontAwesome';
+  position:absolute;
+  color: #ccc;
+  font-size: 16px;
+  padding:8px 0 0 2px;
+}
+
+.language-selector .form-group:hover:before {
+  color: #fff;
+}
+
+
+/* For Amprobe: the product menu is friggin huge, we had to add a
+special class and manually move it to the side */
+/* TODO: Remove !important hack. Looking into this, but pushed temporarily to get it correct on dev. */
+// .megamenu_product
+// {
+//   left: -398px !important;
+// }
+
+/* Hamburger button on Mobile nav */
+// This uses an icomoon custom icon. If this tb_megamenu nav will not be used
+// on mobile, kill this section.
+.tb-megamenu .btn-navbar {
+  border: 0;
+  border-radius: 0;
+  float: right;
+  font-size: 2em;
+  margin: 15px 0;
+  padding: 17px 17px 18px 18px;
+  box-shadow: none;
+  text-shadow: none;
+  background-color: #282828;
+  background-image: none;
+  &:hover,
+  &:focus,
+  &:visited {
+    background-color: @fluke-button-hover;
+    border: 0;
+  }
+}
+
+//kills the container padding only on tablet and mobile, so logo can sit flush left
+#navbar > .container {
+  padding-left: 0;
+  @media (min-width: @screen-md-min) {
+    padding: 0 15px;
+  }
+}
+
+header#navbar {
+  background-color: @fluke-body-text; //This colors the background for the whole navbar
+}
+.logo img {
+  padding: 15px 0;
+  width: auto;
+  //height: 50px;
+  @media (min-width: @screen-md-min) {
+    width: 165px;
+    /* rules for tablet (768 > 992) */
+    padding: 25px 0;
+  }
+}
+.tb-megamenu .nav > li > a {
+  // Height of all megamenu buttons
+  height: 100px;
+  /* Controls the size of the nav buttons on small desktop */
+  @media (min-width: @screen-md-min) {
+    padding: 38px 10px;
+  }
+  /* Controls the size of the nav buttons on large desktop */
+  @media (min-width: @screen-lg-min) {
+    padding: 38px 20px;
+  }
+}
+
+
+.tb-megamenu.style-black {
+  // Overrides the MegaMenu Themes black background color
+  background-image: none;
+  background-color: inherit;
+}
+.tb-megamenu.style-black .nav > li > a {
+//  background: url(../../images/line.png) no-repeat 100% 0; //modified for fluke
+background: none;
+border-right: none;
+  color: @fluke-white; //This styles the default text color for MegaMenu
+  font-weight: normal; //modified for fluke
+}
+.tb-megamenu.style-black .nav > li > a:focus,
+.tb-megamenu.style-black .nav > li > a:hover {
+  background-color: lighten(@fluke-body-text, 10%);
+  //box-shadow: 0 4px 0 @fluke-yellow; //TODO: Turn box-shadow back on for main nav underlines in yellow and white
+  color: @fluke-yellow; //modified for fluke
+}
+.tb-megamenu.style-black .nav > .active > a {
+  color: @fluke-yellow; //modified for fluke
+  //height: 100px;
+  background-color: lighten(@fluke-body-text, 10%);
+  //box-shadow: 1px 4px -1px @fluke-yellow;//modified for Fluke
+}
+.tb-megamenu.style-black .nav > .active > a:hover,
+.tb-megamenu.style-black .nav > .active > a:focus {
+    background-color: lighten(@fluke-body-text, 10%); //modified for Fluke
+    color: @fluke-yellow;
+    //box-shadow: 0 4px 0 @fluke-yellow;//modified for Fluke
+  }
+
+  .tb-megamenu.style-black .nav-collapse .nav > li.active > a:hover,
+  .tb-megamenu.style-black .nav-collapse .nav > li.active > a:focus {
+    background-color: lighten(@fluke-body-text, 10%); //modified for Fluke
+  color: @fluke-yellow; //modified for fluke
+}
+.tb-megamenu.style-black .row-fluid + .row-fluid {
+  border-color: #333;
+}
+.tb-megamenu.style-black .dropdown .caret {
+  margin-left: 5px;
+}
+.tb-megamenu.style-black .dropdown-menu {
+  // -webkit-box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+  // -moz-box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+  // box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+}
+
+.tb-megamenu.style-black .dropdown-menu li > a {
+  border-top: 1px solid #444;
+  //padding: 5px 20px;//modified for fluke
+  padding: 5px 0; //modified for fluke
+  text-shadow: none;
+}
+
+.tb-megamenu.style-black .dropdown-menu li:first-child > a {
+  border-top: 0;
+}
+.tb-megamenu.style-black .navbar .nav > li > .dropdown-menu:before {
+  display: none;
+}
+.tb-megamenu.style-black .navbar .nav > li > .dropdown-menu:after {
+  display: none;
+}
+.tb-megamenu.style-black .dropdown-menu .disabled > a,
+.tb-megamenu.style-black .dropdown-menu .disabled > a:hover {
+  color: #999;
+}
+.tb-megamenu.style-black .dropdown-menu .disabled > a:hover {
+  background-color: transparent;
+}
+.tb-megamenu.style-black .nav li.dropdown.open > .dropdown-toggle {
+  background-color: #666;
+  color: #aaa;
+}
+.tb-megamenu.style-black .nav li.dropdown.active > .dropdown-toggle {
+  background-color: lighten(@fluke-body-text, 10%); //modified for Fluke
+color: @fluke-yellow;//modified for fluke
+//box-shadow: 0 4px 0 @fluke-yellow;//modified for Fluke
+  //color: #7bb9e0;//modified for fluke
+}
+.tb-megamenu.style-black .nav > li.dropdown.open.active > a:hover,
+.tb-megamenu.style-black .nav > li.dropdown.open.active > a:focus { 
+  background-color: lighten(@fluke-body-text, 10%); //modified for Fluke
+  color: @fluke-yellow;
+  //box-shadow: 0 4px 0 @fluke-yellow;
+}
+.tb-megamenu.style-black .dropdown-menu {
+  //TODO: Something changed here for Beha styling, not sure what.
+  //background-color: #222; //modified for Fluke
+  background-color: rgba(40,40,40,0.95); //modified for Fluke
+  //background-color: @beha-body-text; //modified for fluke
+  
+  border: none;
+}
+.tb-megamenu.style-black .dropdown-menu li > a {
+  border-top: 1px solid #444;
+  padding: 5px 0; //modified for fluke
+  text-shadow: none;
+}
+.tb-megamenu.style-black .dropdown-menu li > a:hover,
+.tb-megamenu.style-black .dropdown-menu li > a:focus,
+.tb-megamenu.style-black .dropdown-submenu:hover > a {
+  background: none;
+  color: @fluke-yellow;
+  font-weight: inherit; //TODO: is this necessary?
+}
+
+// This adds a little carrot when hovering over submenu items on megamenu
+.tb-megamenu.style-black .dropdown-menu li > a:hover:before {
+  color: @fluke-yellow;
+  content: "\f105";
+  display: block;
+  float: left;
+  font-family: FontAwesome;
+  height: 0; 
+  margin-left: -14px;
+  margin-right: 6px;
+  width: 0;
+}
+
+.tb-megamenu.style-black .nav li.dropdown.open > .dropdown-toggle,
+.tb-megamenu.style-black .nav li.dropdown.open.active > .dropdown-toggle {
+  background-color: lighten(@fluke-body-text, 10%); //modified for Fluke
+  color: @fluke-yellow;
+}
+.tb-megamenu.style-black .mega-nav .mega-group > .mega-group-title,
+.tb-megamenu.style-black .dropdown-menu .mega-nav .mega-group > .mega-group-title,
+.tb-megamenu.style-black .dropdown-menu .active .mega-nav .mega-group > .mega-group-title {
+  color: @fluke-yellow;//modified for fluke
+  font-weight: bold;
+  text-transform: none;
+  padding-top:18px;
+}
+.tb-megamenu.style-black .tb-block {
+  background: transparent;
+  color: inherit;
+}
+.tb-megamenu.style-black .tb-block .block-inner {
+  padding: 0;
+}
+.tb-megamenu.style-black .tb-block .block-title {
+  background: inherit;
+  color: #ddd;
+}
+.tb-megamenu.style-black .block-ct {
+  background: inherit;
+  color: inherit;
+  padding: 0;
+  *zoom: 1;
+}
+.tb-megamenu.style-black .block-ct:before,
+.tb-megamenu.style-black .block-ct:after {
+  display: table;
+  content: "";
+  //line-height: 0;
+}
+.tb-megamenu.style-black .block-ct:after {
+  clear: both;
+}
+.tb-megamenu.style-black .tb-block ul.unstyled,
+.tb-megamenu.style-black .tb-block ol.unstyled,
+.tb-megamenu.style-black .tb-block ul.nav,
+.tb-megamenu.style-black .tb-block ol.nav {
+  margin-left: 0;
+}
+.tb-megamenu.style-black .block_menu .nav {
+  margin-bottom: 20px;
+}
+.tb-megamenu.style-black .block_menu .nav > li {
+  border-top: 1px solid #444;
+}
+.tb-megamenu.style-black .block_menu .nav > li > a {
+  padding: 5px;
+}
+.tb-megamenu.style-black .block_menu .nav > li:first-child {
+  border-top: 0;
+}
+.tb-megamenu.style-black .block_menu .nav > li:first-child > a {
+  padding-top: 0;
+  border-top: 0;
+}
+
+
+.tb-megamenu .dropdown-menu {
+  left: 0px;
+  padding-left:30px;
+  padding-right:15px;
+}
+
+
+.tb-megamenu .nav > li {
+  font-size: 16px;
+  left:20px;
+  /* Adds extra padding between logo and nav on lg desktop */
+  @media (min-width: @screen-lg-min) {
+    left:75px;
+  }
+}
+
+.tb-megamenu .mega-inner {
+  padding: 16px 15px 23px 4px;
+}
+
+
+
+
+
+.tb-megamenu .mega-nav .mega-group > .mega-group-title, .tb-megamenu .dropdown-menu .mega-nav .mega-group > .mega-group-title, .tb-megamenu .dropdown-menu .active .mega-nav .mega-group > .mega-group-title {
+  padding: 0 0 0 10px;
+}
+
+
+.tb-megamenu .dropdown-menu .active > a{
+  color: #ed3223!important;
+  font-weight: inherit;
+  text-decoration: none;
+  outline: 0;
+  background-color: transparent;
+  background-color: transparent;
+  background-image: none;
+  background-image: none;
+  background-image: none;
+  background-image: none;
+  background-image: none;
+  background-repeat: repeat-x;
+  filter: none;
+}
+
+
+
+
+//Secondary nav overrides to fix white focus//
+.celia-secondary-nav{
+
+  .nav > li > a:hover, .nav > li > a:focus {
+    background-color: green; //TODO: Not sure where this shows
+    text-decoration: none;
+  }
+}
+
+.tb-megamenu .mega-nav > li a, .tb-megamenu .dropdown-menu .mega-nav > li a:hover {
+  background-color:transparent;
+}
+
+
+//Secondary nav overrides to fix white focus//
+
+
+
+
+#navbar .container::before{
+ background-color:#ace524; 
+}
+
+
+/* BEGIN Search in Nav bar */
+.region-navigation #block-search-form{
+  float:right;
+  height: 100px;
+}
+
+.region-navigation .form-search .btn-primary{
+  display: none;
+}
+.region-navigation .form-search .input-group{
+  float: right;
+}
+
+.region-navigation .form-search .input-group .form-control {
+  position: relative;
+  z-index: 2;
+  float: right;
+  margin-bottom: 0;
+  border: none;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  height:100px;
+  padding: 0 30px;
+}
+
+@-moz-document url-prefix() { 
+  .region-navigation .form-search .input-group .form-control {
+    position: relative;
+    z-index: 2;
+    float: right;
+    margin-bottom: 0;
+    border: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    height:100px;
+    width: 75px;
+  }
+}
+.region-navigation .form-search .form-group {
+  margin-bottom: 0px;
+}
+.region-navigation .form-search textarea, input {
+  outline: none;
+}
+.region-navigation .form-search .form-control:focus {
+  border-color: none;
+  outline: 0;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+}
+
+.region-navigation .form-search input[type=text] {
+  background: lighten(@fluke-body-text, 10%) url(../../../../../sites/default/files/search_icon.svg) no-repeat center center;
+  background-size: 14px;
+  -webkit-transition: all .5s;
+  -moz-transition: all .5s;
+  transition: all .5s;
+  -webkit-appearance: textfield;
+  -webkit-box-sizing: content-box;
+  font-family: inherit;
+  font-size: 100%;
+  width: 15px;
+  padding-left: 10px;
+  color: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.region-navigation .form-search input[type=text]:hover {
+  background-color: #efefef;
+}
+.region-navigation .form-search input[type=text]:focus {
+  width: 100%;
+  padding-left: 62px;
+  padding-right: 30px;
+  color: #212121;
+  background: #efefef url(../../../../../sites/default/files/search_icon.svg) no-repeat 29px center;
+  background-size: 14px;
+  cursor: auto;
+}
+.region-navigation .form-search input:-moz-placeholder  {
+  color: transparent;
+  position: relative;
+  padding-left: 100px;
+  -moz-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input::-moz-placeholder {  /* Firefox 19+ */
+  color: transparent;
+  position: relative;
+  padding-left: 100px;
+  -moz-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input:-ms-input-placeholder {  
+  color: #212121;
+  position: relative;
+  padding-left: 100px;
+  -ms-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input::-webkit-input-placeholder {
+  color: #212121;
+  position:relative;
+  padding-left:100px;
+  -webkit-transition: padding 0.5s; /* For Safari 3.1 to 6.0 */
+  transition: padding 0.5s;
+  font-style: italic;
+}
+.region-navigation .form-search input:focus::-webkit-input-placeholder, input:focus::-webkit-input-placeholder {
+  font-style: italic;
+  padding-left: 0;
+}
+.region-navigation .form-search input:focus:-moz-placeholder, input:focus:-moz-placeholder {
+  color: #212121;
+  font-style: italic;
+  padding-left: 0;
+}
+.region-navigation .form-search input:focus::-moz-placeholder, input:focus::-moz-placeholder {
+  /* Firefox 19+ */
+  color: #212121;
+  font-style: italic;
+  padding-left: 0;
+}
+.region-navigation .form-search input:focus:-ms-input-placeholder, input:focus:-ms-input-placeholder {
+  font-style: italic;
+  padding-left: 0;
+}

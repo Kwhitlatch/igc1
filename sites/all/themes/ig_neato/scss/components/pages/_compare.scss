@@ -1,0 +1,176 @@
+.messages.error {
+  overflow: hidden;
+}
+
+#igc-compare-page-form {
+  .form-item-show-only{
+    margin-left: 10px;
+  }
+  #compare-page-top {
+    table tr, table tr td {
+      text-align: center;
+      border-bottom: none;
+      border-top: none;
+    }
+    table tr td .chosen-drop{
+      text-align: left;
+    }
+    table tr td:last-child {
+      padding-right: 0;
+    }
+    .event-buy-now-cta {
+      color: #000;
+      width: 100%;
+      position: relative;
+      float: left;
+      display: inline-block;
+      margin: 0 0 0 0;
+      padding: 11px 30px;
+      text-align: center;
+      background: #ffc20e;
+      border: 1px solid #E4AA00;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      transition-duration: .2s;
+      -o-transition-duration: .2s;
+      -moz-transition-duration: .2s;
+      -webkit-transition-duration: .2s;
+      cursor: pointer;
+    }
+
+    a.compare-remove-link {
+      color: red;
+      &:hover {
+        color: orange;
+      }
+    }
+
+    .chosen-container-single {
+      a, .chosen-search {
+        width: 100%;
+      }
+      .chosen-drop {
+        width: 100%;
+      }
+    }
+
+    .ps-widget {
+      display: none !important;
+    }
+    .ps-widget.ps-enabled {
+      display: block !important;
+    }
+  }
+
+  .utility-block {
+    display: block;
+    .form-item-show-only {
+      float: left;
+      display: inline-block;
+      label.option {
+        font-weight: bold;
+      }
+    }
+    .print-block {
+      margin-top: 1em;
+      margin-bottom: 1em;
+      float: right;
+      display: inline-block;
+      input.igc-compare-print-page{
+        width: auto;
+      }
+    }
+  }
+
+  #compare-accordion {
+    &.hide-matched tr.matched,
+    &.hide-matched div.panel.matched {
+      display: none;
+    }
+    .panel-heading {
+      background-color: #ddd;
+      h4.panel-title {
+        padding: 0 0 0 10px;
+        &:hover{
+          text-decoration: none;
+        }
+        &:focus{
+          text-decoration: none;
+        }
+      }
+      a.plus-minus{
+        &:hover, &:focus, &:active{
+          text-decoration: none;
+        }
+      }
+
+      a:after {
+        right: 10px;
+        top: 10px;
+      }
+    }
+  }
+}
+
+.compare-collapse {
+  .panel {
+    display: block;
+    border-bottom: 1px solid $gray-c;
+    .child-menu-item {
+      padding-bottom: 10px;
+    }
+    .panel-collapse {
+      display: none;
+    }
+  }
+  .panel-heading {
+    position: relative;
+    h4 {
+      margin-bottom: 0;
+      //  font-size: 15px;
+      line-height: 1.3;
+      padding: 1rem 0;
+      font-weight: 700;
+    }
+    @extend %adds-toggle-plus;
+    a[data-parent='#compare-accordion'] {
+      font-family: $heading-font-family;
+      color: $gray-21;
+      padding: 1rem 0;
+      line-height: 1.5;
+      width: 100%;
+      height: 40px;
+      &:after {
+        font-size: $font-size-base;
+        color: $gray-21; //Was $action-color - I believe all toggles should be gray not blue per nws spec
+        position: absolute;
+        right: 0;
+        content: '\f067'; //minus   f068
+        font-family: fluke-icon-font;
+      }
+      &.expanded {
+        &:after {
+          content: '\f068';
+        }
+      }
+    }
+  }
+}
+
+@include media($small-screen-down) {
+  #igc-compare-page-form {
+    table tr td:last-child {
+      display: none;
+    }
+    #compare-page-top .event-buy-now-cta {
+      padding: 11px 18px;
+    }
+
+    .print-block {
+      margin-right: 10px;
+    }
+  }
+}

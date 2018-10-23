@@ -1,0 +1,26 @@
+
+/*
+*
+*   Regular links use the basic action color
+*
+*   For links in inverted areas, see the mixin at helpers-mixins/_inverse.scss
+*
+*/
+
+a {
+  color: $action-color;
+  text-decoration: none;
+  transition: color 0.1s linear;
+
+  &:active,
+  &:focus,
+  &:hover {
+    text-decoration: underline;
+    color: $action-color;
+  }
+
+  &:active,
+  &:focus {
+    outline: none;
+  }
+}

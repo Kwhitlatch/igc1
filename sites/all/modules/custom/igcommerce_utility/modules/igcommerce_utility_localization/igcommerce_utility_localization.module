@@ -1,0 +1,2060 @@
+<?php
+/**
+ * @file
+ * This file extends the functionality by adding languages checkboxes to node and when the node is created/updated this
+ * functions adds/delete the URL Aliases depending on there operation performed on languages checkboxes.
+ *
+ * @author anshul.jain@fluke.com
+ * @author anisha.shaikh@fluke.com
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function igcommerce_utility_localization_views_api() {
+  list($module, $api) = func_get_args();
+  if ($module == "views" && $api == "views_default") {
+    return array("version" => "3.0");
+  }
+}
+
+function igcommerce_utility_localization_menu() {
+  $items = array();
+
+  $items['admin/content/dashboard/show-aliases'] = array(
+    'title' => t('URL Alias Dashboard'),
+    'description' => t('Dashboard for listing of URL Alias'),
+  );
+
+  $items['admin/content/dashboard/show-aliases/settings'] = array(
+    'title' => 'Localization Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('display_localization_form'),
+    'access arguments' => array('access dashboard'),
+    'description' => 'How to use the #states attribute in FAPI',
+  );
+
+  $items['admin/content/dashboard/show-localization/%'] = array(
+    'title' => t('URL Alias Dashboard'),
+    'description' => t('Dashboard for listing of Localization'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('list_product_locaizations', 4),
+    'access arguments' => array('access dashboard'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function igcommerce_utility_localization_form_node_form_alter(&$form, &$form_state) {
+
+  global $user;
+  global $base_url;
+  global $language;
+
+  $node = $form_state['node'];
+  $langs = language_list('language');
+  ksort($langs);
+  $lang_options = array();
+
+  foreach ($langs as $lang) {
+    // don't include just en as they should all have locales
+
+      $lang_options[$lang->language] = $lang->language;
+
+  }
+
+  $items_count = count($lang_options);
+  $field_name = 'field_url_aliases';
+
+  // Only apply URL Alias logic for This FIeld collection(field_url_aliases) , this field collection name is hardcoded as there is no chance of changing it as we are taking field collection name from INC file - field_collection.schema.inc
+  if (isset($form[$field_name])) {
+    $form_theme = $form[$field_name][LANGUAGE_NONE]['#theme'];
+
+    // Remove delete and add more buttons
+    $form[$field_name][LANGUAGE_NONE][0]['remove_button']['#access'] = FALSE;
+    $form[$field_name][LANGUAGE_NONE]['add_more']['#access'] = FALSE;
+    $items = &$form_state['field'][$field_name][LANGUAGE_NONE];
+    // Generate required number of fields collection
+    if ($items_count > 1 and $items['items_count'] != $items_count) {
+      $items['items_count'] = $items_count;
+      $items['field']['cardinality'] = $items_count;
+      $form[$field_name][LANGUAGE_NONE] = field_multiple_value_form($items['field'], $items['instance'], LANGUAGE_NONE, array(), $form, $form_state);
+      // Reset theme function, as field_multiple_value_form hijacks it
+      $form[$field_name][LANGUAGE_NONE]['#theme'] = $form_theme;
+    }
+  }
+
+  // Defining Red icon for Expired Content and Green Icon for LIVE Content.
+  $inactive_img = drupal_get_path('module', 'igcommerce_utility_localization') . '/images/reddot.png';
+  $active_img = drupal_get_path('module', 'igcommerce_utility_localization') . '/images/greendot.png';
+
+  drupal_add_js(array('igcommerce_utility_localization' => array('active_img' => $active_img, 'inactive_img' => $inactive_img, 'base_url' => $base_url)), array('type' => 'setting'));
+
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+
+  // Only apply if we have URL Aliases enabled for this content type, otherwise it will throw error of undefined.
+  if ($node_wrapper->__isset('field_url_aliases')) {
+  	// Check if we have localization tab already created then pull it up the display.
+    if(isset($form['#fieldgroups']['group_localizations'])) {
+      $form['#fieldgroups']['group_localizations']->weight = 86;
+    }
+
+    // Add JS only when Language is en-us.
+    if ($language->language == 'en-us') {
+      drupal_add_js(drupal_get_path('module', 'igcommerce_utility_localization') . '/js/igcommerce_utility_localization.js');
+    }
+
+    // If content is being created for first time and it is a new node then apply these rules.
+    if (!isset($node->nid) || isset($node->is_new)) {
+      $i = 0;
+      foreach ($lang_options as $lang_option) {
+      	// Getting fallback languages for purpose of displaying parent locale content if child locale content is not created.
+        $fallback_locale = _igcommerce_get_fallback_locale($lang_option);
+
+        // Creating content indicator format.
+        $image_options = array(
+          'path' => $inactive_img,
+          'alt' => 'Test alt',
+          'title' => 'Test title',
+          'width' => '30px',
+          'height' => '30px',
+          'attributes' => array('id' => 'expiry_indicator_' . $lang_option),
+        );
+
+        $image = theme('image', $image_options);
+
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['expiry_indicator'] = array(
+          '#type' => 'item',
+          '#title' => t('Current Status'),
+          '#markup' => $image,
+          '#weight' => -1,
+        );
+
+        // Populating Language locale with all the enabled locales and languages & disabled it so that we dont change it by mistake.
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_language_locale'][LANGUAGE_NONE][0]['value']['#default_value'] = $lang_option;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_language_locale'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+
+        //$form['field_url_aliases'][LANGUAGE_NONE][$i]['field_person'][LANGUAGE_NONE][0]['value']['#default_value'] = $user->name;
+        // Disabled the person created value so that it cannot be edited, it should be generated by code.
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_person'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_date_created'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_url_generated'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['remove_button']['#access'] = FALSE;
+
+        $form['field_language_locale'][LANGUAGE_NONE][0]['value']['#default_value'] = $lang_option;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#options'] = $lang_options;
+
+        if (isset($lang_options[$fallback_locale])) {
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#default_value'] = $lang_options[$fallback_locale];
+        }else{
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#default_value'] = 'en-us';
+        }
+        $i++;
+      }
+    }
+    else {
+      $i = 0;
+      // Iterate every locale to populate the previously saved values of field collection.
+      foreach ($lang_options as $lang_option) {
+
+        // Get the first item from the muli-value field collection
+        $raw_collection = $node_wrapper->field_url_aliases[$i]->value();
+
+        // Wrap it with Entity API
+        $collection = entity_metadata_wrapper('field_collection_item', $raw_collection);
+
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_language_locale'][LANGUAGE_NONE][0]['value']['#default_value'] = $lang_option;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_language_locale'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_person'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_date_created'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_url_generated'][LANGUAGE_NONE][0]['#disabled'] = TRUE;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_language_locale'][LANGUAGE_NONE][0]['value']['#default_value'] = $lang_option;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#options'] = $lang_options;
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['remove_button']['#access'] = FALSE;
+
+        /**
+         *
+         * This chunk has been done to populate the Source Language Locale dropdown with fallback languages, For example
+         * The content edit will already have values for this, New content will not have values for it hence we tackling such
+         * cases in IF Else condition, But what about the nodes which are already exists and we dont have any field collection
+         * Data associated with those because that time module was disabled. To tackle such cases we just showing dropdown with
+         * fallback locales so that on submit we add those field collection(URL Alias field values) values to node.
+        */
+        $fallback_locale = _igcommerce_get_fallback_locale($lang_option);
+          if(isset($lang_options[$fallback_locale])) {
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#default_value'] = $lang_options[$fallback_locale];
+          }else{
+            $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#default_value'] = 'en-us';
+          }
+
+        $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#attributes'] = array(
+          'class' => array($lang_option . '_source_lang_options'),
+        );
+
+        if (!empty($collection->value())) {
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_start_date'][LANGUAGE_NONE][0]['value']['#default_value'] = $collection->field_start_date->value();
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_end_date'][LANGUAGE_NONE][0]['value']['#default_value'] = $collection->field_end_date->value();
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_url_generated'][LANGUAGE_NONE][0]['value']['#default_value'] = $collection->field_url_generated->value();
+
+          $lang_locale = $collection->field_language_locale->value();
+          $selected_locale = !empty($node->translations->data[$lang_locale]['source']) ? $node->translations->data[$lang_locale]['source'] : '';
+          if ($lang_option === 'en-us') {
+            $selected_locale = 'en-us';
+          }
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#default_value'] = $selected_locale;
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['field_source_language_locale'][LANGUAGE_NONE]['#attributes'] = array(
+            'class' => array($lang_option . '_source_lang_options'),
+          );
+
+          // Gathering stand and end date to check for expired and non expired content.
+          $start_date = $collection->field_start_date->value();
+          $end_date = $collection->field_end_date->value();
+          $current_timestamp = time();
+
+          // If content is expired or source language is not set then create a red color bubble which indicates inactive.
+          if (empty($collection->field_source_language_locale->value()) || $current_timestamp < $start_date || $current_timestamp > $end_date) {
+            $image_options = array(
+              'path' => $inactive_img,
+              'alt' => 'Test alt',
+              'title' => 'Test title',
+              'width' => '30px',
+              'height' => '30px',
+              'attributes' => array('id' => 'expiry_indicator_' . $lang_option),
+            );
+          }
+          // Create a green color bubble showing that it is not expired.
+          else {
+            $image_options = array(
+              'path' => $active_img,
+              'alt' => 'Test alt',
+              'title' => 'Test title',
+              'width' => '30px',
+              'height' => '30px',
+              'attributes' => array('id' => 'expiry_indicator_' . $lang_option),
+            );
+          }
+
+          // Theme image to create image src tag.
+          $image = theme('image', $image_options);
+
+          $form['field_url_aliases'][LANGUAGE_NONE][$i]['expiry_indicator'] = array(
+            '#type' => 'item',
+            '#title' => t('Current Status'),
+            '#markup' => $image,
+            '#weight' => -1,
+          );
+        }
+        $i++;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_validate.
+ *
+ * This function validates the node submitted values so that any checks
+ * can be made before saving the node content in db.
+ *
+ * This function checks for certain invalid characters in URL Title field and adds the
+ * title policy with Only A-Z, a-z, 0-9, -, and _ are allowed characters.
+ *
+ * @param object $node Submitted node object , containing node
+ * @param array $form Form array containing unrendered array with elements.
+ * @param array $form_state contains submitted form values.
+ */
+function igcommerce_utility_localization_node_validate($node, $form, &$form_state) {
+  $error_locales = array();
+  $error = FALSE;
+
+  if (isset($form_state['values']['field_url_aliases'][LANGUAGE_NONE])) {
+    foreach ($form_state['values']['field_url_aliases'][LANGUAGE_NONE] as $keys => $values) {
+      if (is_numeric($keys)) {
+        $start_date = $form_state['values']['field_url_aliases'][LANGUAGE_NONE][$keys]['field_start_date'][LANGUAGE_NONE][0]['value'];
+        $end_date = $form_state['values']['field_url_aliases'][LANGUAGE_NONE][$keys]['field_end_date'][LANGUAGE_NONE][0]['value'];
+        $locale = $form_state['values']['field_url_aliases'][LANGUAGE_NONE][$keys]['field_language_locale'][LANGUAGE_NONE][0]['value'];
+
+        if (strtotime($end_date) < strtotime($start_date)) {
+          $error = TRUE;
+          $error_locales[] = $locale;
+        }
+      }
+    }
+  }
+
+  if ($error) {
+    form_set_error('no_before_date', t("End date must be greater then start date for @locale.", array('@locale' => implode(',', $error_locales))));
+  }
+}
+
+/**
+ * Implements hook_entity_presave.
+ *
+ * This triggers just before saving an entity , in our case we are checking if we are saving any node
+ * then we are performing following tasks:
+ * 1) Checking if the node title is present, if there is no node title then we are assigning the content
+ *    title as a node title.
+ * 2) Prepare the field collection submitted value in node for later use.
+ *
+ * @param object $entity entity object.
+ * @param string $type type of entity.
+ */
+function igcommerce_utility_localization_entity_presave($entity, $type) {
+  global $user;
+
+  // Don't consider this when we run batch job , because it throws lot of errors.
+ if( arg(0) == 'batch') {
+    return;
+  }
+
+  // If node has being opened in edit mode then load node wrapper for field collection data.
+  if (!empty($entity->nid)) {
+    $node = node_load($entity->nid);
+    $node_wrapper = entity_metadata_wrapper('node', $node);
+  }
+
+  $collection_data_submitted = array();
+  $collection_data_saved = array();
+
+  // If field url aliases exists in node then collect the info.
+  if (isset($entity->field_url_aliases)) {
+    foreach ($entity->field_url_aliases[LANGUAGE_NONE] as $item_id => $collection_details) {
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['field_start_date'] = strtotime($collection_details['field_start_date'][LANGUAGE_NONE][0]['value']);
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['field_end_date'] = strtotime($collection_details['field_end_date'][LANGUAGE_NONE][0]['value']);
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['field_person'] = $user->name;
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['field_date_created'] = strtotime($collection_details['field_date_created'][LANGUAGE_NONE][0]['value']);
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['field_url_generated'] = $collection_details['field_url_generated'][LANGUAGE_NONE][0]['value'];
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['field_language_locale'] = $collection_details['field_language_locale'][LANGUAGE_NONE][0]['value'];
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['field_source_language_locale'] = $collection_details['field_source_language_locale'][LANGUAGE_NONE][0]['value'];
+
+      if (isset($collection_details['field_language_locale']['delete_alias'])) {
+        $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['locale_delete'] = $collection_details['field_language_locale']['delete_alias'];
+      }
+      else {
+        $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['locale_delete'] = 0;
+      }
+      $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['item_id_key'] = $item_id;
+
+      // check if Item Id generated or not
+      if (empty($collection_details['entity']->item_id)) {
+        $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['item_id'] = 0;
+      }
+      else {
+        $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['item_id'] = $collection_details['entity']->item_id;
+      }
+      // check if Entity Node Id generated or not
+      if (empty($entity->nid)) {
+        $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['nid'] = 0;
+      }
+      else {
+        $collection_data_submitted[$collection_details['field_language_locale'][LANGUAGE_NONE][0]['value']]['nid'] = $entity->nid;
+      }
+    }
+  }
+  // Assigning the submitted value to entity for later comparision of changed items.
+  $entity->collection_data_submitted = $collection_data_submitted;
+
+  // Iterating items and get the data to prepare for execution.
+  if (!empty($entity->nid)) {
+    foreach ($collection_data_submitted as $locale => $item_details) {
+      $item_id = $item_details['item_id'];
+
+      $node = node_load($item_details['nid']);
+
+      // If we have item id for field collection that is saved
+      if (!empty($item_id)) {
+        // Get saved values for the field collection to be processed.
+
+        $collection_item = entity_load('field_collection_item', array($item_id));
+
+        // If we have such field collection exists.
+        if (isset($collection_item[$item_id])) {
+
+          $collection_details = $collection_item[$item_id];
+
+          if (!empty($collection_details)) {
+            $lang_locale = $collection_details->field_language_locale[LANGUAGE_NONE][0]['value'];
+            $selected_locale = !empty($node->translations->data[$lang_locale]['source']) ? $node->translations->data[$lang_locale]['source'] : '';
+
+            if (isset($collection_details->field_start_date[LANGUAGE_NONE][0]['value'])) {
+              $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['field_start_date'] = $collection_details->field_start_date[LANGUAGE_NONE][0]['value'];
+            }
+
+            if (isset($collection_details->field_end_date[LANGUAGE_NONE][0]['value'])) {
+              $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['field_end_date'] = $collection_details->field_end_date[LANGUAGE_NONE][0]['value'];
+            }
+
+            if (isset($collection_details->field_person[LANGUAGE_NONE][0]['value'])) {
+              $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['field_person'] = $collection_details->field_person[LANGUAGE_NONE][0]['value'];
+            }
+
+            if (isset($collection_details->field_date_created[LANGUAGE_NONE][0]['value'])) {
+              $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['field_date_created'] = $collection_details->field_date_created[LANGUAGE_NONE][0]['value'];
+            }
+
+            if (isset($collection_details->field_url_generated[LANGUAGE_NONE][0]['value'])) {
+              $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['field_url_generated'] = $collection_details->field_url_generated[LANGUAGE_NONE][0]['value'];
+            }
+
+            if (isset($collection_details->field_language_locale[LANGUAGE_NONE][0]['value'])) {
+              $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['field_language_locale'] = $collection_details->field_language_locale[LANGUAGE_NONE][0]['value'];
+            }
+
+            $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['field_source_language_locale'] = $selected_locale;
+            $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['item_id'] = $item_id;
+            $collection_data_saved[$collection_details->field_language_locale[LANGUAGE_NONE][0]['value']]['nid'] = $item_details['nid'];
+          }
+        }
+      }
+    }
+  }
+  // Assigning the saved value to entity for later comparision of changed items.
+  $entity->collection_data_saved = $collection_data_saved;
+}
+
+/**
+ *
+ * implements hook_node_insert
+ *
+ * This will be triggered when node is being created and new node is neing formed, we are
+ * performing the url aliases creation on node submit.
+ *
+ * @param  object $node This is a node object being inserted.
+ */
+function igcommerce_utility_localization_node_insert($node) {
+  // Preparing data for translation and aliasing.
+  igcommerce_prepare_data($node, 'insert');
+}
+
+/**
+ * Implements hook_node_update
+ *
+ * This will get triggered when any node has been updated.
+ *
+ * @param object $node Node object being edited.
+ */
+function igcommerce_utility_localization_node_update($node) {
+  // Preparing data for translation and aliasing.
+  igcommerce_prepare_data($node, 'update');
+}
+
+/**
+ * This prepares the node data to generate aliases and perform source to destination
+ * translation.
+ *
+ * @param object $node The node
+ */
+function igcommerce_prepare_data($node, $op) {
+  global $language, $user;
+  $lang_name = $language->language;
+  $is_processed = FALSE;
+  $collection_data_saved = array();
+  $collection_data_submitted = array();
+
+  // If the article is new and we are submitting for first time then keep there field collection ids.
+  if (!empty($node->collection_data_submitted)) {
+    if ($node->is_new) {
+      foreach ($node->collection_data_submitted as $locale => $details) {
+        if (isset($node->field_url_aliases[LANGUAGE_NONE][$details['item_id_key']]['value'])) {
+          $node->collection_data_submitted[$locale]['nid'] = $node->nid;
+          $node->collection_data_submitted[$locale]['item_id'] = $node->field_url_aliases[LANGUAGE_NONE][$details['item_id_key']]['value'];
+        }
+      }
+    }
+
+    // Get Collection submitted data
+    $collection_data_submitted = $node->collection_data_submitted;
+    // Get Collection saved data
+    $collection_data_saved = $node->collection_data_saved;
+
+    // Get changed fields, This compares the submitted values with existing saved values in node for all locales.
+    $changed_fields = get_changed_fields($collection_data_saved, $collection_data_submitted);
+
+    // If we have some fields to process hence we start processing it.
+    if (!empty($changed_fields)) {
+      // Send all the selection for translations.
+      $is_processed = process_translations($node, $changed_fields, $op);
+    }
+    else {
+      $is_processed = FALSE;
+    }
+  }
+  return $is_processed;
+}
+
+/**
+ * Translation function which adds or remove traslation based on user selection at node form.
+ *
+ * @param object $node Node object
+ * @param array $changed_fields Array of fields that has been changed.
+ * @param boolean  $is_new indicates if node is new or old.
+ */
+function process_translations($node, $changed_fields, $op) {
+
+  global $base_url;
+
+  $alias_processed = FALSE;
+  $entity_processed = FALSE;
+  $is_processed = FALSE;
+  $current_timestamp = time();
+  $handler = entity_translation_get_handler('node', $node);
+
+  // For every changed locale aliases we iterate and check if its removed, added or updated and perform operation accordingly.
+  foreach ($changed_fields as $locale => $activity_details) {
+    // If we are removing the translation then remove url alias as well as entity translation.
+    if (in_array('removed_source_locale', $activity_details['activity'])) {
+      if ($activity_details['field_language_locale'] !== 'en-us') {
+        $path = path_load(
+          array(
+            'source' => 'node/' . $node->nid,
+            'language' => $activity_details['field_language_locale'],
+          )
+        );
+
+        path_delete($path['pid']);
+
+        $handler->removeTranslation($activity_details['field_language_locale']);
+        field_attach_presave('node', $node);
+        field_attach_update('node', $node);
+
+        if (!empty($activity_details['item_id'])) {
+          $default_start_date_code = field_info_instance('field_collection_item', 'field_start_date', 'field_url_aliases');
+          $start_date_default = date('Y-m-d H:i:s', strtotime($default_start_date_code['settings']['default_value_code'] . '+8 hours'));
+
+          $default_end_date_code = field_info_instance('field_collection_item', 'field_end_date', 'field_url_aliases');
+          $end_date_default = date('Y-m-d H:i:s', strtotime($default_end_date_code['settings']['default_value_code'] . '+8 hours'));
+
+          $fc = entity_load('field_collection_item', array($activity_details['item_id']));
+          // Updated the alias creation with generated URL Alias for the source and destination locale.
+          $fc[$activity_details['item_id']]->field_start_date[LANGUAGE_NONE][0]['value'] = $start_date_default;
+          $fc[$activity_details['item_id']]->field_end_date[LANGUAGE_NONE][0]['value'] = $end_date_default;
+          $fc[$activity_details['item_id']]->field_url_generated[LANGUAGE_NONE][0]['value'] = "";
+          // Updated the person who has implemented the alias.
+          $fc[$activity_details['item_id']]->field_person[LANGUAGE_NONE][0]['value'] = "";
+          $fc[$activity_details['item_id']]->save(TRUE);
+        }
+
+        $entity_processed = TRUE;
+        $alias_processed = TRUE;
+        $alias_locale = $activity_details['field_language_locale'];
+        $item_id = $activity_details['item_id'];
+        $person = $activity_details['field_person'];
+      }
+      else {
+        form_set_error('cannot_delete_base_locale', "Cannot delete base locale - en-us");
+      }
+    }
+
+    // If locales have been added, then add alias as well as entity translation.
+    if (in_array('added_source_locale', $activity_details['activity'])) {
+      // Dont do anything if we have set both source and language locale same because it doesnt make sense.
+      if ($activity_details['field_source_language_locale'] !== $activity_details['field_language_locale']) {
+        // If the alias already exist then update the existing alias or add new.
+        $path = igcommerce_utility_localization_create_alias($node, $op, $locale);
+
+        //  If we found the alias that means translation was success.
+        if ($path) {
+          // Path is created that means url alias is being generated successfully.
+          $alias_processed = TRUE;
+        }
+
+        // Setting up the aliases and cloning the source node with destination node with all fields populated with source content.
+        $is_processed = igcommerce_set_translation($node, $activity_details['field_source_language_locale'], $activity_details['field_language_locale'], 'insert');
+
+        $entity_processed = TRUE;
+        $alias_locale = $activity_details['field_language_locale'];
+        $item_id = $activity_details['item_id'];
+        $person = $activity_details['field_person'];
+      }
+    }
+
+    // If we are updating the existing alias with changing source language then update it.
+    if (in_array('update_existing_locales', $activity_details['activity'])) {
+
+      $locale_to_add_source = $activity_details['submitted']['field_source_language_locale'];
+      $locale_to_add_lang = $activity_details['submitted']['field_language_locale'];
+      $node->translations->data[$locale_to_add_lang]['changed'] = $current_timestamp;
+      field_attach_update('node', $node);
+      // Setting up the aliases and cloning the source node with destination node with all fields populated with source content.
+      $is_processed = igcommerce_set_translation($node, $locale_to_add_source, $locale_to_add_lang, 'update');
+
+      $entity_processed = TRUE;
+      $alias_processed = TRUE;
+      $alias_locale = $activity_details['submitted']['field_language_locale'];
+      $item_id = $activity_details['saved']['item_id'];
+      $person = '';
+      if(isset($activity_details['field_person'])) {
+        $person = $activity_details['field_person'];
+      }
+      // If we are updating the existing start date or end date then update it.
+    }
+
+    if (in_array('update_existing_locales_startdate', $activity_details['activity']) || (in_array('update_existing_locales_enddate', $activity_details['activity']))) {
+      $locale_to_add_lang = $activity_details['submitted']['field_language_locale'];
+      $person = $activity_details['submitted']['field_person'];
+      $item_id = $activity_details['saved']['item_id'];
+        // To update changed date
+        $node->translations->data[$locale_to_add_lang]['changed'] = $current_timestamp;
+      $alias_locale = $activity_details['submitted']['field_language_locale'];
+        field_attach_update('node', $node);
+        $is_processed = TRUE;
+      $entity_processed = TRUE;
+      $alias_processed = TRUE;
+    }
+
+    // If translation is created successfully then update ailas path and person who implemented in field collection.
+    if ($entity_processed && $alias_processed) {
+      $alias = drupal_get_path_alias('node/' . $node->nid, $alias_locale);
+      $alias_url = $base_url . "/" . $alias_locale . "/" . $alias;
+
+      $fc = entity_load('field_collection_item', array($item_id));
+      $fc = current($fc);
+
+      if(!empty($fc)) {
+      // Updated the alias creation with generated URL Alias for the source and destination locale.
+        $fc->field_url_generated[LANGUAGE_NONE][0]['value'] = $alias_url;
+      // Updated the person who has implemented the alias.
+        $fc->field_person[LANGUAGE_NONE][0]['value'] = $person;
+
+        if( $item_id == 0 ) {
+          //$fc->save(TRUE);
+        }else {
+          $fc->save(TRUE);
+        }
+        $is_processed = TRUE;
+      }
+    }
+    // If not successful then update field collection with proper status.
+    else {
+      if (!$entity_processed) {
+        watchdog('igcommerce_utility_localization', 'Entity translation failed for node id %nid with locale %locale.', array('%locale' => $activity_details['field_language_locale'], '%nid' => $node->nid));
+      }
+
+      if (!$alias_processed) {
+        watchdog('igcommerce_utility_localization', 'URL alias creation failed for node id %nid with locale %locale.', array('%locale' => $activity_details['field_language_locale'], '%nid' => $node->nid));
+      }
+    }
+  }
+  return $is_processed;
+}
+
+/**
+ * Sets the translation for provided node and source and destination locale, all the custom fields are cloned from source to
+ * destination lccale.
+ *
+ * @param Object $node Node Object
+ * @param String $source_locale The source locale
+ * @param String $destination_locale The destination locale
+ *
+ * @return Boolean TRUE if successfully processed , False if there is error.
+ */
+function igcommerce_set_translation($node, $source_locale, $destination_locale, $op) {
+  $handler = entity_translation_get_handler('node', $node);
+  $translations = $handler->getTranslations();
+  // Adding entity translation into the table with soecifying source and language value.
+  $translation = array(
+    'translate' => 0,
+    'status' => 1,
+    'language' => $destination_locale,
+    'source' => $source_locale,
+  );
+
+  $values = array();
+  $instances = field_info_instances('node', $node->type);
+  if ($source_locale !== $destination_locale) {
+    foreach ($instances as $instance) {
+      $field_name = $instance['field_name'];
+
+      if (in_array($field_name, array('title_field', 'field_url_builder', 'field_url_title'))) {
+        $field_info = field_info_field($field_name);
+        if (field_is_translatable('node', $field_info)) {
+          try {
+            // If its a new node we just copy english title and urlbuilder to fields else inherits.
+            if ($op == 'insert') {
+              $source_locale_get = 'en-us';
+            }
+            else {
+              $source_locale_get = $source_locale;
+            }
+
+            if (isset($node->{$field_name}[$source_locale_get])) {
+              $translation['status'] = isset($translations->data[$source_locale]['status']) && $translations->data[$source_locale]['status'] ? 1 : 0;
+              $values[$field_name] = array(
+                $destination_locale => $node->{$field_name}[$source_locale_get],
+              );
+            }
+          }
+          catch(Exception$e) {
+            watchdog('igcommerce_utility_localization', "Error getting language %source_language for node %node", array('%source_language' => $source_locale, '%node' => $node->nid));
+          }
+        }
+      }
+    }
+  }
+  // If we have something to be cloned then do that.
+  if (!empty($values)) {
+    $handler->setTranslation($translation, $values);
+    field_attach_update('node', $node);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * This function will prepare a array of changed fields whether it is edited or removed.
+ *
+ * @param array $collection_data_saved The field collection data which is saved in db.
+ * @param array $collection_data_submitted  The field collection data which is submitted.
+ */
+function get_changed_fields($collection_data_saved, $collection_data_submitted) {
+
+  $alias_activity = array();
+  if (!empty($collection_data_saved)) {
+
+    foreach ($collection_data_saved as $locale => $details) {
+      // Skip those items which have source and destination locale same, it doesnt matter to translate from source to destination.
+      if($collection_data_submitted[$locale]['field_source_language_locale'] !== $collection_data_submitted[$locale]['field_language_locale']) {
+        if($collection_data_saved[$locale]['field_language_locale'] !== $collection_data_submitted[$locale]['field_source_language_locale'])
+
+      // If we have new configuration detected.
+      if ($collection_data_saved[$locale]['field_source_language_locale'] !== $collection_data_submitted[$locale]['field_source_language_locale']) {
+
+        // If saved value NONE and new value has been set for the locale.
+        if (empty($collection_data_saved[$locale]['field_source_language_locale']) && !empty($collection_data_submitted[$locale]['field_source_language_locale'])) {
+          $alias_activity[$locale] = $collection_data_submitted[$locale];
+          $alias_activity[$locale]['activity'][] = "added_source_locale";
+        }
+
+        if (!empty($collection_data_saved[$locale]['field_source_language_locale']) && empty($collection_data_submitted[$locale]['field_source_language_locale'])) {
+          $alias_activity[$locale] = $collection_data_submitted[$locale];
+          $alias_activity[$locale]['activity'][] = "removed_source_locale";
+        }
+
+        if (!empty($collection_data_saved[$locale]['field_source_language_locale']) && !empty($collection_data_submitted[$locale]['field_source_language_locale'])) {
+          if ($collection_data_submitted[$locale]['locale_delete'] !== 1) {
+            $alias_activity[$locale]['submitted'] = $collection_data_submitted[$locale];
+            $alias_activity[$locale]['saved'] = $collection_data_saved[$locale];
+            $alias_activity[$locale]['activity'][] = "update_existing_locales";
+          }
+        }
+      }
+      // Check saved start date is different from submitted date
+      if (strtotime($collection_data_saved[$locale]['field_start_date']) !== $collection_data_submitted[$locale]['field_start_date']) {
+
+        if (!empty(strtotime($collection_data_saved[$locale]['field_start_date'])) && !empty($collection_data_submitted[$locale]['field_start_date'])) {
+          if ($collection_data_submitted[$locale]['locale_delete'] !== 1) {
+            $alias_activity[$locale]['submitted'] = $collection_data_submitted[$locale];
+            $alias_activity[$locale]['saved'] = $collection_data_saved[$locale];
+            $alias_activity[$locale]['activity'][] = "update_existing_locales_startdate";
+          }
+        }
+      }
+
+      // Check saved end date is different from submitted date
+      if (strtotime($collection_data_saved[$locale]['field_end_date']) !== $collection_data_submitted[$locale]['field_end_date']) {
+
+        if (!empty(strtotime($collection_data_saved[$locale]['field_end_date'])) && !empty($collection_data_submitted[$locale]['field_end_date'])) {
+          if ($collection_data_submitted[$locale]['locale_delete'] !== 1) {
+            $alias_activity[$locale]['submitted'] = $collection_data_submitted[$locale];
+            $alias_activity[$locale]['saved'] = $collection_data_saved[$locale];
+            $alias_activity[$locale]['activity'][] = "update_existing_locales_enddate";
+          }
+        }
+      }
+
+      if ($collection_data_submitted[$locale]['locale_delete'] == 1) {
+        $alias_activity[$locale] = $collection_data_submitted[$locale];
+        $alias_activity[$locale]['activity'][] = "removed_source_locale";
+      }
+    }
+  }
+  }
+  // Add new node form.
+  else {
+    if (!empty($collection_data_submitted)) {
+      foreach ($collection_data_submitted as $locale => $details) {
+        if (!empty($collection_data_submitted[$locale]['field_source_language_locale'])) {
+          $alias_activity[$locale] = $collection_data_submitted[$locale];
+          $alias_activity[$locale]['activity'][] = "added_source_locale";
+        }
+      }
+    }
+  }
+  return $alias_activity;
+}
+
+/**
+ * Creates aliases or updates aliases on basis of operation selected. This function
+ * acts on selected languages from node fields and then creates aliases for all the
+ * languages selected in node, which all points to the node being saved/updated.
+ *
+ * @param object $node Node is being created/updated
+ * @param string $op operation performed on node whether it is insert or update.
+ * @param array $selected_locales selected languages on node.
+ */
+function igcommerce_utility_localization_create_alias($node, $op, $locale) {
+
+  // get alias of node provided.
+  $alias = igcommerce_get_alias($node, $locale);
+
+  // If we have alias then add the alias in db.
+  if (!empty($alias)) {
+    $path = array();
+    $source = 'node/' . $node->nid;
+
+    // Check if we have the alias existing for node.
+    $existing_alias = _pathauto_existing_alias_data($source, $locale);
+    // Build the new path alias array and send it off to be created.
+    $path = array(
+      'source' => $source,
+      'alias' => $alias,
+      'language' => $locale,
+    );
+    // Only create/update alias when its does not match from existing one.
+    if ($alias !== $existing_alias['alias']) {
+      // create alias in db.
+      $path = _pathauto_set_alias($path, $existing_alias, $op);
+    }
+    return $path;
+  }
+  else {
+    watchdog('igcommerce_utility_localization', 'No Aliases found while creating a node id @node', array('@node' => $node->nid));
+  }
+  return FALSE;
+}
+
+/**
+ * Gets the alias of provided node.
+ *
+ * @param object $node This will provide the node object with node details.
+ *
+ * @return string Returns the alias of a node else FALSE if no pattern or any other error occur.
+ */
+function igcommerce_get_alias($node, $language) {
+
+  // If no locale is provided take node's default locale for alias translation.
+  if (NULL === $language) {
+    // Get the language of node.
+    $language = pathauto_entity_language('node', $node);
+  }
+
+  // Need to load pathauto module as we are using its functions to get aliases.
+  module_load_include('inc', 'pathauto');
+  // Loads the patter provided by drupal admin UI for particular node types.
+  $pattern = pathauto_pattern_load_by_entity('node', $node->type);
+
+  if (empty($pattern)) {
+    // No pattern? Do nothing (otherwise we may blow away existing aliases...)
+    return FALSE;
+  }
+
+  $all_tokens = explode('/', $pattern);
+  $length = count($all_tokens);
+  $i = 0;
+
+  $final_alias = '';
+
+  $opco_settings = variable_get('opco_strip_settings', '');
+  $opco_exclude = array_map('trim', explode(',', $opco_settings));
+
+  foreach ($all_tokens as $keys => $key_pattern) {
+    // Replace any tokens in the pattern. Uses callback option to clean replacements. No sanitization.
+    $alias = token_replace($key_pattern, array('node' => $node), array(
+        'sanitize' => FALSE,
+        'clear' => TRUE,
+        'callback' => 'pathauto_clean_token_values',
+        'language' => (object)array('language' => $language),
+        'pathauto' => TRUE,
+      ));
+
+    if (!empty($alias)) {
+      if( !in_array($alias, $opco_exclude) ) {
+      $final_alias .= $alias;
+
+      if ($i !== $length - 1) {
+        $final_alias .= '/';
+        }
+      }
+    }else{
+      // If we dont find the alias for term in URL Builder , then we need to take its parent translation (Recursively till we get parent translation) , See the hierarchy at URL - admin/config/regional/language
+      $fallback_alias = get_fallback_alias($key_pattern, $node, $language);
+      if( !in_array($fallback_alias, $opco_exclude) ) {
+      $final_alias .= $fallback_alias;
+
+        if ($i !== $length - 1) {
+          $final_alias .= '/';
+        }
+        }
+      }
+    $i++;
+  }
+
+  // Stripping forward slash at beginning of screen
+  $final_alias = ltrim($final_alias, '/');
+
+  // Check if the token replacement has not actually replaced any values. If
+  // that is the case, then stop because we should not generate an alias.
+  // @see token_scan()
+  $pattern_tokens_removed = preg_replace('/\[[^\s\]:]*:[^\s\]]*\]/', '', $pattern);
+  if ($final_alias === $pattern_tokens_removed) {
+    return;
+  }
+
+  // If we have arrived at an empty string, discontinue.
+  if (!drupal_strlen($final_alias)) {
+    return;
+  }
+  return $final_alias;
+}
+
+/**
+ * This is a recursive function to find the URL ALias for Taxonomy - URL Builder with traversing parents till
+ * we dont find the translations for the term.
+ *
+ * @param string $key_pattern Url builder pattern set from admin.
+ * @param object $node Node object beig created.
+ * @param string $language Language in which term needs to be translated.
+ *
+ * @return string URL alias with parent traversed.
+ */
+function get_fallback_alias($key_pattern, $node, $language) {
+  $alias = token_replace($key_pattern, array('node' => $node), array(
+    'sanitize' => FALSE,
+    'clear' => TRUE,
+    'callback' => 'pathauto_clean_token_values',
+    'language' => (object)array('language' => $language),
+    'pathauto' => TRUE,
+  ));
+
+  // Check if current term has entity traslation.
+  if(!empty($alias)){
+    return $alias;
+  }
+
+  // If we dont have translation we will traverse parent, till we get translation.
+  if(empty($alias)) {
+    if($language !== 'en-us'){
+    $lang =_igcommerce_get_fallback_locale($language);
+    return get_fallback_alias($key_pattern, $node, $lang);
+  }
+}
+}
+
+/**
+ * Implements hook_views_pre_render
+ *
+ * This hook is called right before the render process
+ *
+ * @param  object $view View object.
+ */
+//function igcommerce_utility_localization_views_pre_render(&$view) {
+//
+//// This function is killing performance on the live site -- commenting out until we can optimize.
+//
+//  // Only apply to view which uses node as a base, because we are controlling access for nodes.
+//  if ($view->base_table == 'node') {
+//
+//    // Global user object containing all details of logged in user.
+//    global $user;
+//    // Global language object which stores language related info for site.
+//    global $language;
+//    $lang_name = $language->language;
+//    $node_to_remove = array();
+//
+//    // Getting the result of view in a variable for manipulations.
+//    $result = $view->result;
+//    foreach ($result as $key => $result_data) {
+//      // Only applied for nodes.
+//      if (!empty($result_data->nid)) {
+//        // Getting node id of a result set of view.
+//        $nid = $result_data->nid;
+//        $node = node_load($nid);
+//        // Loading entity metadata wrapper for node to load field collection.
+//        $node_wrapper = entity_metadata_wrapper('node', $node);
+//
+//        // If we have field collection values saved in db then process.
+//        if (isset($node_wrapper->field_url_aliases)) {
+//          foreach ($node_wrapper->field_url_aliases as $field_collection_wrapper) {
+//            $field_collection = $field_collection_wrapper->value();
+//            if (isset($field_collection->field_language_locale[LANGUAGE_NONE])) {
+//              $lang = $field_collection->field_language_locale[LANGUAGE_NONE][0]['value'];
+//              // CHeck if current site language is same as field collection source language so that we can collect its info
+//              // for further processing like hiding/showing.
+//              if ($lang == $lang_name) {
+//                $start_date = strtotime($field_collection->field_start_date[LANGUAGE_NONE][0]['value']);
+//                $end_date = strtotime($field_collection->field_end_date[LANGUAGE_NONE][0]['value']);
+//                $current_timestamp = time();
+//
+//                // Check if current date falls in between start and end date so that we can show content as expired or valid.
+//                if ($current_timestamp < $start_date || $current_timestamp > $end_date) {
+//                  // Preparing temporary array to hold the nids which needs to be hidden for view.
+//                  $node_to_remove[$nid]['nid'] = $nid;
+//                  $node_to_remove[$nid]['start_date'] = $start_date;
+//                  $node_to_remove[$nid]['end_date'] = $end_date;
+//                }
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    // Skip data hiding for admin role user.
+//    if (!in_array('authenticated user', $user->roles)) {
+//      // Only apply this expiration rule for non admin users.
+//      foreach ($view->result as $key => $resultdata) {
+//        if (isset($resultdata->nid)) {
+//          if (in_array($resultdata->nid, array_keys($node_to_remove))) {
+//            // Removing result from resultset.
+//            unset($view->result[$key]);
+//          }
+//        }
+//      }
+//    }
+//    $view->total_rows = $view->total_rows - count($node_to_remove);
+//  }
+//
+//
+//}
+
+/**
+ * This will provide the status of the node whether it has the locale been in published state or expired state
+ * it is called as expired if the alias for that locale has the start and end date doesnt fall in range with
+ * current date and if the current date is between start and end date that means the node is in published state
+ * for that locale.
+ *
+ * @param string $locale Locale to check for aliases
+ * @param integer $nid Node id of node being checked.
+ *
+ * @return boolean TRUE if content is in published state, FALSE if content is expired.
+ */
+function igcommerce_utility_localization_get_node_alias_status($locale, $nid) {
+  $status = FALSE;
+  // If there exists a node then only process.
+  if (!empty($nid)) {
+    // Getting node details to load the field collection items attached for fetching the start and end dates.
+    $node = node_load($nid);
+    // Loading entity metadata wrapper for node to load field collection.
+    $node_wrapper = entity_metadata_wrapper('node', $node);
+
+    // Check if and only if there is already record save for field collection for given node id.
+    if (isset($node_wrapper->field_url_aliases)) {
+
+      // Iterating over all locales to check if content is published or not.
+      foreach ($node_wrapper->field_url_aliases as $field_collection_wrapper) {
+
+        $field_collection = $field_collection_wrapper->value();
+        if (isset($field_collection->field_language_locale[LANGUAGE_NONE])) {
+          $lang = $field_collection->field_language_locale[LANGUAGE_NONE][0]['value'];
+
+          // Get the only details of locale which is provided in function argument.
+          if ($lang == $locale) {
+            // Getting start date timestamp for comparision.
+            $start_date = strtotime($field_collection->field_start_date[LANGUAGE_NONE][0]['value']);
+
+            // Getting end date timestamp for comparision.
+            $end_date = strtotime($field_collection->field_end_date[LANGUAGE_NONE][0]['value']);
+
+            // Getting current date timestamp.
+            $current_timestamp = time();
+
+            // Check if current date falls in between start and end date so that we can show content as expired or valid.
+            if ($start_date < $current_timestamp && $end_date > $current_timestamp) {
+              // Setting status to published and content can be viewed.
+              $status = TRUE;;
+            }
+            else {
+              // Setting status to expired and content cannot be viewed for locale.
+              $status = FALSE;
+            }
+          }
+        }
+      }
+    }
+  }
+  return $status;
+}
+
+/**
+ * This retreives the start and end date for publishing purpose, for a piece of
+ * content.
+ *
+ * @param string $locale The locale
+ * @param integer $nid The nid
+ *
+ * @return array return start and end date.
+ */
+function _igcommerce_get_start_end_date_node($locale, $nid) {
+   // Check if we have nid.
+   if (!empty($nid)) {
+    // Getting node details to load the field collection items attached for fetching the start and end dates.
+    $node = node_load($nid);
+    // Loading entity metadata wrapper for node to load field collection.
+    $node_wrapper = entity_metadata_wrapper('node', $node);
+
+    // Check if and only if there is already record save for field collection for given node id.
+    if (isset($node_wrapper->field_url_aliases)) {
+
+      // Iterating over all locales to check if content is published or not.
+      foreach ($node_wrapper->field_url_aliases as $field_collection_wrapper) {
+        $field_collection = $field_collection_wrapper->value();
+        if (isset($field_collection->field_language_locale[LANGUAGE_NONE])) {
+          $lang = $field_collection->field_language_locale[LANGUAGE_NONE][0]['value'];
+
+          // Get the only details of locale which is provided in function argument.
+          if ($lang == $locale) {
+
+            $start_date = new DateTime($field_collection->field_start_date[LANGUAGE_NONE][0]['value']);
+            $end_date = new DateTime($field_collection->field_end_date[LANGUAGE_NONE][0]['value']);
+            // Getting timestamps for start and end date.
+            $sdut = $start_date->format('U');
+            $edut = $end_date->format('U');
+            return array('start_date' => $sdut, 'end_date' => $edut);
+          }
+        }
+      }
+      return array('start_date' => '', 'end_date' => '');
+    }
+  }
+}
+
+/**
+ * Implements hook_node_view.
+ *
+ * Act on a node that is being assembled before rendering.
+ *
+ * @param object $node Node being rendered.
+ * @param string $view_mode The view mode
+ */
+function igcommerce_utility_localization_node_view($node, $view_mode, $langcode) {
+  // Do not apply this rule for batch process, because while indexing we were encountering issue, hence skipped.
+
+  if( arg(0) !== 'batch') {
+    $settings = variable_get('ig_localized_ctypes', array());
+    // Only apply to content type selected for URL Alias.
+    if(in_array($node->type, $settings)) {
+      global $language, $user;
+      //Do not redirect or apply for administer role.
+      if (!in_array('administrator', $user->roles)) {
+        $status = igcommerce_utility_localization_get_node_alias_status($language->language, $node->nid);
+        if(!$status) {
+//         drupal_goto('search');
+        }
+      }
+    }
+  }
+}
+
+/**
+ * This displays the list of aliases and content with there status, whether they are LIVE or EXPIRED.
+ * This will show red and green dot respective of the content if content is expired then it shows red
+ * and if content is LIVE for the locale then it shows green.
+ * Top row of every locale will show the combined result, hence if any of the locale content is LIVE
+ * in all of the content the TOP Row status will be green , and if all the locale status is EXPIRED for
+ * locale then it will show RED Dot.
+ *
+ * @return String Rendered HTML output for the page.
+ */
+function _display_aliases_status($current_node_id) {
+
+  global $base_url;
+  drupal_add_css(drupal_get_path('module', 'igcommerce_utility_localization') . '/css/igcommerce_utility_localization.css');
+
+  // Returns the default language, as an object,
+  $default = language_default();
+  $defaultlocal = $default->language;
+
+  // Defining images for expand/collapse and LIVE/Expired.
+  $expand_img = drupal_get_path('module', 'igcommerce_utility_localization') . '/images/expand.png';
+  $collapse_img = drupal_get_path('module', 'igcommerce_utility_localization') . '/images/collapse.png';
+  $inactive_img = drupal_get_path('module', 'igcommerce_utility_localization') . '/images/reddot.png';
+  $active_img = drupal_get_path('module', 'igcommerce_utility_localization') . '/images/greendot.png';
+  $preview_img = drupal_get_path('module', 'igcommerce_utility_localization') . '/images/preview.png';
+
+  // Sending the statuses and variables to javascript for runtime processing.
+  drupal_add_js(array('igcommerce_utility_localization_table' => array('defaultlocal' => $defaultlocal, 'inactive_img' => $inactive_img, 'active_img' => $active_img, 'expand_img' => $expand_img, 'collapse_img' => $collapse_img, 'preview_img' => $preview_img, 'base_url' => $base_url)), array('type' => 'setting'));
+
+  $rows = array();
+  $rowsw = array();
+  $stemp = array();
+  $locale = '';
+  $i = 0;
+  $odd_even = "";
+
+  // Load node details for fetching field collections in form of start and end date for every locales.
+  $node = node_load($current_node_id);
+
+  // counter for odd even rows
+  $j = 0;
+  // Loading entity metadata wrapper for node to load field collection.
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+
+  // If we have valid URL Aliases set , and have valid start and end dates for locales.
+  if (isset($node_wrapper->field_url_aliases)) {
+    // Going through each and every field collection items to get proper start and end dates for every locales.
+    foreach ($node_wrapper->field_url_aliases as $field_collection_wrapper) {
+      $field_collection = $field_collection_wrapper->value();
+      $item_id = $field_collection->item_id;
+
+      // Getting start date and end date for comparision.
+      $start_date = date('Y-m-d', strtotime($field_collection->field_start_date[LANGUAGE_NONE][0]['value']));
+      $end_date = date('Y-m-d', strtotime($field_collection->field_end_date[LANGUAGE_NONE][0]['value']));
+      // Converting into timestamp so that we can compare that if the content is expired or live.
+      $start_date_ts = strtotime($field_collection->field_start_date[LANGUAGE_NONE][0]['value']);
+      $end_date_ts = strtotime($field_collection->field_end_date[LANGUAGE_NONE][0]['value']);
+      $current_timestamp = time();
+      // Get Language locale from Field Collection Array
+      if (isset($field_collection->field_language_locale[LANGUAGE_NONE])) {
+        $locale = $field_collection->field_language_locale[LANGUAGE_NONE][0]['value'];
+      }
+      //Get Modified date from Translation array
+      if (empty($node->translations->data[$locale])) {
+        $modified_date = '---';
+        $data_modified_date = '';
+      }
+      else {
+        $modified_date = format_date($node->translations->data[$locale]['changed'], 'custom', 'Y-m-d');
+        $data_modified_date = $modified_date;
+      }
+      // Get Modify By :Fetch data If data present in Field Collection and for Default Locale(en-us) data get from Node of Translation Array.
+      if (!empty($field_collection->field_person) && !empty($field_collection->field_source_language_locale)) {
+        $modified_by = $field_collection->field_person[LANGUAGE_NONE][0]['value'];
+        $data_modified_by = $modified_by;
+      }
+      elseif (!empty($node->translations->data[$locale]['uid']) && ($defaultlocal === $locale)) {
+        $user = user_load($node->translations->data[$locale]['uid']);
+        $modified_by = $user->name;
+        $data_modified_by = $modified_by;
+      }
+      else {
+        $modified_by = '---';
+        $data_modified_by = '';
+      }
+      // Get Source is not present in Field Collection Array Translation array then we will fetch from Translation Array otherwise it will go else part
+      if (!empty($field_collection->field_source_language_locale)) {
+        $source = $field_collection->field_source_language_locale[LANGUAGE_NONE][0]['value'];
+        $data_source = $source;
+      }
+      else {
+        $source = '---';
+        $data_source = '';
+      }
+
+      $image_options = array();
+
+      // Check if current date falls in between start and end date so that we can show content as expired or valid.
+      if (empty($field_collection->field_source_language_locale) || $current_timestamp < $start_date_ts || $current_timestamp > $end_date_ts) {
+        $image_options = array(
+          'path' => $inactive_img,
+          'attributes' => array('class' => 'expiry_indicator status_icon red'),
+        );
+      }
+      else {
+        $image_options = array(
+          'path' => $active_img,
+          'attributes' => array('class' => 'expiry_indicator status_icon green'),
+        );
+      }
+
+      // Provide view link tp page if translation is available.
+      $view_page = '---';
+      $preview = '---';
+      $image = theme('image', $image_options);
+      if (empty($node->translations->data[$locale])) {
+        $link = l(t('Add'), '/node/' . $node->nid . "/edit/add/" . $defaultlocal . '/' . $locale, array('attributes' => array('target' => "_blank")));
+      }
+      else {
+        $link = l(t('Edit'), '/node/' . $node->nid . "/edit/" . $locale);
+      }
+      $path = 'node/' . $node->nid;
+      $path_alias = drupal_get_path_alias($path, $locale);
+
+      if ($path != $path_alias) {
+        $node_link = drupal_get_path_alias('node/' . $node->nid, $locale);
+        $node_link1 = '../' . $locale . '/' . $path_alias;
+        $view_page = l('<img src="' . $base_url . '/' . $preview_img . '">'
+          , $node_link1, array('html' => TRUE, 'attributes' => array('class' => array('View-links'), 'target' => "_blank"))
+        );
+      }
+      // Compare the default locale with locales of field collection , if they match then show title else show empty cell.
+      if ($defaultlocal === $locale) {
+        $odd_even = odd_even_row($i, $odd_even);
+        ++$i;
+        $class = "collapsitablesection " . $odd_even;
+        $nodeid = $node->nid;
+        $alias_title_align = 'alias_content_left';
+        $preview = $view_page;
+      }
+      else {
+        $odd_even = odd_even_row($j, $odd_even);
+        ++$j;
+        $class = "childclass " . $odd_even;
+        $node_title = "";
+        $preview = $view_page;
+        $nodeid = "";
+        $alias_title_align = '';
+      }
+
+      // Format array keeping node id as key, so that we can identify the default locale(en-us) in array and put this in top of array stack so that en-us comes at top of the listing.
+      $rowsw[$item_id] = array($image, $locale, array('data' => $source), array('data' => $start_date), array('data' => $end_date), array('data' => $modified_date), array('data' => $modified_by), array('data' => $preview), $link);
+
+      // Show Default language(for example en-us) on the 0th index.
+      foreach ($rowsw[$item_id] as $k => $value) {
+        if ($defaultlocal === $value) {
+          $stemp = $rowsw[$item_id];
+          unset($rowsw[$item_id]);
+          $rowsw = array($item_id => $stemp) + $rowsw;
+          break;
+        }
+      }
+      $current_timestamp = time();
+    }
+
+    $rows = $rowsw;
+  }
+
+  // Defining header for the table rendered.
+  $header = array(t('Status'), t('Locale'), t('Source'), t('Start Date'), t('End Date'), t('Modified (Date)'), t('Modified By'), t('Preview'), t('Edit'));
+
+
+  return array('header' => $header, 'rows' => $rows, 'title' => $node->title);
+}
+
+function display_localization_form() {
+
+  $ctypes = node_type_get_types();
+  $ctypes_options = array();
+  $ctypes_settings = array();
+
+  foreach($ctypes as $ctype => $cname) {
+    $ctypes_options[$ctype] = $cname->name;
+    $existing_field = field_read_instance('node', 'field_url_aliases', $ctype);
+    if (!empty($existing_field)) {
+      $ctypes_settings[$ctype] = $ctype;
+    }
+    else {
+      $ctypes_settings[$ctype] = 0;
+    }
+  }
+
+  $form['ig_localized_ctypes'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $ctypes_options,
+    '#title' => t('Enable localization for'),
+    '#default_value' => $ctypes_settings,
+  );
+
+  $form['ig_opco_strip'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('OpCo Strip'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $opco_settings = variable_get('opco_strip_settings');
+  $form['ig_opco_strip']['opco_strip_settings'] = array(
+    '#title' => t('Strip OpCo From URL'),
+    '#type' => 'textarea',
+    '#description' => t('Specify comma separated opco to strip from URL Aliases'),
+    '#default_value' => !empty($opco_settings) ? $opco_settings : '',
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save Configuration',
+  );
+  //return $form;
+  return $form;
+}
+
+function display_localization_form_submit($form, &$form_state) {
+  module_load_include('inc', 'igcommerce_utility_localization', 'inc/field_collection.schema');
+  $settings = array();
+  $added_settings = array();
+  $removed_settings = array();
+  $settings = $form_state['values']['ig_localized_ctypes'];
+  $old_settings = variable_get('ig_localized_ctypes');
+
+  $opco_settings = $form_state['values']['opco_strip_settings'];
+  variable_set('opco_strip_settings', $opco_settings);
+
+  foreach($settings as $keys => $value) {
+
+    $prior_instance = field_read_instance('node', 'field_url_aliases', $keys);
+
+    // If field exists and we have selected to remove it.
+    if( !empty($prior_instance) && $settings[$keys] === 0 ){
+      $removed_settings[$keys] = $keys;
+    }
+
+    // If field does not exists and we have selected to add it.
+    if( empty($prior_instance) && $settings[$keys] !== 0 ){
+      $added_settings[$keys] = $keys;
+    }
+  }
+
+  if(!empty($added_settings)) {
+    foreach($added_settings as $keys => $value) {
+      $added_schema = _get_field_collection_fields($keys);
+      _add_field_collection_schema($added_schema);
+    }
+  }
+
+  if(!empty($removed_settings)) {
+    foreach($removed_settings as $keys => $value) {
+      $removed_schema = _get_field_collection_fields($keys);
+      _remove_field_collection_schema($removed_schema);
+    }
+  }
+}
+
+function list_product_locaizations($form, $form_state, $nid) {
+  drupal_add_js(drupal_get_path('module', 'igcommerce_utility_localization') . '/js/igcommerce_dashbord.js');
+  $format = 'd-m-Y';
+  $extraLinks = l(t('Change all Start Dates'), '#', array('attributes' => array('id' => 'start-link'))) . '|';
+  $extraLinks .= l(t('Change all End Dates'), '#', array('attributes' => array('id' => 'end-link')));
+  $extraLinks .= l(t('Cancel'), '#', array('attributes' => array('id' => 'cancel-link', 'style' => 'display:none')));
+  $tableDetails = _display_aliases_status($nid);
+  $form['form_title'] = array(
+    '#type' => 'markup',
+    '#markup' => '<h2>' . $tableDetails['title'] . '</h2>',
+  );
+  $form['change-all-start-date-time'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Change all Start Dates'),
+    '#date_format' => 'm/d/Y',
+    '#date_label_position' => 'within',
+    '#date_timezone' => 'America/Chicago',
+    '#date_increment' => 15,
+    '#date_year_range' => '0:+33',
+    '#prefix' => '<div id ="change-all-start-dates" style="display: none;">',
+    '#suffix' => '</div>',
+  );
+
+  $form['change-all-end-date-time'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Change all End Dates'),
+    '#date_format' => 'm/d/Y',
+    '#date_label_position' => 'within',
+    '#date_timezone' => 'America/Chicago',
+    '#date_increment' => 15,
+    '#date_year_range' => '0:+83',
+    '#prefix' => '<div id ="change-all-end-dates" style="display: none;">',
+    '#suffix' => '</div>',
+  );
+
+  $form['btn-change-date'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#prefix' => '<div id ="btn-save" style="display: none;float: left;">',
+    '#suffix' => '</div>',
+  );
+  $form['extra_links'] = array(
+    '#type' => 'markup',
+    '#markup' => $extraLinks,
+  );
+  $form['locale-list'] = array(
+    '#type' => 'tableselect',
+    '#empty' => t('No content found'),
+    '#header' => $tableDetails['header'],
+    '#options' => $tableDetails['rows'],
+  );
+
+
+  $form['#submit'][] = 'display_aliases_status_form_submit';
+  $form['#validate'][] = 'display_aliases_status_form_validate';
+  return $form;
+}
+
+function display_aliases_status_form_submit($form, $form_state) {
+  global $user;
+
+  $startDate = '';
+  $endDate = '';
+  $nid = $form_state['build_info']['args'][0];
+  $current_timestamp = time();
+  if ($form_state['values']['change-all-start-date-time']) {
+    $startDate = date('Y-m-d H:i:s', strtotime($form_state['values']['change-all-start-date-time'] . '+8 hours'));
+  }
+  if ($form_state['values']['change-all-end-date-time']) {
+    $endDate = date('Y-m-d H:i:s', strtotime($form_state['values']['change-all-end-date-time'] . '+8 hours'));
+  }
+  if (!empty($form_state['values']['change-all-start-date-time']) || (!empty($form_state['values']['change-all-end-date-time']))) {
+    foreach ($form_state['values']['locale-list'] as $key => $val) {
+      if ($val > 0) {
+        //logic here for change dates and user info
+        $fc = entity_load('field_collection_item', array($val));
+        $language_locale = $fc[$val]->field_language_locale[LANGUAGE_NONE][0]['value'];
+        // Updated the person who has implemented the alias.
+        $fc[$val]->field_person[LANGUAGE_NONE][0]['value'] = $user->name;
+        if ($startDate != '') {
+          $fc[$val]->field_start_date[LANGUAGE_NONE][0]['value'] = $startDate;
+        }
+        if ($endDate != '') {
+          $fc[$val]->field_end_date[LANGUAGE_NONE][0]['value'] = $endDate;
+        }
+        $fc[$val]->save(TRUE);
+        // To update changed date
+        // load Node passing parameter node id
+        $node = node_load($nid);
+        $node->translations->data[$language_locale]['changed'] = $current_timestamp;
+        field_attach_update('node', $node);
+      }
+      else {
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * implementation of hook_form_validate.
+ *
+ * Use below function to apply validation for alias dashboard change all
+ * start and end date time
+ */
+function display_aliases_status_form_validate($form, $form_state) {
+  //echo 'here1';exit;
+}
+
+function igcommerce_utility_localization_permission() {
+  return array(
+    'access dashboard' => array(
+      'title' => t('Access Url Alias Dashboard'),
+      'description' => t('Perform content related tasks.'),
+    ),
+  );
+}
+
+//To calculate odd even row number and add class name.
+function odd_even_row($num, $odd_even) {
+
+  if ($num % 2 == 0) {
+    $odd_even = "even-row";
+  }
+  else {
+    $odd_even = "odd-row";
+  }
+  return $odd_even;
+}
+
+/**
+ * Gives the language fallback locale for the provided locale
+ *
+ * @param  string $locale locale.
+ *
+ * @return string fallback locale
+ */
+function _igcommerce_get_fallback_locale($locale) {
+  if (!empty($locale)) {
+    $result = db_select('languages', 'l')->fields('l')->condition('language', $locale, '=')->execute()->fetchAssoc();
+
+    if (!empty($result['parent'])) {
+      return $result['parent'];
+    }
+    else {
+      return 'en-us';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_views_default_views().
+ */
+function igcommerce_utility_localization_views_default_views() {
+
+  $export = array();
+
+  $view = new view();
+  $view->name = 'Url_alias_dashboard';
+  $view->description = '';
+  $view->tag = 'default';
+  $view->base_table = 'node';
+  $view->human_name = 'Url Alias Dashboard';
+  $view->core = 7;
+  $view->api_version = '3.0';
+  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+
+  /* Display: Master */
+  $handler = $view->new_display('default', 'Master', 'default');
+  $handler->display->display_options['title'] = 'Url Alias Dashboard';
+  $handler->display->display_options['use_more_always'] = FALSE;
+  $handler->display->display_options['access']['type'] = 'role';
+  $handler->display->display_options['access']['role'] = array(
+    3 => '3',
+    4 => '4',
+  );
+  $handler->display->display_options['cache']['type'] = 'none';
+  $handler->display->display_options['query']['type'] = 'views_query';
+  $handler->display->display_options['exposed_form']['type'] = 'basic';
+  $handler->display->display_options['pager']['type'] = 'full';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '15';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
+  $handler->display->display_options['pager']['options']['id'] = '0';
+  $handler->display->display_options['pager']['options']['quantity'] = '9';
+  $handler->display->display_options['style_plugin'] = 'table';
+  $handler->display->display_options['style_options']['row_class_special'] = FALSE;
+  $handler->display->display_options['style_options']['columns'] = array(
+    'nid' => 'nid',
+    'title' => 'title',
+    'name' => 'name',
+    'changed' => 'changed',
+    'edit_node' => 'edit_node',
+  );
+  $handler->display->display_options['style_options']['default'] = '-1';
+  $handler->display->display_options['style_options']['info'] = array(
+    'nid' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'title' => array(
+      'sortable' => 1,
+      'default_sort_order' => 'asc',
+      'align' => 'views-align-left',
+      'separator' => '|',
+      'empty_column' => 0,
+    ),
+    'name' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'changed' => array(
+      'sortable' => 1,
+      'default_sort_order' => 'asc',
+      'align' => 'views-align-left',
+      'separator' => '|',
+      'empty_column' => 0,
+    ),
+    'edit_node' => array(
+      'align' => 'views-align-left',
+      'separator' => '|',
+      'empty_column' => 0,
+    ),
+  );
+  /* Field: Content: Title */
+  $handler->display->display_options['fields']['title']['id'] = 'title';
+  $handler->display->display_options['fields']['title']['table'] = 'node';
+  $handler->display->display_options['fields']['title']['field'] = 'title';
+  $handler->display->display_options['fields']['title']['alter']['trim'] = TRUE;
+  $handler->display->display_options['fields']['title']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['title']['link_to_node'] = FALSE;
+  $handler->display->display_options['fields']['title']['node_in_colorbox_width'] = '600';
+  $handler->display->display_options['fields']['title']['node_in_colorbox_height'] = '600';
+  $handler->display->display_options['fields']['title']['node_in_colorbox_rel'] = '';
+  /* Field: Content: Author uid */
+  $handler->display->display_options['fields']['uid']['id'] = 'uid';
+  $handler->display->display_options['fields']['uid']['table'] = 'node';
+  $handler->display->display_options['fields']['uid']['field'] = 'uid';
+  $handler->display->display_options['fields']['uid']['label'] = 'Updated By';
+  $handler->display->display_options['fields']['uid']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['uid']['link_to_user'] = FALSE;
+  /* Field: Content: Updated date */
+  $handler->display->display_options['fields']['changed']['id'] = 'changed';
+  $handler->display->display_options['fields']['changed']['table'] = 'node';
+  $handler->display->display_options['fields']['changed']['field'] = 'changed';
+  $handler->display->display_options['fields']['changed']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['changed']['date_format'] = 'search_api_facetapi_YEAR';
+  $handler->display->display_options['fields']['changed']['second_date_format'] = 'search_api_facetapi_YEAR';
+  /* Field: Content: Edit link */
+  $handler->display->display_options['fields']['edit_node']['id'] = 'edit_node';
+  $handler->display->display_options['fields']['edit_node']['table'] = 'views_entity_node';
+  $handler->display->display_options['fields']['edit_node']['field'] = 'edit_node';
+  $handler->display->display_options['fields']['edit_node']['element_label_colon'] = FALSE;
+  /* Sort criterion: Content: Post date */
+  $handler->display->display_options['sorts']['created']['id'] = 'created';
+  $handler->display->display_options['sorts']['created']['table'] = 'node';
+  $handler->display->display_options['sorts']['created']['field'] = 'created';
+  $handler->display->display_options['sorts']['created']['order'] = 'DESC';
+  /* Sort criterion: Content: Updated date */
+  $handler->display->display_options['sorts']['changed']['id'] = 'changed';
+  $handler->display->display_options['sorts']['changed']['table'] = 'node';
+  $handler->display->display_options['sorts']['changed']['field'] = 'changed';
+  $handler->display->display_options['sorts']['changed']['exposed'] = TRUE;
+  $handler->display->display_options['sorts']['changed']['expose']['label'] = 'Updated date';
+  /* Sort criterion: Content: Updated/commented date */
+  $handler->display->display_options['sorts']['last_updated']['id'] = 'last_updated';
+  $handler->display->display_options['sorts']['last_updated']['table'] = 'node_comment_statistics';
+  $handler->display->display_options['sorts']['last_updated']['field'] = 'last_updated';
+  $handler->display->display_options['sorts']['last_updated']['exposed'] = TRUE;
+  $handler->display->display_options['sorts']['last_updated']['expose']['label'] = 'Updated/commented date';
+  /* Filter criterion: Content: Published */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'node';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = 1;
+  $handler->display->display_options['filters']['status']['group'] = 1;
+  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+  /* Filter criterion: Content: Type */
+  $handler->display->display_options['filters']['type']['id'] = 'type';
+  $handler->display->display_options['filters']['type']['table'] = 'node';
+  $handler->display->display_options['filters']['type']['field'] = 'type';
+  $handler->display->display_options['filters']['type']['value'] = array(
+    'article' => 'article',
+  );
+  $handler->display->display_options['filters']['type']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['type']['expose']['operator_id'] = 'type_op';
+  $handler->display->display_options['filters']['type']['expose']['label'] = 'Type';
+  $handler->display->display_options['filters']['type']['expose']['operator'] = 'type_op';
+  $handler->display->display_options['filters']['type']['expose']['identifier'] = 'type';
+  $handler->display->display_options['filters']['type']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  /* Filter criterion: Content: Title */
+  $handler->display->display_options['filters']['title']['id'] = 'title';
+  $handler->display->display_options['filters']['title']['table'] = 'node';
+  $handler->display->display_options['filters']['title']['field'] = 'title';
+  $handler->display->display_options['filters']['title']['operator'] = 'contains';
+  $handler->display->display_options['filters']['title']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['title']['expose']['operator_id'] = 'title_op';
+  $handler->display->display_options['filters']['title']['expose']['label'] = 'Title';
+  $handler->display->display_options['filters']['title']['expose']['operator'] = 'title_op';
+  $handler->display->display_options['filters']['title']['expose']['identifier'] = 'title';
+  $handler->display->display_options['filters']['title']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  /* Filter criterion: Field: Display Title (field_content_title) */
+  $handler->display->display_options['filters']['field_content_title_value']['id'] = 'field_content_title_value';
+  $handler->display->display_options['filters']['field_content_title_value']['table'] = 'field_data_field_content_title';
+  $handler->display->display_options['filters']['field_content_title_value']['field'] = 'field_content_title_value';
+  $handler->display->display_options['filters']['field_content_title_value']['operator'] = 'contains';
+  $handler->display->display_options['filters']['field_content_title_value']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['operator_id'] = 'field_content_title_value_op';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['label'] = 'Display Title ';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['operator'] = 'field_content_title_value_op';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['identifier'] = 'field_content_title_value';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  /* Filter criterion: Content: Application (field_application) */
+  $handler->display->display_options['filters']['field_application_tid']['id'] = 'field_application_tid';
+  $handler->display->display_options['filters']['field_application_tid']['table'] = 'field_data_field_application';
+  $handler->display->display_options['filters']['field_application_tid']['field'] = 'field_application_tid';
+  $handler->display->display_options['filters']['field_application_tid']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['field_application_tid']['expose']['operator_id'] = 'field_application_tid_op';
+  $handler->display->display_options['filters']['field_application_tid']['expose']['label'] = 'Application (field_application)';
+  $handler->display->display_options['filters']['field_application_tid']['expose']['operator'] = 'field_application_tid_op';
+  $handler->display->display_options['filters']['field_application_tid']['expose']['identifier'] = 'field_application_tid';
+  $handler->display->display_options['filters']['field_application_tid']['type'] = 'select';
+  $handler->display->display_options['filters']['field_application_tid']['vocabulary'] = 'application';
+  $handler->display->display_options['filters']['field_application_tid']['hierarchy'] = 1;
+  /* Filter criterion: Content: Industry (field_industry) */
+  $handler->display->display_options['filters']['field_industry_tid']['id'] = 'field_industry_tid';
+  $handler->display->display_options['filters']['field_industry_tid']['table'] = 'field_data_field_industry';
+  $handler->display->display_options['filters']['field_industry_tid']['field'] = 'field_industry_tid';
+  $handler->display->display_options['filters']['field_industry_tid']['vocabulary'] = 'industry';
+  /* Filter criterion: Content: URL Builder (field_url_builder) */
+  $handler->display->display_options['filters']['field_url_builder_tid']['id'] = 'field_url_builder_tid';
+  $handler->display->display_options['filters']['field_url_builder_tid']['table'] = 'field_data_field_url_builder';
+  $handler->display->display_options['filters']['field_url_builder_tid']['field'] = 'field_url_builder_tid';
+  $handler->display->display_options['filters']['field_url_builder_tid']['vocabulary'] = 'url_builder';
+
+  /* Display: Page */
+  $handler = $view->new_display('page', 'Page', 'page');
+  $handler->display->display_options['defaults']['style_plugin'] = FALSE;
+  $handler->display->display_options['style_plugin'] = 'table';
+  $handler->display->display_options['style_options']['columns'] = array(
+    'nid' => 'nid',
+    'title' => 'title',
+    'type' => 'type',
+    'name' => 'name',
+    'changed' => 'changed',
+    'edit_node' => 'edit_node',
+  );
+  $handler->display->display_options['style_options']['default'] = '-1';
+  $handler->display->display_options['style_options']['info'] = array(
+    'nid' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'title' => array(
+      'sortable' => 1,
+      'default_sort_order' => 'asc',
+      'align' => 'views-align-left',
+      'separator' => '|',
+      'empty_column' => 0,
+    ),
+    'type' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => 'views-align-center',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'name' => array(
+      'sortable' => 0,
+      'default_sort_order' => 'asc',
+      'align' => 'views-align-center',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'changed' => array(
+      'sortable' => 1,
+      'default_sort_order' => 'asc',
+      'align' => 'views-align-center',
+      'separator' => '|',
+      'empty_column' => 0,
+    ),
+    'edit_node' => array(
+      'align' => 'views-align-center',
+      'separator' => '|',
+      'empty_column' => 0,
+    ),
+  );
+  $handler->display->display_options['defaults']['style_options'] = FALSE;
+  $handler->display->display_options['defaults']['row_plugin'] = FALSE;
+  $handler->display->display_options['defaults']['row_options'] = FALSE;
+  $handler->display->display_options['defaults']['relationships'] = FALSE;
+  /* Relationship: Content revision: User */
+  $handler->display->display_options['relationships']['uid']['id'] = 'uid';
+  $handler->display->display_options['relationships']['uid']['table'] = 'node_revision';
+  $handler->display->display_options['relationships']['uid']['field'] = 'uid';
+  $handler->display->display_options['relationships']['uid']['required'] = TRUE;
+  $handler->display->display_options['defaults']['fields'] = FALSE;
+  /* Field: Content: Nid */
+  $handler->display->display_options['fields']['nid']['id'] = 'nid';
+  $handler->display->display_options['fields']['nid']['table'] = 'node';
+  $handler->display->display_options['fields']['nid']['field'] = 'nid';
+  $handler->display->display_options['fields']['nid']['label'] = 'ID';
+  $handler->display->display_options['fields']['nid']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['nid']['node_in_colorbox_width'] = '600';
+  $handler->display->display_options['fields']['nid']['node_in_colorbox_height'] = '600';
+  $handler->display->display_options['fields']['nid']['node_in_colorbox_rel'] = '';
+  /* Field: Content: Title */
+  $handler->display->display_options['fields']['title']['id'] = 'title';
+  $handler->display->display_options['fields']['title']['table'] = 'node';
+  $handler->display->display_options['fields']['title']['field'] = 'title';
+  $handler->display->display_options['fields']['title']['label'] = 'Name';
+  $handler->display->display_options['fields']['title']['alter']['trim'] = TRUE;
+  $handler->display->display_options['fields']['title']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['title']['link_to_node'] = FALSE;
+  $handler->display->display_options['fields']['title']['node_in_colorbox_width'] = '600';
+  $handler->display->display_options['fields']['title']['node_in_colorbox_height'] = '600';
+  $handler->display->display_options['fields']['title']['node_in_colorbox_rel'] = '';
+  /* Field: Content: Type */
+  $handler->display->display_options['fields']['type']['id'] = 'type';
+  $handler->display->display_options['fields']['type']['table'] = 'node';
+  $handler->display->display_options['fields']['type']['field'] = 'type';
+  $handler->display->display_options['fields']['type']['element_label_colon'] = FALSE;
+  /* Field: User: Name */
+  $handler->display->display_options['fields']['name']['id'] = 'name';
+  $handler->display->display_options['fields']['name']['table'] = 'users';
+  $handler->display->display_options['fields']['name']['field'] = 'name';
+  $handler->display->display_options['fields']['name']['relationship'] = 'uid';
+  $handler->display->display_options['fields']['name']['label'] = 'Last Modified By';
+  $handler->display->display_options['fields']['name']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['name']['link_to_user'] = FALSE;
+  /* Field: Content: Updated date */
+  $handler->display->display_options['fields']['changed']['id'] = 'changed';
+  $handler->display->display_options['fields']['changed']['table'] = 'node';
+  $handler->display->display_options['fields']['changed']['field'] = 'changed';
+  $handler->display->display_options['fields']['changed']['label'] = 'Last Modified Date';
+  $handler->display->display_options['fields']['changed']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['changed']['date_format'] = 'custom';
+  $handler->display->display_options['fields']['changed']['custom_date_format'] = 'd/m/Y  h:m:s A';
+  $handler->display->display_options['fields']['changed']['second_date_format'] = 'search_api_facetapi_YEAR';
+  /* Field: Content: Edit link */
+  $handler->display->display_options['fields']['edit_node']['id'] = 'edit_node';
+  $handler->display->display_options['fields']['edit_node']['table'] = 'views_entity_node';
+  $handler->display->display_options['fields']['edit_node']['field'] = 'edit_node';
+  $handler->display->display_options['fields']['edit_node']['label'] = 'Edit';
+  $handler->display->display_options['fields']['edit_node']['alter']['alter_text'] = TRUE;
+  $handler->display->display_options['fields']['edit_node']['alter']['text'] = '<a href= "/en-us/admin/content/dashboard/show-localization/[nid]"  class="overlay-exclude"  target= "_blank">Edit</a>';
+  $handler->display->display_options['fields']['edit_node']['element_label_colon'] = FALSE;
+  $handler->display->display_options['defaults']['sorts'] = FALSE;
+  /* Sort criterion: Content: Updated date */
+  $handler->display->display_options['sorts']['changed']['id'] = 'changed';
+  $handler->display->display_options['sorts']['changed']['table'] = 'node';
+  $handler->display->display_options['sorts']['changed']['field'] = 'changed';
+  $handler->display->display_options['sorts']['changed']['order'] = 'DESC';
+  $handler->display->display_options['sorts']['changed']['expose']['label'] = 'Updated date';
+  /* Sort criterion: Content: Updated/commented date */
+  $handler->display->display_options['sorts']['last_updated']['id'] = 'last_updated';
+  $handler->display->display_options['sorts']['last_updated']['table'] = 'node_comment_statistics';
+  $handler->display->display_options['sorts']['last_updated']['field'] = 'last_updated';
+  $handler->display->display_options['sorts']['last_updated']['expose']['label'] = 'Updated/commented date';
+  /* Sort criterion: Content: Post date */
+  $handler->display->display_options['sorts']['created']['id'] = 'created';
+  $handler->display->display_options['sorts']['created']['table'] = 'node';
+  $handler->display->display_options['sorts']['created']['field'] = 'created';
+  $handler->display->display_options['sorts']['created']['order'] = 'DESC';
+  $handler->display->display_options['defaults']['filter_groups'] = FALSE;
+  $handler->display->display_options['defaults']['filters'] = FALSE;
+  /* Filter criterion: Content: Published */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'node';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = 1;
+  $handler->display->display_options['filters']['status']['group'] = 1;
+  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+  /* Filter criterion: Content: Type */
+  $handler->display->display_options['filters']['type']['id'] = 'type';
+  $handler->display->display_options['filters']['type']['table'] = 'node';
+  $handler->display->display_options['filters']['type']['field'] = 'type';
+  $handler->display->display_options['filters']['type']['value'] = array(
+    'article' => 'article',
+  );
+  $handler->display->display_options['filters']['type']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['type']['expose']['operator_id'] = 'type_op';
+  $handler->display->display_options['filters']['type']['expose']['label'] = 'Type';
+  $handler->display->display_options['filters']['type']['expose']['operator'] = 'type_op';
+  $handler->display->display_options['filters']['type']['expose']['identifier'] = 'type';
+  $handler->display->display_options['filters']['type']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  /* Filter criterion: Content: Title */
+  $handler->display->display_options['filters']['title']['id'] = 'title';
+  $handler->display->display_options['filters']['title']['table'] = 'node';
+  $handler->display->display_options['filters']['title']['field'] = 'title';
+  $handler->display->display_options['filters']['title']['operator'] = 'contains';
+  $handler->display->display_options['filters']['title']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['title']['expose']['operator_id'] = 'title_op';
+  $handler->display->display_options['filters']['title']['expose']['label'] = 'Title';
+  $handler->display->display_options['filters']['title']['expose']['operator'] = 'title_op';
+  $handler->display->display_options['filters']['title']['expose']['identifier'] = 'title';
+  $handler->display->display_options['filters']['title']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  /* Filter criterion: Field: Display Title (field_content_title) */
+  $handler->display->display_options['filters']['field_content_title_value']['id'] = 'field_content_title_value';
+  $handler->display->display_options['filters']['field_content_title_value']['table'] = 'field_data_field_content_title';
+  $handler->display->display_options['filters']['field_content_title_value']['field'] = 'field_content_title_value';
+  $handler->display->display_options['filters']['field_content_title_value']['operator'] = 'contains';
+  $handler->display->display_options['filters']['field_content_title_value']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['operator_id'] = 'field_content_title_value_op';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['label'] = 'Display Title ';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['operator'] = 'field_content_title_value_op';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['identifier'] = 'field_content_title_value';
+  $handler->display->display_options['filters']['field_content_title_value']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  /* Filter criterion: Content: Application (field_application) */
+  $handler->display->display_options['filters']['field_application_tid']['id'] = 'field_application_tid';
+  $handler->display->display_options['filters']['field_application_tid']['table'] = 'field_data_field_application';
+  $handler->display->display_options['filters']['field_application_tid']['field'] = 'field_application_tid';
+  $handler->display->display_options['filters']['field_application_tid']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['field_application_tid']['expose']['operator_id'] = 'field_application_tid_op';
+  $handler->display->display_options['filters']['field_application_tid']['expose']['label'] = 'Application ';
+  $handler->display->display_options['filters']['field_application_tid']['expose']['operator'] = 'field_application_tid_op';
+  $handler->display->display_options['filters']['field_application_tid']['expose']['identifier'] = 'field_application_tid';
+  $handler->display->display_options['filters']['field_application_tid']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  $handler->display->display_options['filters']['field_application_tid']['type'] = 'select';
+  $handler->display->display_options['filters']['field_application_tid']['vocabulary'] = 'application';
+  $handler->display->display_options['filters']['field_application_tid']['hierarchy'] = 1;
+  /* Filter criterion: Content: Industry (field_industry) */
+  $handler->display->display_options['filters']['field_industry_tid']['id'] = 'field_industry_tid';
+  $handler->display->display_options['filters']['field_industry_tid']['table'] = 'field_data_field_industry';
+  $handler->display->display_options['filters']['field_industry_tid']['field'] = 'field_industry_tid';
+  $handler->display->display_options['filters']['field_industry_tid']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['field_industry_tid']['expose']['operator_id'] = 'field_industry_tid_op';
+  $handler->display->display_options['filters']['field_industry_tid']['expose']['label'] = 'Industry';
+  $handler->display->display_options['filters']['field_industry_tid']['expose']['operator'] = 'field_industry_tid_op';
+  $handler->display->display_options['filters']['field_industry_tid']['expose']['identifier'] = 'field_industry_tid';
+  $handler->display->display_options['filters']['field_industry_tid']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  $handler->display->display_options['filters']['field_industry_tid']['type'] = 'select';
+  $handler->display->display_options['filters']['field_industry_tid']['vocabulary'] = 'industry';
+  $handler->display->display_options['filters']['field_industry_tid']['hierarchy'] = 1;
+  /* Filter criterion: Content: URL Builder (field_url_builder) */
+  $handler->display->display_options['filters']['field_url_builder_tid']['id'] = 'field_url_builder_tid';
+  $handler->display->display_options['filters']['field_url_builder_tid']['table'] = 'field_data_field_url_builder';
+  $handler->display->display_options['filters']['field_url_builder_tid']['field'] = 'field_url_builder_tid';
+  $handler->display->display_options['filters']['field_url_builder_tid']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['field_url_builder_tid']['expose']['operator_id'] = 'field_url_builder_tid_op';
+  $handler->display->display_options['filters']['field_url_builder_tid']['expose']['label'] = 'URL Builder';
+  $handler->display->display_options['filters']['field_url_builder_tid']['expose']['operator'] = 'field_url_builder_tid_op';
+  $handler->display->display_options['filters']['field_url_builder_tid']['expose']['identifier'] = 'field_url_builder_tid';
+  $handler->display->display_options['filters']['field_url_builder_tid']['expose']['remember_roles'] = array(
+    2 => '2',
+    1 => 0,
+    3 => 0,
+    4 => 0,
+  );
+  $handler->display->display_options['filters']['field_url_builder_tid']['type'] = 'select';
+  $handler->display->display_options['filters']['field_url_builder_tid']['vocabulary'] = 'url_builder';
+  $handler->display->display_options['filters']['field_url_builder_tid']['hierarchy'] = 1;
+  $handler->display->display_options['path'] = 'admin/content/dashboard/show-aliases';
+  $handler->display->display_options['menu']['type'] = 'normal';
+  $handler->display->display_options['menu']['title'] = 'URL Alias Dashboard';
+  $handler->display->display_options['menu']['weight'] = '10';
+  $handler->display->display_options['menu']['name'] = 'management';
+  $handler->display->display_options['menu']['context'] = 0;
+  $handler->display->display_options['menu']['context_only_inline'] = 0;
+  $translatables['Url_alias_dashboard'] = array(
+    t('Master'),
+    t('Url Alias Dashboard'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('Items per page'),
+    t('- All -'),
+    t('Offset'),
+    t('? first'),
+    t('? previous'),
+    t('next ?'),
+    t('last ?'),
+    t('Title'),
+    t('Updated By'),
+    t('Updated date'),
+    t('Edit link'),
+    t('Updated/commented date'),
+    t('Type'),
+    t('Display Title '),
+    t('Application (field_application)'),
+    t('Page'),
+    t('revision user'),
+    t('ID'),
+    t('Name'),
+    t('Last Modified By'),
+    t('Last Modified Date'),
+    t('Edit'),
+    t('<a href= "/en-us/admin/content/dashboard/show-localization/[nid]"  class="overlay-exclude"  target= "_blank">Edit</a>'),
+    t('Application '),
+    t('Industry'),
+    t('URL Builder'),
+  );
+
+  $export['url_alias_dashboard'] = $view;
+  return $export;
+}

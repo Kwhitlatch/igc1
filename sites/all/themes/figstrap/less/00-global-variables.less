@@ -1,0 +1,30 @@
+/**
+ * @file 00-global-variables.less
+ * Defines global variables and mixins.
+ *
+ * Style loosly adheres to Drupal CSS standards https://www.drupal.org/node/1887862
+ * This file is for variables that are not specifically used to override
+ * bootstrap variables. Those should go in variable-overrides.less
+ */
+
+
+ /**
+  * Used for padding above footer. This is required because of the
+  * atypical way that the background color is set for products.
+  * This will be seen mostly on the containers of Flukestrap custom
+  * page templates.
+  */
+  @flukestrap-footer: ceil((@font-size-base * 6.5)); // ~85px
+
+  /**
+   * Used to add grey to the left half of the screen. The gradient split will be hidden
+   * behind a navigation panel. Mainly used in Pascal layout
+   */
+   .flukestrap-split-bg {
+      /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#eaeaea+33,ffffff+33 */
+      background: rgb(239,239,239); /* Old browsers */
+      background: -moz-linear-gradient(left,  rgba(239,239,239,1) 25%, rgba(255,255,255,1) 25%); /* FF3.6-15 */
+      background: -webkit-linear-gradient(left,  rgba(239,239,239,1) 25%,rgba(255,255,255,1) 25%); /* Chrome10-25,Safari5.1-6 */
+      background: linear-gradient(to right,  rgba(239,239,239,1) 25%,rgba(255,255,255,1) 25%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eaeaea', endColorstr='#ffffff',GradientType=1 ); /* IE6-9 */
+    }

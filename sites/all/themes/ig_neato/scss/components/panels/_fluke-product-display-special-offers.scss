@@ -1,0 +1,10 @@
+// Only appears if the product has special offers.
+// Example: /en-us/product/electrical-testing/digital-multimeters/fluke-279-fc
+// /en-us/product/electrical-testing/digital-multimeters/fluke-3000-fc
+#fluke-product-display-special-offers {
+  clear: both;
+  @extend %m-b-2;
+  h2 {
+    margin-bottom: 10px;
+  }
+}

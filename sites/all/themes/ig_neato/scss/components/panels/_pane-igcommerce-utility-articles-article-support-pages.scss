@@ -1,0 +1,15 @@
+// These are pages linked to from the footer, such as fluke/privacy-policy
+// Most, if not all of these templates use 'flukestrap-todd' template. it pulls
+// in the flukestrap-todd background color from layouts/flukestrap_todd.scss
+
+
+/* MIG1981 had us pull out the padding on support pages where it lives in a
+ * 3/9 split, that's why its inside the todd template wrapper.  Specifically
+ * to exclude /en-us/support/calibration-services
+ */
+.todd .pane-igcommerce-utility-articles-article-support-pages {
+  padding: 45px 15px;
+  @include media(min-width $desk) { 
+    padding: 45px 15px;
+  }
+}

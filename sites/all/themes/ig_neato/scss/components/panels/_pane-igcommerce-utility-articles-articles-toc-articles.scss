@@ -1,0 +1,113 @@
+// Webcard TOCs
+// Example: en-us/learn/best-practices/measurement-basics/electricity
+.pane-igcommerce-utility-articles-articles-toc-category-listing-solr {
+  @include span-columns(12);
+  padding-top: $spacing-2;
+  @include clearfix;
+  // TOC Card Container Begin
+  .pane-content {
+    // Affects large and medium cards both.
+    .card {
+      @include box-shadow($color: rgba($gray, .35));
+      @include span-columns(12);
+      background: $white;
+      display: inline-block; 
+      margin-bottom: 2em;
+      margin-right: 2em;
+      img {
+        min-height: 170px;
+        height: 170px;
+        object-fit: cover;
+        width: 100%;
+      }
+      &:hover {
+        opacity: .7;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+      }
+      h2 {
+        @extend %h3;
+        color: $base-font-color;
+        font-family: $heading-font-family;
+        line-height: 25px;
+        margin: 10px 0 18px;
+        padding: 0 18px;
+      }
+      @include media($phone) {
+        min-height: 288px;
+      }
+    }
+    // There should be a two empty columns on the right for tablet up.
+    // This is because the source files are'nt that big, and since we cut 
+    // the small card size, stuff doesn't line up real great anymore.
+    @include media($phone) {
+      > a:nth-child(even) {
+        margin-right: 0;
+      }
+      .toc_article_card_large {
+        @include span-columns(6 of 10);
+      }
+      .toc_article_card_medium {
+        @include span-columns(4 of 10);
+      }
+    }
+    @include media($desk) {
+      .toc_article_card_large {
+        @include span-columns(6 of 12);
+      }
+      .toc_article_card_medium {
+        @include span-columns(4 of 12);
+      }
+    }
+  }
+}
+
+// Related resources in TOC Footer (Products)
+
+// This is the recommended products title only.
+.recommended-products-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+// Webcard TOC Recommended products 
+.toc-listing-title-h3 {   
+  font-family: $font-family-sans-serif;
+  font-size: 17px;
+}
+
+.article-related-product-download {
+  line-height: 19.2px;
+}
+
+// Related resources in TOC Footer (Resources - No images, so needs to be smaller)
+.pane-igcommerce-utility-articles-articles-toc-url-resources-solr{
+  .toc-article-related-resource-wrapper{
+    min-height: 120px;
+    &:nth-of-type(4){
+      margin-right: 0;
+    }
+  }
+}
+
+.pane-igcommerce-utility-articles-articles-toc-desc {
+  img {
+    background-color: transparent;
+    margin-right: 2rem;
+  }
+}
+
+// Padding top over related resource footer on article TOC
+.pane-igcommerce-utility-articles-articles-toc-url-resources{
+  padding-top: $spacing-3;
+}
+
+// Fixed un-clickable cards when logged in.
+.contextual-links-region {
+  position: inherit;
+}
+
+// CTAs found on the taxonomy toc pages. Currently requested to be centered.....
+.toc-cta{
+  @extend %p;
+  text-align: center;
+}

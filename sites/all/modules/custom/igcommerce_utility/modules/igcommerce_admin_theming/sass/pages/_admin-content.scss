@@ -1,0 +1,77 @@
+// For the page at: /admin/content
+body.page-admin-content {
+  @extend %table-shrink;
+  .views-exposed-widgets .views-exposed-widget {
+    width: 100%;
+    @media (min-width: 768px) {
+      width: 25%;
+    }
+    .form-select {
+      width: 100%;
+    }
+    &:nth-child(4n+5){
+      clear: both;
+    }
+    .views-widget,
+    label {
+      display: block;
+      clear: both;
+      width: 100%;
+    }
+    div.form-select,
+    input.form-text {
+      width: 100% !important;
+    }
+  }
+  //Apply Filter button
+  .views-submit-button {
+    #edit-submit-commerce-backoffice-content{
+      float: left;
+      line-height: 30px;
+      list-style-type: none;
+      margin: 1.4em  1em 0 0;
+      overflow: hidden;
+      padding: 0 20px 0 20px;
+      width: 100%;
+      @extend %action-links-button;
+    }
+  }
+  //Add Content Button
+  ul.action-links li {
+    background: none;
+    border: 0;
+    box-shadow: none;
+    a {
+      @extend %gray-button;
+      padding: 4px 10px;
+      &:before {
+       font-family: 'fluke-icon-font';
+       content: "\f067";
+       display: inline-block;
+       padding-right: 8px;
+       vertical-align: middle;
+     }
+   }
+ }
+  //Operations dropdown culumn
+  table th.views-field-operations-dropbutton{
+    width: 100px;
+  }
+  .views-field-operations-dropbutton { 
+    .ctools-dropbutton-processed {
+      position: relative;
+      top: auto;
+      width: 100%;
+      padding-right: 0;
+    }
+  }
+  //Bulk operations checkbox
+  .views-field-views-bulk-operations {
+    text-align: center;
+  }
+  // Updated Date, URL Builder
+  .views-field-changed:not(th),
+  .field-type-taxonomy-term-reference {
+    @extend %cell-shrink;
+  }
+}

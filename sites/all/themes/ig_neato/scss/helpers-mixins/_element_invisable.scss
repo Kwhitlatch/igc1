@@ -1,0 +1,11 @@
+// Element invisable is the preferred method in D7 for hiding content that 
+// should be available to screen readers, such as field labels.
+// https://www.drupal.org/docs/7/creating-accessible-themes/hide-content-properly
+%element-invisible {
+  position: absolute !important;
+  clip: rect(1px, 1px, 1px, 1px);
+  overflow: hidden;
+  height: 1px;
+  width: 1px;
+  word-wrap: normal;
+}

@@ -1,0 +1,171 @@
+// Fluke News TOC and Sub-TOC
+// Example: solutions/fluke-news, solutions/fluke-news/vibration
+
+.page-learn-blog {
+
+//Fluke News Article item - full width on sub category
+  .fluke-news-article-wrapper{
+    @include outer-container;
+    //Left Column Image for article
+    .fluke-news-article-image{
+      padding-right: $spacing-1;
+      @include span-columns(12);
+      @include media($screen-xs) {
+        @include span-columns(4);
+        margin-right: 0; //
+      }
+    }
+    //Left Column titles, short descripion, and date
+    .fluke-news-article-content{
+      @include span-columns(12);
+      @include media($screen-xs) {
+        @include span-columns(8);
+        margin-right: 0; //
+      }
+    }
+    // Featured Article Seaction
+    &.featured {
+      .fluke-news-article-image {
+        padding-right: 0;
+      }
+      img {
+        width: 100%;
+      }
+      padding: $spacing-2 0 $spacing-3;
+      .fluke-news-article-image{
+      @include media($screen-xs) {
+      @include span-columns(5);
+      }
+      }
+      //Left Column titles, short descripion, and date
+      .fluke-news-article-content{
+      @include media($screen-xs) {
+      @include span-columns(7);
+      }
+    }
+    .fluke-news-article-cta{
+      margin: $spacing-1 0;
+    }
+    }
+  }
+
+//Article item 
+div.pane-content div.fluke-news-top-stories-wrapper{
+  // Remove padding on paginated items
+  ul{
+    padding-left:0;
+    list-style: none;
+    li{
+      padding: $spacing-2 0;
+      border-top: 1px solid $gray-c;
+      &:first-child{
+        padding-top: 0;
+        border-top: none;
+      }
+      &:last-child{
+        padding-bottom: 0; //Removes extra padding from last item
+      }
+    }
+  }
+}
+a.btn-survey{
+  @extend %button-secondary;
+  &:focus{
+    background-color: darken($color-secondary, 10%);
+  }
+}
+
+  // Fluke News Plus Main TOC, example:en-us/solutions/fluke-news
+  // Using new template to accound for left and right sidebar, Pascal FNP
+
+  //Content Top - H1, Special Event Banner, Featured article - full column
+  .fnp-top{
+    @include span-columns(12);
+  }
+  //Content Left - Top Stories
+  .fnp-left{
+    @include span-columns(12);
+    @include media($screen-md) {
+      @include span-columns(8);
+    }
+  }
+  //Content Right - Cool links, survey
+  .fnp-right{
+    padding-bottom: $spacing-3;
+    @include span-columns(12);
+    @include media($screen-md) {
+      @include span-columns(4);
+      margin-right: 0; //
+    }
+    .link-feature-article-wrapper{
+      padding: 1.5rem 0 $spacing-2; //Added some additional padding to surveys in right column
+      border-bottom: 1px solid $gray-c;
+      @include media($screen-md) {
+        border-bottom: none;
+        padding: 0 0 $spacing-1;
+      }
+    }
+  }
+  // Date and topic of Fluke News Article
+  .fluke-news-footer {
+    font-size: $font-size-xs;
+    padding: $spacing-1 0 1rem;
+  }
+
+  //Content Footer - Recent stories
+  .fnp-bottom {
+    @include span-columns(12);
+    .fluke-news-recent-stories-item{
+      @include span-columns(12);
+      @include media($screen-xs) {
+        @include span-columns(3);
+        //margin-right: 0; //
+      }
+    .fluke-news-article-image, .fluke-news-article-content{
+      @include span-columns(12);
+        padding-right: 0;
+      }
+      .fluke-news-article-desc{
+        display: none;
+      }
+    }
+    .fluke-news-footer {
+      padding: 0 0 $spacing-2;
+      @include media($screen-md) {
+        padding: initial;
+      }
+    }
+  }
+  // The fluke-news articles were imported en-masse from the old cms'. The
+  // images are often different sizes, the style below will work for "most" cases.
+  // Only affects images in the body of the article.
+  .pane-igcommerce-utility-articles-articles-solr-desc {
+    margin-bottom: 15px;
+    figure {
+      width:100%;
+      display: block;
+      margin: 1rem 0;
+      @include media($screen-xs) {
+        display: inline-block;
+        width: auto;
+        margin: 1rem;
+        width: 33%;
+        float: right;
+      }
+      @include media($screen-md) {
+       width: 50%;
+      }
+      figcaption {
+        clear: both;
+        text-align: left;
+        font-style: italic;
+      @extend .small;
+      }
+      // Ensures small images will fill the full container size.
+      img {
+        max-width: none;
+        width: 100%;
+      }
+    }
+  }
+}
